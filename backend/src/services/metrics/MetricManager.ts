@@ -22,6 +22,7 @@ export class MetricManager {
 
         // extracts owner and repository name from the URL
         let pathParts = path.split('/').filter(Boolean);
+        
         if (pathParts.length >= 2) {
             this.owner = pathParts[0];
             this.repoName = pathParts[1];
