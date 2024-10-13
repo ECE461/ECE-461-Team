@@ -80,9 +80,17 @@ export class PullRequest{
             const response = await axios.get(this.getEndpoint('number', pr_number), {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
             const data = response.data; 
            
-            arr[0] += data.additions; 
-            arr[1] += data.deletions;
-            return; 
+            //check to see if code review exists 
+            const response2 = await axios.get(this.getEndpoint('number', pr_number) + '/reviews', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
+            const review = response2.data; 
+
+            console.log(`is data merged for #${pr_number}? ${data.merged}\nis there a code review? ${review.length ? 'yes' : 'no'}`);
+            //only count line contribution if the pull request has been merged and if a code review exists 
+            if(data.merged && review.length){
+                arr[0] += data.additions; 
+                arr[1] += data.deletions;
+                return;
+            }
 
         } catch(Error){
             Logger.logDebug(Error); 
