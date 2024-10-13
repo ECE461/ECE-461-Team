@@ -5,6 +5,8 @@ import { Logger } from '../../utils/Logger';
 import { MetricManager } from './MetricManager';
 import {URL} from 'url' 
 import { log } from 'console';
+import { checkCustomRoutes } from 'next/dist/lib/load-custom-routes';
+import { hasUncaughtExceptionCaptureCallback } from 'process';
 
 
 /**
@@ -12,13 +14,13 @@ import { log } from 'console';
  * 
  * @private @method getEndpoint(): returnsrelevant API endpoint 
  * 
- * @private @method getDetails(): returns lines changed from one pull request 
+ * @private @method getDetails(): @returns {Promise<number>} lines changed from one pull request 
  * 
- * @private @method getPRChanges(): returns total lines changed from pull requests
+ * @private @method getPRChanges(): @returns {Promise <number | null>} returns total lines changed from pull requests
  * 
- * @private @method getTotalChanges(): returns total lines changed on repo 
+ * @private @method getTotalChanges(): @returns {Promise <number | null>} total lines changed on repo, or null for error
  * 
- * @public @method calculatePullRequest(): returns fraction of code from pull requests
+ * @public @method calculatePullRequest(): @returns {Promise <number | null>} fraction of code from pull requests, or null for error
  * 
 */
 
@@ -36,13 +38,13 @@ export class PullRequest{
     /**
      * 
      * @param type
-     * @param pr_number: optional
+     * @param {optional} pr_number 
      * @returns github endpoint for all pull requests, or for a certain number pull request see @example
      *
      * @example
-     * getEndpoint('all'); all pull requests 
+     * getEndpoint('all'); all pull requests
      * getEndpoint('total lines'); api endpoint to parse through line changes
-     * getEndpoint('number', 1437); where 1437 is a dummy number, details of pull rq 1437
+     * getEndpoint('number', {n}); where n is any pull request, returns details of pull request #n
      * 
      */
     private getEndpoint(type: string, pr_number?: number): string{
@@ -65,43 +67,62 @@ export class PullRequest{
 
     /**
      * @param pr_number
-     * @return string: number of lines changed from a certain pull request
+     * @return {Promise<number>}: number of lines changed from a certain pull request
      */
-    private async getDetails(pr_number: number): Promise<number>{
-        
+    private async getDetails(pr_number: number, arr: [number | null, number | null]): Promise<void>{
+
         try{
+            
+            if (arr[0] == null || arr[1] == null){
+                throw new Error('getDetails(): your array values are null')
+            }
 
             const response = await axios.get(this.getEndpoint('number', pr_number), {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
             const data = response.data; 
-
-            return data.additions - data.deletions; 
+           
+            arr[0] += data.additions; 
+            arr[1] += data.deletions;
+            return; 
 
         } catch(Error){
             Logger.logDebug(Error); 
         }
-        return 0; 
     }
     
-    private async getPRChanges(): Promise<number | null>{
+    
+    private async getPRChanges(): Promise<[number | null, number | null]>{
 
         try{
-            const response = await axios.get(this.getEndpoint('all'), {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
-            const data = response.data;
+            
+            let line_changes: [number, number] = [0, 0]; 
+            let page_number: number = 1; 
+            let next_page_exists: any; 
 
-            let pr_lines: number = 0;
+            do{
+                //this endpoint only provides nth pull request
+                const response = await axios.get(this.getEndpoint('all') + `&per_page=100&page=${page_number++}`, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
+                const data = response.data;
+                
+                //obtain details (line changes) of every pull request number
+                for(const pull_request of data){
+                    await this.getDetails(pull_request.number, line_changes);
+                }
 
-            //TODO: implement pagination?
-            for(const pull_request of data){
-                pr_lines += await this.getDetails(pull_request.number);
-            }
+                //check the "next" page, the one that has been incremented before you decide to iterate through the loop. hence for 'N' number of pages, function will make N + 1 API Calls
+                //? what about rate limiting here 
+                const check = await axios.get(this.getEndpoint('all') + `&per_page=100&page=${page_number}`, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}})
+                next_page_exists = check.data.length;
+
+            } while(next_page_exists)
         
-            return pr_lines; 
+            return line_changes; 
 
         }catch(Error){
             
             Logger.logDebug(Error);
         }
-        return null;
+
+        return [null, null];
     }
 
 
@@ -109,43 +130,55 @@ export class PullRequest{
      * 
      * @returns total @number of lines changed 
      */
-    private async getTotalChanges(): Promise<number | null>{
+    private async getTotalChanges(): Promise<[number | null, number | null]>{
         
         try{
             
             const response = await axios.get(this.getEndpoint('total lines'), {headers: {'Authorization': `token ${process.env.GITHUB_TOKEN}`}})
             const data = response.data; 
             
-            let total: number = 0; 
-            
+            let add: number = 0; 
+            let del: number = 0; 
+
             for (const contributor of data){
                 for(const week of contributor.weeks){
-                    total += week.a - week.d;
+                    add += week.a; 
+                    del += week.d;
                 }
             }
 
-            return total; 
+            return [add, del];
 
         } catch(Error){
             Logger.logDebug(Error); 
         }
         
-        return null;
+        return [null, null];
     }
 
     
 
     /**
-     * @return : calculates pull request 
+     * @return {Promise } : calculates pull request 
      */
     public async calculatePullRequest(): Promise<number>{
         
         
         try{
             
+            //remember that each of these functions return [add, deleted]
             const values = await Promise.all([this.getPRChanges(), this.getTotalChanges()]);
-    
-            return (values[0] == null || values[1] == null) ? 0 : values[0] / values[1];
+
+            //assign to values to make operations easier to read and write
+            const pr_changes = values[0]; 
+            const total_changes = values[1]; 
+
+            //arr.includes(null) still throws an error
+            if(pr_changes[0] == null || pr_changes[1] == null || total_changes[0] == null || total_changes[1] == null){
+                throw new Error("calculatePullRequest(): error fetching pull request changes and/or total changes. unable to proceed with metric calculation");
+            }
+
+            return Math.sqrt(pr_changes[0] / (total_changes[0] + total_changes[1]));
 
         } catch(Error){
             Logger.logDebug(Error);
