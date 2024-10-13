@@ -178,7 +178,8 @@ export class PullRequest{
                 throw new Error("calculatePullRequest(): error fetching pull request changes and/or total changes. unable to proceed with metric calculation");
             }
 
-            return Math.sqrt(pr_changes[0] / (total_changes[0] + total_changes[1]));
+            //sqrt((pr_add^2 + pr_del^2) / total_add^2 + total_del^2));
+            return Math.sqrt((pr_changes[0] ** 2 + pr_changes[1] ** 2) / (total_changes[0] ** 2 + total_changes[1] ** 2));
 
         } catch(Error){
             Logger.logDebug(Error);
