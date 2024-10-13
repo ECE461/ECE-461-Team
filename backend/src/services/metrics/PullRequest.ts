@@ -84,7 +84,7 @@ export class PullRequest{
             const response2 = await axios.get(this.getEndpoint('number', pr_number) + '/reviews', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
             const review = response2.data; 
 
-            console.log(`is data merged for #${pr_number}? ${data.merged}\nis there a code review? ${review.length ? 'yes' : 'no'}`);
+            // console.log(`is data merged for #${pr_number}? ${data.merged}\nis there a code review? ${review.length ? 'yes' : 'no'}`);
             //only count line contribution if the pull request has been merged and if a code review exists 
             if(data.merged && review.length){
                 arr[0] += data.additions; 
@@ -169,7 +169,7 @@ export class PullRequest{
     /**
      * @return {Promise } : calculates pull request 
      */
-    public async calculatePullRequest(): Promise<number>{
+    public async getPullRequestScore(): Promise<number>{
         
         
         try{
@@ -198,21 +198,21 @@ export class PullRequest{
 
 }
 
-async function dummy(){
+// async function dummy(){
     
-    //must declare url object. 
-    const url = new URL('https://github.com/nullivex/nodist');
+//     //must declare url object. 
+//     const url = new URL('https://github.com/nullivex/nodist');
     
-    let metric = new MetricManager(url.pathname);
+//     let metric = new MetricManager(url.pathname);
 
-    let pr_fraction = new PullRequest(metric.getOwner(), metric.getRepoName());
+//     let pr_fraction = new PullRequest(metric.getOwner(), metric.getRepoName());
    
-    pr_fraction.calculatePullRequest().then(
-        result =>{console.log(result)}
-    ).catch(error => {
-        console.log(error);
-    });
+//     pr_fraction.getPullRequestScore().then(
+//         result =>{console.log(result)}
+//     ).catch(error => {
+//         console.log(error);
+//     });
 
-}
+// }
  
-dummy();
+// dummy();

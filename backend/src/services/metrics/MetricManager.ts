@@ -6,6 +6,7 @@ import { License } from "./License";
 import { Correctness } from "./Correctness";
 import * as dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
+import { PullRequest } from "./PullRequest";
 dotenv.config();
 
 
@@ -49,6 +50,8 @@ export class MetricManager {
         maintainerLatency: number,
         licenseValue: number,
         licenseLatency: number
+        pullRequestValue: number, 
+        pullRequestLatency: number
     }> {
         let NetStartTime = performance.now();
         let startTime = performance.now();
@@ -76,7 +79,11 @@ export class MetricManager {
         let correctnessValue = await correctnessMetric.getCorrectnessScore();
         let correctnessLatency = (performance.now() - startTime) / 1000;
         //console.log(`The Correctness Score is: ${correctnessValue}`);
-
+        
+        startTime = performance.now(); 
+        let pullRequestMetric = new PullRequest(this.owner, this.repoName); 
+        let pullRequestValue = await pullRequestMetric.getPullRequestScore(); 
+        let pullRequestLatency = (performance.now() - startTime) / 1000; 
         // Calculate the net score
         // (0.3 * busFactor + 0.2 * correctness + 0.2 * rampup + 0.3 * maintainer) * license
 
@@ -97,7 +104,9 @@ export class MetricManager {
             maintainerValue: parseFloat(maintainerValue.toFixed(3)),
             maintainerLatency: parseFloat(maintainerLatency.toFixed(3)),
             licenseValue: parseFloat(licenseValue.toFixed(3)),
-            licenseLatency: parseFloat(licenseLatency.toFixed(3))
+            licenseLatency: parseFloat(licenseLatency.toFixed(3)),
+            pullRequestValue: parseFloat(pullRequestValue.toFixed(3)),
+            pullRequestLatency: parseFloat(pullRequestLatency.toFixed(3))
         };
 
 

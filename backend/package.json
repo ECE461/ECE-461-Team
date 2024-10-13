@@ -19,10 +19,11 @@
     "es6-promise": "^4.2.8",
     "express": "^4.21.0",
     "isomorphic-git": "^1.27.1",
-    "joi": "^17.13.3",
-    "pg": "^8.13.0",
-    "semver": "^7.6.3",
-    "sqlite3": "^5.1.7"
+    "next": "14.2.13",
+    "react": "^18.3.1",
+    "ts-node": "^10.9.2",
+    "url": "^0.11.4",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/commander": "^2.12.0",
