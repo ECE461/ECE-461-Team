@@ -1,111 +1,132 @@
-import Image from "next/image";
-import {Input, Button} from "@nextui-org/react";
-import "./globals.css";
+"use client";
 
-export default function Home() {
+import { Input, Button } from "@nextui-org/react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import * as S from "../styles/searchPage.module"; 
+import {useRouter} from 'next/router';
+import Link from 'next/link';
+
+function App() {
+
+  const [inputs, setInputs] = useState([{ name: "", version: "" }]); // Holds multiple packages
+  const [id, setId] = useState([]);
+  const [error, setError] = useState(""); // For error handling
+  const [isMounted, setIsMounted] = useState(false);
+  const [activePage, setActivePage] = useState("search");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Handle input field changes
+  const handleChange = (index: number, field: string, value: string) => {
+    const newInputs = [...inputs];
+    newInputs[index][field] = value; // Update the value of the specific field (name or version)
+    setInputs(newInputs);
+  };
+
+  // Handle adding more input fields for more packages
+  const handleAddInput = () => {
+    setInputs([...inputs, { name: "", version: "" }]); // Adds an additional input for name and version
+  };
+
+  // Handle form submission
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError("");
+    setId([]);
+  
+    console.log(inputs);
+    // Construct the payload directly without the 'packages' wrapper
+    const formattedInputs = inputs.map((input) => ({
+      Version: input.version,
+      Name: input.name,
+    }));
+  
+    // Log the payload for debugging
+    console.log("Request Payload:", JSON.stringify(formattedInputs));
+  
+    try {
+      // Send the payload directly as an array, no 'packages' wrapper
+      const response = await axios.post("http://localhost:3000/api/v1/packages", formattedInputs, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      setId(response.data);
+    } catch (error) {
+      console.error("Error fetching ID:", error);
+      if (error.response) {
+        console.error("Response Data:", error.response.data);
+        setError(`Error: ${error.response.data.message || 'ID not found for the given versions and names.'}`);
+      } else {
+        setError("An unknown error occurred.");
+      }
+    }
+  };
+  
+  
+  
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div>
+      <S.NavBar>
+        <S.NavItem className={activePage === "search" ? S.active : ""}
+          onClick={() => setActivePage("search")}>
+          Search</S.NavItem>
+        <S.NavItem>Upload</S.NavItem>
+        <S.NavItem>Update</S.NavItem>
+      </S.NavBar>
+      <S.SearchBox>
+      <form onSubmit={handleSubmit}>
+        {inputs.map((input, index) => (
+          <div key={index} style={{ marginBottom: "10px" }}>
+            <Input
+              label={`Version ${index + 1}`}
+              placeholder="Enter version"
+              value={input.version}
+              onChange={(e) => handleChange(index, "version", e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+            <Input
+              label={`Name ${index + 1}`}
+              placeholder="Enter name"
+              value={input.name}
+              onChange={(e) => handleChange(index, "name", e.target.value)}
+            />
+          </div>
+        ))}
+        <Button onClick={handleAddInput} type="button">
+          Add More
+        </Button>
+        <Button type="submit">Find IDs</Button>
+      </form>
+      </S.SearchBox>
 
+      {id.length > 0 && (
         <div>
-          <Input  className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5" label="URL" placeholder="Enter a GitHUb or npm URL" radius="lg"/>
-            <Button className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            >Enter</Button>
+          <h2>Results:</h2>
+          <ul>
+          {id.map((result, index) => (
+        <li key={index}>
+         
+          <strong>Name:</strong> {result.Name} <br />
+          <strong>Version:</strong> {result.Version}  <br />
+          <strong>ID:</strong> {result.ID} <br />
+        </li>
+      ))}
+          </ul>
         </div>
-        
+      )}
 
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {error && (
+        <div>
+          <p style={{ color: "red" }}>{error}</p>
+        </div>
+      )}
+     
     </div>
   );
 }
+
+export default App;
