@@ -30,8 +30,8 @@ describe('POST /packages Test Endpoint and Controller', () => {
     it('should return 200 and package metadata when valid query is provided', async () => {
         const validQuery = [
             {
-                name: 'TestPackage',
-                version: '1.2.3'
+                Name: 'TestPackage',
+                Version: '1.2.3'
             }
         ];
 
@@ -49,8 +49,8 @@ describe('POST /packages Test Endpoint and Controller', () => {
     it('should return 400 for invalid package query', async () => {
         const invalidQuery = [
             {
-                name: '', // Invalid, name is required
-                version: '1.2.3'
+                Name: '', // Invalid, name is required
+                Version: '1.2.3'
             }
         ];
 
@@ -65,8 +65,8 @@ describe('POST /packages Test Endpoint and Controller', () => {
     it('should return 400 for invalid offset', async () => {
         const validQuery = [
             {
-                name: 'TestPackage',
-                version: '1.2.3'
+                Name: 'TestPackage',
+                Version: '1.2.3'
             }
         ];
 
@@ -97,8 +97,8 @@ describe('POST /packages Test Endpoint and Controller', () => {
 
         const validQuery = [
             {
-                name: 'TestPackage',
-                version: '1.2.3'
+                Name: 'TestPackage',
+                Version: '1.2.3'
             }
         ];
 

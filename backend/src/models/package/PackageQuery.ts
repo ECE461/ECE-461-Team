@@ -10,8 +10,8 @@ export class PackageQuery {
 
     private static packageQuerySchema = Joi.array().items(
         Joi.object({
-            name: Joi.string().required(),
-            version: Joi.string().required(),
+            Name: Joi.string().required(),
+            Version: Joi.string().required(),
         })
     ).required();
 
