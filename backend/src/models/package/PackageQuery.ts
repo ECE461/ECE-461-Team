@@ -2,14 +2,30 @@ import { PackageName } from './PackageName';
 import { PackageVersionQuery } from './PackageVersionQuery';
 import { PackageVersion } from './PackageVersion';
 import { PackageMetadata } from './PackageMetadata';
+import Joi from 'joi';
 
 export class PackageQuery {
     private name: PackageName;
     private versionQuery: PackageVersionQuery;
 
+    private static packageQuerySchema = Joi.array().items(
+        Joi.object({
+            Name: Joi.string().required(),
+            Version: Joi.string().required(),
+        })
+    ).required();
+
     constructor(name: string, versionQuery: string) {
         this.name = new PackageName(name);
         this.versionQuery = new PackageVersionQuery(versionQuery);
+    }
+
+    static isValidQuery(reqBody: any) : boolean {
+        const { error } = PackageQuery.packageQuerySchema.validate(reqBody);
+        if (error) {
+            return false;
+        }
+        return true;
     }
 
     isValid(): boolean {
