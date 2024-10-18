@@ -47,19 +47,56 @@ describe('POST /packages Test Endpoint and Controller', () => {
     });
 
     it('should return 400 for invalid package query', async () => {
+        // Missing Name
         const invalidQuery = [
             {
                 Name: '', // Invalid, name is required
                 Version: '1.2.3'
             }
         ];
-
         const response = await request(app)
             .post('/api/v1/packages')
             .send(invalidQuery)
             .expect(400);
-
         expect(response.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+
+        // Missing Version
+        const invalidQuery2 = [
+            {
+                Name: 'Yah'
+            }
+        ];
+        const response2 = await request(app)
+            .post('/api/v1/packages')
+            .send(invalidQuery2)
+            .expect(400);
+        expect(response2.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+
+        // Invalid Version1
+        const invalidQuery3 = [
+            {
+                Name: 'Yah',
+                Version: '1.2.3-1.2.a'
+            }
+        ];
+        const response3 = await request(app)
+            .post('/api/v1/packages')
+            .send(invalidQuery3)
+            .expect(400);
+        expect(response3.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+
+        // Invalid Version2
+        const invalidQuery4 = [
+            {
+                Name: 'Yah',
+                Version: '1 2.3'
+            }
+        ];
+        const response4 = await request(app)
+            .post('/api/v1/packages')
+            .send(invalidQuery4)
+            .expect(400);
+        expect(response4.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
     });
 
     it('should return 400 for invalid offset', async () => {

@@ -6,19 +6,30 @@ export class PackageVersionQuery {
     
     constructor(versionQuery: string) {
         // Set version query with no spaces
-        this.versionQuery = versionQuery.replace(/\s/g, '');;
+        this.versionQuery = versionQuery.replace(/\s/g, '');
     }
 
-    isValid(): boolean {
-        const exactPattern = /^\d+\.\d+\.\d+$/;
-        const rangePattern = /^\d+\.\d+\.\d+-\d+\.\d+\.\d+$/;
-        const caratPattern = /^\^\d+\.\d+\.\d+$/;
-        const tildePattern = /^~\d+\.\d+\.\d+$/;
+    static isValidVersionQuery(versionQuery: string): boolean {
+        const rangePattern = /^\d+\.\d+\.\d+\s*-\s*\d+\.\d+\.\d+$/;
 
-        return exactPattern.test(this.versionQuery) || 
-               rangePattern.test(this.versionQuery) || 
-               caratPattern.test(this.versionQuery) || 
-               tildePattern.test(this.versionQuery);
+        if (PackageVersion.isValidVersion(versionQuery)) {
+            return true; // Exact version (e.g., '1.2.3')
+        }
+        if (versionQuery.startsWith('^') && PackageVersion.isValidVersion(versionQuery.slice(1))) {
+            return true; // Caret version (e.g., '^1.2.3')
+        }
+        if (versionQuery.startsWith('~') && PackageVersion.isValidVersion(versionQuery.slice(1))) {
+            return true; // Tilde version (e.g., '~1.2.3')
+        }
+        if (rangePattern.test(versionQuery)) {
+            const [leftVersion, rightVersion] = versionQuery.split('-').map(v => v.trim());
+            
+            // Ensure both versions are valid and left is less than or equal to right
+            if (PackageVersion.isValidVersion(rightVersion) && PackageVersion.isValidVersion(leftVersion) && semver.lte(leftVersion, rightVersion)) {
+                return true;
+            }
+        }
+        return false; // Invalid format
     }
 
     getVersionQueryType(): string {
@@ -37,7 +48,4 @@ export class PackageVersionQuery {
         return this.versionQuery;
     }
 
-    getPackageVersionQuery(): string {
-        return this.versionQuery;
-    }
 }

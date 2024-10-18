@@ -10,8 +10,24 @@ export class PackageQuery {
 
     private static packageQuerySchema = Joi.array().items(
         Joi.object({
-            Name: Joi.string().required(),
-            Version: Joi.string().required(),
+            Name: Joi.string().
+                required()
+                .custom((value, helpers) => {
+                    value = value.replace(/\s/g, '');
+                    if (!PackageName.isValidName(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                    return value;
+                }),
+            Version: Joi.string()
+                .required()
+                .custom((value, helpers) => {
+                    value = value.replace(/\s/g, '');
+                    if (!PackageVersionQuery.isValidVersionQuery(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                    return value;
+                }),
         })
     ).required();
 
@@ -29,7 +45,7 @@ export class PackageQuery {
     }
 
     isValid(): boolean {
-        return this.name.isValid() && this.versionQuery.isValid();
+        return PackageName.isValidName(this.name.getName()) && PackageVersion.isValidVersion(this.versionQuery.getVersionQuery());
     }
 
     checkMatches(packetMetadata: PackageMetadata): boolean {
@@ -41,7 +57,7 @@ export class PackageQuery {
 
     getJson() {
         return {
-            Version: this.versionQuery.getPackageVersionQuery(),
+            Version: this.versionQuery.getVersionQuery(),
             Name: this.name.getName()
         }
     }

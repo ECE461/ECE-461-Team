@@ -6,11 +6,11 @@ export class PackageName {
         this.name = name.trim();
     }
 
-    isValid(): boolean {
+    static isValidName(name: string): boolean {
         // Check that name is not just empty
         // Check name is <= 214 char, must have URL-safe characters
 
-        return this.name.length > 0 && this.name.length <= 214 && /^[a-zA-Z0-9-_.@/]+$/.test(this.name);
+        return name.length > 0 && name.length <= 214 && /^[a-zA-Z0-9-_.@/]+$/.test(name);
     }
 
     matches(otherName: string): boolean {
