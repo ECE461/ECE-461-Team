@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { PackageService } from '../services/package/PackageService';
 import { Package } from '../models/package/Package';
+import { PackageQuery } from '../models/package/PackageQuery';
 
 /* PackageQueryController: Handles all API calls for read-only actions, sets "res" status and data
+ * Handles Initial Request Validation
  * @method: getPackagesByQuery
  * @method: getPackagesByRegex
  * @method: getPackageById
@@ -11,6 +13,7 @@ import { Package } from '../models/package/Package';
  */
 export class PackageQueryController {
 
+    static packageService = new PackageService();
     static readonly MSG_INVALID = {message: "There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."};
 
     /* getPackagesByQuery: Gets any packages fitting query (see models/package/PackageQuery.ts)
@@ -24,22 +27,23 @@ export class PackageQueryController {
     *  Sets "res" to array of package metadata + next offset user should use for pagination (in header)
     *  Also sets status code to 200 (success), 400 (invalid request), or 413 (too many packages returned - if no pagination?) 
     */
-    static async getPackagesByQuery(req: Request, res: Response) {
+    static async getPackagesByQuery(req: Request, res: Response) : Promise<void> {
         try {
-            // TODO: Check that request is correct format - possibly use "joi"
-            console.log(req.body);
-
+            // Offset Validation
             const offset = req.query.offset ? Number(req.query.offset) : 0;
-            const packageQueries = req.body; // Array of PackageQuery
+            if (isNaN(offset) || offset < 0 || !Number.isInteger(offset)) {
+              res.status(400).json(PackageQueryController.MSG_INVALID);
+              return;
+            }
 
-            // Validate that the request body is an array
-            if (!Array.isArray(packageQueries)) {
+            // Package Query Validation
+            if (!PackageQuery.isValidQuery(req.body)) {
                 res.status(400).json(PackageQueryController.MSG_INVALID);
                 return;
             }
 
             // Call PackageService to handle business logic
-            const packages = await PackageService.getPackagesByQuery(packageQueries, offset);
+            const packages = await PackageQueryController.packageService.getPackagesByQuery(req.body, offset);
 
             res.setHeader('offset', (offset + packages.length).toString());
             res.status(200).json(packages);

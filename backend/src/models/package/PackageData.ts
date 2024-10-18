@@ -1,7 +1,14 @@
+import Joi from 'joi';
+
 export class PackageData {
     private content; // Zipped content converted to base-64
     private JSProgram; // TODO: Extension
 
+    private static packageUploadSchema = Joi.object({
+        Content: Joi.string(),
+        URL: Joi.string().uri(),
+        JSProgram: Joi.string().optional(),
+    }).xor('Content', 'URL');
 
     /* Private Constructor : (only can be used in create method)
      * - Uses create method becasue setContentFromURL is async 
@@ -41,6 +48,14 @@ export class PackageData {
         } catch (e) {
             return false;
         }
+    }
+
+    static isValidUpdateRequest(reqBody: any) {
+        const { error } = PackageData.packageUploadSchema.validate(reqBody);
+        if (error) {
+            return false;
+        }
+        return true;
     }
 
     /* setContentFromURL : sets content from URL by getting 

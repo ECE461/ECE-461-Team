@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { PackageService } from '../services/package/PackageService';
+import { PackageData } from '../models/package/PackageData';
 
 /* PackageCommandController: Handles all API actions that modify state (delete, update), sets "res" status and data
+ * Handles Initial Request Validation
  * @method: uploadPackage
  * @method: updatePackage
  * @method: reset
@@ -10,7 +12,7 @@ import { PackageService } from '../services/package/PackageService';
  * @method: createAccessToken
  */
 export class PackageCommandController {
-
+    private packageService = new PackageService();
     static readonly MSG_INVALID = {message: "There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."};
 
     /* uploadPackage: Uploads package from content or ingests package from URL.
@@ -28,6 +30,10 @@ export class PackageCommandController {
      * TODO: should we rate all packages here and store for later?
      */
     static async uploadPackage(req: Request, res: Response) {
+        if (!PackageData.isValidUpdateRequest(req.body)) {
+            res.status(400).json(PackageCommandController.MSG_INVALID);
+            return;
+        }
 
         const fakeRes = {
             metadata: {

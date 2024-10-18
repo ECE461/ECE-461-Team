@@ -2,12 +2,19 @@ import { PackageUpdateService } from './PackageUpdateService';
 import { PackageUploadService } from './PackageUploadService';
 import { PackageDeleteService } from './PackageDeleteService';
 import { PackageDownloadService } from './PackageDownloadService';
+// import { Database } from '../../database';
 
 export class PackageService {
-    static async getPackagesByRegex() {
+    // private db: Database;
+
+    constructor() {
+        // this.db = Database.getInstance('packages.db');
     }
 
-    static async getPackagesByQuery(packageQueries: any[], offset: number) {
+    async getPackagesByRegex() {
+    }
+
+    async getPackagesByQuery(packageQueries: any[], offset: number) {
         try {
             const maxItemsPerPage = 20;
 
@@ -25,30 +32,30 @@ export class PackageService {
         }
     }
 
-    static async getPackageById() {
+    async getPackageById() {
     }
 
-    static async uploadPackage() {
+    async uploadPackage() {
     }
 
-    static async updatePackage() {
+    async updatePackage() {
     }
 
-    static async getRating() {
+    async getRating() {
     }
 
-    static async reset() {
+    async reset() {
     }
 
-    static async deletePackageByName() {
+    async deletePackageByName() {
     }
 
-    static async deletePackageById() { // NON-BASELINE
+    async deletePackageById() { // NON-BASELINE
     }
 
-    static async getPackageHistoryByName() { // NON-BASELINE
+    async getPackageHistoryByName() { // NON-BASELINE
     }
 
-    static async createAccessToken() { // Non-baseline --> add to user/authenticate endpoint or not
+    async createAccessToken() { // Non-baseline --> add to user/authenticate endpoint or not
     }
 }
