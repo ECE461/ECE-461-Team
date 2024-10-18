@@ -1,3 +1,5 @@
+import * as semver from 'semver';
+
 export class PackageVersion {
     private version: string;
     
@@ -5,10 +7,10 @@ export class PackageVersion {
         this.version = version.replace(/\s+/g, '');
     }
 
-    isValid(): boolean {
+    static isValidVersion(version: string): boolean {
         const exactPattern = /^\d+\.\d+\.\d+$/;
 
-        return exactPattern.test(this.version);
+        return Boolean(exactPattern.test(version) && semver.valid(version));
     }
 
     matches(otherVersion: PackageVersion): boolean {
