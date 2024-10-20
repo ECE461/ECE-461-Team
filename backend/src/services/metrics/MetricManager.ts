@@ -49,6 +49,7 @@ export class MetricManager {
         licenseValue: number,
         licenseLatency: number
     }> {
+        // TODO: Need to calculate in parrallel
         let NetStartTime = performance.now();
         let startTime = performance.now();
         let busFactorMetric = new BusFactor(this.owner, this.repoName);
