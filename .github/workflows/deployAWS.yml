@@ -20,5 +20,5 @@ jobs:
 
         - name: SSH into EC2 and navgiate to app
           run: |
-              ssh -o StrictHostKeyChecking=no ubuntu@3.129.240.110 "cd ECE-461-Team/ && git pull && cd backend/ && /home/ubuntu/.nvm/versions/node/v20.18.0/bin/npx pm2 start npm --name backend-ece461"
+              ssh -o StrictHostKeyChecking=no ubuntu@3.129.240.110 "cd ECE-461-Team/ && git pull && cd backend/ && /home/ubuntu/.nvm/versions/node/v20.18.0/bin/ npx pm2 start npm --name backend-ece461"
           
