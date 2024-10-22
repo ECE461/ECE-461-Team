@@ -1,0 +1,24 @@
+name: Deploy to AWS EC2
+
+on:
+    push:
+        branches:
+            - main  # will trigger on a push to main branch (pull request)
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest  # run on Github hosted VM
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3  # clone repository onto the runner
+
+        - name: Set up SSH agent
+          uses: webfactory/ssh-agent@v0.5.3  # loads the SSH key onto the runner
+          with:
+              ssh-private-key: ${{ secrets.AWS_EC2_SSH_KEY }}
+
+        - name: SSH into EC2 and navgiate to app
+          run: |
+              ssh -o StrictHostKeyChecking=no ubuntu@3.129.240.110 "cd ECE-461-Team/ && git pull && cd backend/ && npm install && npm run start"
+          
