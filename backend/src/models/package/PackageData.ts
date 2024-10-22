@@ -6,6 +6,7 @@ import fs from 'fs';
 import { MetricManager } from '../../services/metrics/MetricManager';
 import { URLHandler } from '../../utils/URLHandler';
 import { Logger } from '../../utils/Logger';
+import { Request } from 'express';
 
 export class PackageData {
     private content; // Zipped content converted to base-64
@@ -91,7 +92,7 @@ export class PackageData {
         }
     }
 
-    static isValidUpdateRequest(reqBody: any) {
+    static isValidUploadOrUpdateRequest(reqBody: Request): boolean {
         const { error } = PackageData.packageUploadSchema.validate(reqBody);
         if (error) {
             return false;

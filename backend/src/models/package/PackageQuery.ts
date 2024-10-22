@@ -36,11 +36,19 @@ export class PackageQuery {
         this.versionQuery = new PackageVersionQuery(versionQuery);
     }
 
-    static isValidQuery(reqBody: any) : boolean {
-        const { error } = PackageQuery.packageQuerySchema.validate(reqBody);
+    static isValidQuery(req: any) : boolean {
+        // Request body validation
+        const { error } = PackageQuery.packageQuerySchema.validate(req.body);
         if (error) {
             return false;
         }
+
+        // Offset validation
+        const offset = req.query.offset ? Number(req.query.offset) : 0;
+        if (isNaN(offset) || offset < 0 || !Number.isInteger(offset)) {
+            return false;
+        }
+        
         return true;
     }
 

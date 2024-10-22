@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Request } from 'express';
 
 export class PackageID {
     private id: string;
@@ -7,6 +8,11 @@ export class PackageID {
         const data = packageName + packageVersion;
 
         this.id = crypto.createHash('sha256').update(data).digest('hex');
+    }
+
+    static isValidGetByIdRequest (req: Request) {
+        // TODO: Add logic
+        return true;
     }
 
     getId(): string {
