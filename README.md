@@ -20,3 +20,5 @@ This command will also return latency scores for each of these metrics.
 
 # ./run test
 This command will run our test suite located in the Metric Tests folder. Our test suite contains tests for each of our metrics as well as our Metric Manager class and CLIParser file.
+
+# automatic deployment to AWS
