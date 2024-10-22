@@ -49,7 +49,7 @@ function App() {
   
     try {
       // Send the payload directly as an array, no 'packages' wrapper
-      const response = await axios.post("http://localhost:3005/api/v1/packages", formattedInputs, {
+      const response = await axios.post("http://localhost:3000/api/v1/packages", formattedInputs, {
         headers: {
           'Content-Type': 'application/json',
         },
