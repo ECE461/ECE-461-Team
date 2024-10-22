@@ -1,22 +1,28 @@
-import { Pool, Client } from 'pg';
+import { Pool } from 'pg';
 import { Logger } from './utils/Logger';
 
+/**
+ * @class Database
+ * @description Singleton that manages database instance and operations
+ * 
+ * @method getInstance: gets the singleton instance of the Database
+ * @method addPackage: adds a new package to the database
+ * @method packageExists: checks if a package exists in the database
+ */
 export class Database {
     private static instance: Database;
     private pool: Pool;
     
     private constructor() {
-        if (!process.env.RDS_USER || !process.env.RDS_KEY) {
-            throw new Error('RDS_USER and RDS_KEY must be defined');
-        }
-        const databaseUrl = `postgres://${process.env.RDS_USER}:${process.env.RDS_KEY}@ece461-db.cvwo68cu081c.us-east-2.rds.amazonaws.com:5432/ece461-db`;
-
         this.pool = new Pool({
-            user: 'ece461',
+            user: `${process.env.RDS_USER}`,
             password: `${process.env.RDS_KEY}`,
-            host: 'ece461-db.cvwo68cu081c.us-east-2.rds.amazonaws.com',
+            host: `${process.env.RDS_HOST}`, // localhost for LOCAL development, 'ece461-db.cvwo68cu081c.us-east-2.rds.amazonaws.com' for EC2
             port: 5432,
-            database: 'ece461-db'
+            database: 'packages',
+            ssl: {
+                rejectUnauthorized: false // Change to true in production for better security
+            }
         });
         Logger.logInfo('Starting connection to the PostgreSQL database...');
         // Optionally test the connection immediately
@@ -39,7 +45,7 @@ export class Database {
 
     private async initialize() {
         try {
-            console.log('CREATING TABLES...');
+            // Create "packages" table if it does not exist
             await this.pool.query(`CREATE TABLE IF NOT EXISTS packages (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -47,7 +53,7 @@ export class Database {
                 readme TEXT,
                 url TEXT
             )`);
-            console.log('Packages table created or already exists.');
+            Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
             console.error('Error creating table:', err.message);
         }
@@ -71,6 +77,19 @@ export class Database {
         } catch (err: any) {
             console.error('Error checking package existence:', err.message);
             throw err; // Rethrow the error for further handling if needed
+        }
+    }
+
+    public async deleteAllPackages() {
+        
+        // Delete all entries from the "packages" table
+        const sql = `DELETE FROM packages`;
+        try {
+            const res = await this.pool.query(sql);
+            console.log(`Deleted ${res.rowCount} entries from the packages table.`);
+        } catch (err: any) {
+            console.error('Error deleting entries:', err.message);
+            throw err;
         }
     }
 

@@ -51,7 +51,7 @@ export class PackageService {
             if (await this.db.packageExists(packageMetadata.getId())) {
                 throw new Error('409: Package already exists');
             }
-            this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl());
+            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl());
 
             // Upload to S3 Database
             Logger.logInfo("Uploading package to S3"); //---------------------------------------------------------------
@@ -74,6 +74,13 @@ export class PackageService {
     }
 
     async reset() {
+        // Delete all packages from RDS
+        await this.db.deleteAllPackages();
+
+        // Delete all packages from S3
+        await S3.deleteAllPackages();
+
+        // TODO: Delete users?
     }
 
     async deletePackageByName() {
