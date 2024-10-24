@@ -55,6 +55,9 @@ export class PackageService {
 
             // Upload to S3 Database
             Logger.logInfo("Uploading package to S3"); //---------------------------------------------------------------
+            if (await S3.checkIfPackageExists(packageMetadata.getId())) {
+                throw new Error('409: Package already exists');
+            }
             await S3.uploadBase64Zip(packageData.getContent(), packageMetadata.getId());
 
             const pack = new Package(packageMetadata, packageData);

@@ -1,4 +1,4 @@
-import { S3Client, HeadBucketCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand} from '@aws-sdk/client-s3';
+import { S3Client, HeadBucketCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadObjectCommand} from '@aws-sdk/client-s3';
 import { Logger } from './Logger';
 
 /** 
@@ -74,6 +74,30 @@ export class S3 {
             }
         } catch (error: any) {
             Logger.logInfo('Error deleting objects from S3');
+            Logger.logDebug(error);
+            throw error;
+        }
+    }
+
+    static async checkIfPackageExists(key: string): Promise<boolean> {
+        try {
+            // Create a HeadObjectCommand to check for the object in the bucket
+            const headObjectCommand = new HeadObjectCommand({
+                Bucket: S3.bucketName,
+                Key: key,
+            });
+
+            // Send the command and check if it exists
+            await S3.s3Client.send(headObjectCommand);
+            Logger.logInfo(`Package ${key} exists in ${S3.bucketName}`);
+            return true;  // Package exists
+        } catch (error: any) {
+            // If the error is "Not Found", return false; otherwise, throw the error
+            if (error.name === 'NotFound') {
+                Logger.logInfo(`Package ${key} does not exist in ${S3.bucketName}`);
+                return false;
+            }
+            Logger.logInfo('Error checking if package exists in S3');
             Logger.logDebug(error);
             throw error;
         }
