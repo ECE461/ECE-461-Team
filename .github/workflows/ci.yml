@@ -1,0 +1,38 @@
+name: Node.js CI
+
+on: 
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '22'
+
+    # Install dependencies in the base directory
+    - name: Install dependencies (base)
+      run: npm install
+      working-directory: .
+
+    # Install dependencies for the frontend
+    - name: Install dependencies (frontend)
+      run: npm install
+      working-directory: ./frontend
+
+    # Install dependencies for the backend
+    - name: Install dependencies (backend)
+      run: npm install
+      working-directory: ./backend
+
+    - name: Run tests
+      run: npm test
+      working-directory: .
