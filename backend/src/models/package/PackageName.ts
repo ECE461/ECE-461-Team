@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 export class PackageName {
     private name: string;
     
@@ -11,6 +13,11 @@ export class PackageName {
         // Check name is <= 214 char, must have URL-safe characters
 
         return name.length > 0 && name.length <= 214 && /^[a-zA-Z0-9-_.@/]+$/.test(name);
+    }
+
+    static isValidGetByNameRequest(req: Request): boolean {
+        // TODO: Add logic
+        return true;
     }
 
     matches(otherName: string): boolean {

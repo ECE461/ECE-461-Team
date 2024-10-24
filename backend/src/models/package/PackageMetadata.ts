@@ -15,6 +15,8 @@ export class PackageMetadata{
     private name: PackageName; // ex: "package-name"
     private version: PackageVersion; // ex: "1.0.0"
     private id: PackageID; // ex: "123456789"
+    private url?: string;
+    private readMe?: string;
 
     /* Constructor
      * @param name: string - name of the package
@@ -26,6 +28,16 @@ export class PackageMetadata{
         this.id = new PackageID(name, version);
     }
 
+    setUrl(url: string) {
+        if (!url) {
+            throw new Error('URL cannot be empty');
+        }
+        this.url = url;
+    }
+
+    setReadMe(readMe: string) {
+        this.readMe = readMe;
+    }
     // getName : Returns name of the package
     getName(): string {
         return this.name.getName();
@@ -49,4 +61,19 @@ export class PackageMetadata{
             ID: this.id.getId()
         }
     }
+
+    getUrl(): string {
+        if (!this.url) {
+            throw new Error('URL not set');
+        }
+        return this.url;
+    }
+
+    getReadMe(): string {
+        if (!this.readMe) {
+            throw new Error('ReadMe not set');
+        }
+        return this.readMe;
+    }
+
 }
