@@ -5,8 +5,9 @@ import { error } from 'console';
 export interface PackageDetails {
     name : string; 
     version: string; 
-    readme: string; 
-    url: string;
+    readme?: string; 
+    url?: string;
+    jsprogram?: string
 }
 
 /**
@@ -61,7 +62,8 @@ export class Database {
                 name TEXT NOT NULL,
                 version TEXT NOT NULL,
                 readme TEXT,
-                url TEXT
+                url TEXT,
+                jsprogram TEXT
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
@@ -69,10 +71,10 @@ export class Database {
         }
     }
 
-    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string) {
-        const sql = `INSERT INTO packages (id, name, version, readme, url) VALUES ($1, $2, $3, $4, $5)`;
+    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string) {
+        const sql = `INSERT INTO packages (id, name, version, readme, url, jsprogram) VALUES ($1, $2, $3, $4, $5, $6)`;
         try {
-            const res = await this.pool.query(sql, [packageId, name, version, readme, url]);
+            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram]);
             console.log(`A new package has been inserted with id: ${packageId}`);
         } catch (err: any) {
             console.error('Error inserting data:', err.message);
@@ -120,7 +122,7 @@ export class Database {
      */
 
     public async getDetails(packageID: string): Promise<{PackageDetails: any} | null>{
-        const sql = `SELECT name, version, readme, url FROM packages WHERE id = $1`;
+        const sql = `SELECT (name, version, readme, url, jsprogram) FROM packages WHERE id = $1`;
         try{
             
             const res = await this.pool.query(sql, [packageID]);
