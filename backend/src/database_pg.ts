@@ -1,5 +1,13 @@
 import { Pool } from 'pg';
 import { Logger } from './utils/Logger';
+import { error } from 'console';
+
+export interface PackageDetails {
+    name : string; 
+    version: string; 
+    readme: string; 
+    url: string;
+}
 
 /**
  * @class Database
@@ -8,6 +16,8 @@ import { Logger } from './utils/Logger';
  * @method getInstance: gets the singleton instance of the Database
  * @method addPackage: adds a new package to the database
  * @method packageExists: checks if a package exists in the database
+ * @method deleteAllPackages: delete all entries form the packages table 
+ * @method close: close the instance
  */
 export class Database {
     private static instance: Database;
@@ -99,6 +109,29 @@ export class Database {
             console.log('Closed the database connection.');
         } catch (err: any) {
             console.error('Error closing the database connection:', err.message);
+        }
+    }
+
+    /**
+     * 
+     * @param packageID 
+     * @returns {Promise<{PackageDetails} | null>}: return null if package details if empty
+     *                                              current implementation requires user to check whether or not the fields are empty. 
+     */
+
+    public async getDetails(packageID: string): Promise<{PackageDetails: any} | null>{
+        const sql = `SELECT name, version, readme, url FROM packages WHERE id = $1`;
+        try{
+            
+            const res = await this.pool.query(sql, [packageID]);
+            
+            //consider implementing a check to see which fields are left blank and whether or not to return null;
+
+            return res.rows.length ? res.rows[0] : null;
+
+        } catch(err: any){
+            console.error('Error fetching details associated with your package ID', err.message);
+            throw err;
         }
     }
 }
