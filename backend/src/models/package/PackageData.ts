@@ -48,7 +48,7 @@ export class PackageData {
      * @param jsProgram: string - jsProgram for sensitive data
      * @returns Promise
      */
-    static async create(source: string, jsProgram: string) {
+    static async create(source: string, jsProgram="") {
         const instance = new PackageData("", jsProgram);
         if (instance.isValidURL(source)) {
             Logger.logInfo(`Checking URL Metrics: ${source}`);

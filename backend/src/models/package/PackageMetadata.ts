@@ -17,7 +17,7 @@ export class PackageMetadata{
     private id: PackageID; // ex: "123456789"
     private url?: string;
     private readMe?: string;
-
+    
     /* Constructor
      * @param name: string - name of the package
      * @param version: string - version of the package
@@ -75,5 +75,4 @@ export class PackageMetadata{
         }
         return this.readMe;
     }
-
 }

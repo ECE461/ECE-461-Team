@@ -5,6 +5,7 @@ import { PackageQuery } from '../models/package/PackageQuery';
 import { PackageRegex } from '../models/package/PackageRegex';
 import { PackageID } from '../models/package/PackageID';
 import { PackageName } from '../models/package/PackageName';
+import { PackageMetadata } from '../models/package/PackageMetadata';
 
 /* PackageQueryController: Handles all API calls for read-only actions, sets "res" status and data
  * Handles Initial Request Validation
@@ -80,12 +81,19 @@ export class PackageQueryController {
      * Description: Given package ID, sets response as package information (see models/package/Package.ts)
      * includes metadata + data (Content + JSProgram)
      * Sets status to 200 (success), 400 (invalid request), or 404 (package does not exist)
-     */
+     */ 
     static async getPackageById(req: Request, res: Response) {
-      if (!PackageID.isValidGetByIdRequest(req)) {
-        res.status(400).json(PackageQueryController.MSG_INVALID);
-        return;
+      try{
+
+        if (!PackageID.isValidGetByIdRequest(req)) {
+          res.status(400).json(PackageQueryController.MSG_INVALID);
+          return;
+        }
+        
+      }catch(Error){
+
       }
+
     }
     
     /* getRating: Gets rating of a package

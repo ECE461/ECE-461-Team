@@ -12,7 +12,13 @@ export class PackageID {
 
     static isValidGetByIdRequest (req: Request) {
         // TODO: Add logic
-        return true;
+
+        //the only endpoints that have an id are /packages/{id} endpoints, so don't need to consider the possibility that it's in a formatted req body
+        if(req.params.id){
+            return true;
+        }
+        
+        return false;
     }
 
     getId(): string {
