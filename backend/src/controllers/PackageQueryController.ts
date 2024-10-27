@@ -100,9 +100,19 @@ export class PackageQueryController {
      * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package rating system broke on at least one metric)
      */
     static async getRating(req: Request, res: Response) {
-      if (!PackageID.isValidGetByIdRequest(req)) {
-        res.status(400).json(PackageQueryController.MSG_INVALID);
-        return;
+      try {
+        if (!PackageID.isValidGetByIdRequest(req)) {
+          res.status(400).json(PackageQueryController.MSG_INVALID);
+          return;
+        }
+
+        // Get the package id from the request
+        const packageId = req.params.id;
+        const rating = await PackageQueryController.packageService.getRating(packageId);
+      }
+      catch (error) {
+        console.error('Error fetching patches: ', error);
+        res.status(500).send({message: "Internal Server Error"});
       }
     }
     
