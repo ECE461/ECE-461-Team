@@ -42,31 +42,31 @@ export class PackageService {
     }
 
     async uploadPackage(packageData: PackageData) {
-        try {
-            Logger.logInfo("Extracting package metadata");
-            const packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData);
+        // try {
+        //     Logger.logInfo("Extracting package metadata");
+        //     const packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData);
 
-            // Upload metadata and readme to RDS (SQLite (later PostgreSQL)) -----------------------------------------
-            // If pacakge does not exist already:
-            if (await this.db.packageExists(packageMetadata.getId())) {
-                throw new Error('409: Package already exists');
-            }
-            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl());
+        //     // Upload metadata and readme to RDS (SQLite (later PostgreSQL)) -----------------------------------------
+        //     // If pacakge does not exist already:
+        //     if (await this.db.packageExists(packageMetadata.getId())) {
+        //         throw new Error('409: Package already exists');
+        //     }
+        //     await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl());
 
-            // Upload to S3 Database
-            Logger.logInfo("Uploading package to S3"); //---------------------------------------------------------------
-            if (await S3.checkIfPackageExists(packageMetadata.getId())) {
-                throw new Error('409: Package already exists');
-            }
-            await S3.uploadBase64Zip(packageData.getContent(), packageMetadata.getId());
+        //     // Upload to S3 Database
+        //     Logger.logInfo("Uploading package to S3"); //---------------------------------------------------------------
+        //     if (await S3.checkIfPackageExists(packageMetadata.getId())) {
+        //         throw new Error('409: Package already exists');
+        //     }
+        //     await S3.uploadBase64Zip(packageData.getContent(), packageMetadata.getId());
 
-            const pack = new Package(packageMetadata, packageData);
-            return pack;
-        } catch (error : any) {
-            Logger.logInfo("Error uploading package");
-            Logger.logDebug(error);
-            throw error;
-        }
+        //     const pack = new Package(packageMetadata, packageData);
+        //     return pack;
+        // } catch (error : any) {
+        //     Logger.logInfo("Error uploading package");
+        //     Logger.logDebug(error);
+        //     throw error;
+        // }
 
     }
 
