@@ -6,6 +6,8 @@ import { MetricManager } from './MetricManager';
 import {URL} from 'url' 
 import { log } from 'console';
 import { hasUncaughtExceptionCaptureCallback } from 'process';
+import { performance } from 'perf_hooks';
+
 
 
 /**
@@ -103,11 +105,11 @@ export class PullRequest{
             
             let line_changes: [number, number] = [0, 0]; 
             let page_number: number = 1; 
-            let next_page_exists: any; 
+            // let next_page_exists: any; 
 
-            do{
+            // do{
                 //this endpoint only provides nth pull request
-                const response = await axios.get(this.getEndpoint('all') + `&per_page=100&page=${page_number++}`, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
+                const response = await axios.get(this.getEndpoint('all') + `&per_page=25&page=${page_number++}`, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
                 const data = response.data;
                 
                 //obtain details (line changes) of every pull request number
@@ -115,12 +117,12 @@ export class PullRequest{
                     await this.getDetails(pull_request.number, line_changes);
                 }
 
-                //check the "next" page, the one that has been incremented before you decide to iterate through the loop. hence for 'N' number of pages, function will make N + 1 API Calls
-                //? what about rate limiting here 
-                const check = await axios.get(this.getEndpoint('all') + `&per_page=100&page=${page_number}`, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}})
-                next_page_exists = check.data.length;
+            //     //check the "next" page, the one that has been incremented before you decide to iterate through the loop. hence for 'N' number of pages, function will make N + 1 API Calls
+            //     //? what about rate limiting here 
+            //     const check = await axios.get(this.getEndpoint('all') + `&per_page=100&page=${page_number}`, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}})
+            //     next_page_exists = check.data.length;
 
-            } while(next_page_exists)
+            // } while(next_page_exists)
         
             return line_changes; 
 
@@ -168,7 +170,7 @@ export class PullRequest{
     /**
      * @return {Promise } : calculates pull request 
      */
-    public async calculatePullRequest(): Promise<number>{
+    public async getPullRequest(): Promise<number>{
         
         
         try{
@@ -184,9 +186,13 @@ export class PullRequest{
             if(pr_changes[0] == null || pr_changes[1] == null || total_changes[0] == null || total_changes[1] == null){
                 throw new Error("calculatePullRequest(): error fetching pull request changes and/or total changes. unable to proceed with metric calculation");
             }
+            
+            //0 = add, 1 = del
+            let pr = pr_changes[0] + pr_changes[1];
+            let total = total_changes[0] + total_changes[1];
 
-            //sqrt((pr_add^2 + pr_del^2) / total_add^2 + total_del^2));
-            return Math.sqrt((pr_changes[0] ** 2 + pr_changes[1] ** 2) / (total_changes[0] ** 2 + total_changes[1] ** 2));
+            console.log(`pr w code review: ${pr} total: ${total}`);
+            return pr/total;
 
         } catch(Error){
             Logger.logDebug(Error);
@@ -199,19 +205,26 @@ export class PullRequest{
 
 async function dummy(){
     
+    let startTime = performance.now(); 
+
     //must declare url object. 
-    const url = new URL('https://github.com/nullivex/nodist');
+    const url = new URL('https://github.com/lodash/lodash');
     
     let metric = new MetricManager(url.pathname);
 
     let pr_fraction = new PullRequest(metric.getOwner(), metric.getRepoName());
    
-    pr_fraction.calculatePullRequest().then(
-        result =>{console.log(result)}
+    pr_fraction.getPullRequest().then(
+        result =>{
+            console.log(result)
+            console.log(`latency = ${performance.now() - startTime}`);
+        }
+
     ).catch(error => {
         console.log(error);
     });
 
 }
- 
-dummy();
+
+dummy(); 
+

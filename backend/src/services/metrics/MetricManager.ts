@@ -4,6 +4,7 @@ import { Maintainer } from "./Maintainer";
 import { RampUp } from "./RampUp";
 import { License } from "./License";
 import { Correctness } from "./Correctness";
+import { PullRequest } from "./PullRequest"; 
 import * as dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
 dotenv.config();
@@ -48,6 +49,8 @@ export class MetricManager {
         maintainerLatency: number,
         licenseValue: number,
         licenseLatency: number
+        pullRequestValue: number, 
+        pullRequestLatency: number
     }> {
         // TODO: Need to calculate in parrallel
         let NetStartTime = performance.now();
@@ -75,6 +78,11 @@ export class MetricManager {
         let correctnessMetric = new Correctness(this.owner, this.repoName);
         let correctnessValue = await correctnessMetric.getCorrectnessScore();
         let correctnessLatency = (performance.now() - startTime) / 1000;
+
+        startTime = performance.now(); 
+        let pullRequestMetric = new PullRequest(this.owner, this.repoName); 
+        let pullRequestValue = await pullRequestMetric.getPullRequest(); 
+        let pullRequestLatency = (performance.now() - startTime);
         //console.log(`The Correctness Score is: ${correctnessValue}`);
 
         // Calculate the net score
@@ -97,11 +105,13 @@ export class MetricManager {
             maintainerValue: parseFloat(maintainerValue.toFixed(3)),
             maintainerLatency: parseFloat(maintainerLatency.toFixed(3)),
             licenseValue: parseFloat(licenseValue.toFixed(3)),
-            licenseLatency: parseFloat(licenseLatency.toFixed(3))
+            licenseLatency: parseFloat(licenseLatency.toFixed(3)),
+            pullRequestValue: parseFloat(pullRequestValue.toFixed(3)), 
+            pullRequestLatency: parseFloat(pullRequestLatency.toFixed(3))
         };
 
 
-        // return `
+        // return 
         // URL: ${this.owner}/${this.repoName}
         // busFactorValue: ${parseFloat(busFactorValue.toFixed(3))} (Latency: ${busFactorLatency.toFixed(3)} s)
         // rampUpValue: ${parseFloat(rampUpValue.toFixed(3))} (Latency: ${rampUpLatency.toFixed(3)} s)
