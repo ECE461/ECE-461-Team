@@ -85,7 +85,7 @@ export class PullRequest{
             const response2 = await axios.get(this.getEndpoint('number', pr_number) + '/reviews', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
             const review = response2.data; 
 
-            console.log(`is data merged for #${pr_number}? ${data.merged}\nis there a code review? ${review.length ? 'yes' : 'no'}`);
+            // console.log(`is data merged for #${pr_number}? ${data.merged}\nis there a code review? ${review.length ? 'yes' : 'no'}`);
             //only count line contribution if the pull request has been merged and if a code review exists 
             if(data.merged && review.length){
                 arr[0] += data.additions; 
@@ -127,7 +127,7 @@ export class PullRequest{
             return line_changes; 
 
         }catch(Error){
-            
+                
             Logger.logDebug(Error);
         }
 
@@ -203,28 +203,28 @@ export class PullRequest{
 
 }
 
-async function dummy(){
+// async function dummy(){
     
-    let startTime = performance.now(); 
+//     let startTime = performance.now(); 
 
-    //must declare url object. 
-    const url = new URL('https://github.com/lodash/lodash');
+//     //must declare url object. 
+//     const url = new URL('https://github.com/lodash/lodash');
     
-    let metric = new MetricManager(url.pathname);
+//     let metric = new MetricManager(url.pathname);
 
-    let pr_fraction = new PullRequest(metric.getOwner(), metric.getRepoName());
+//     let pr_fraction = new PullRequest(metric.getOwner(), metric.getRepoName());
    
-    pr_fraction.getPullRequest().then(
-        result =>{
-            console.log(result)
-            console.log(`latency = ${performance.now() - startTime}`);
-        }
+//     pr_fraction.getPullRequest().then(
+//         result =>{
+//             console.log(result)
+//             console.log(`latency = ${performance.now() - startTime}`);
+//         }
 
-    ).catch(error => {
-        console.log(error);
-    });
+//     ).catch(error => {
+//         console.log(error);
+//     });
 
-}
+// }
 
-dummy(); 
+// dummy(); 
 
