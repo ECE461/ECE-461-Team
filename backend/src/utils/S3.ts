@@ -106,9 +106,9 @@ export class S3 {
     /**
      * @method getFileByKey: Retrieves a file from S3 bucket by its key
      * @param key : string - the key of the file to retrieve
-     * @returns : Buffer - the file content as a buffer
+     * @returns {string | null} - the file content as a buffer -> string or null if dne 
      */
-    static async getFileByKey(key: string): Promise<Buffer | null> {
+    static async getFileByKey(key: string) {
         try {
             // Create command to get object from S3 bucket
             const getObjectCommand = new GetObjectCommand({
@@ -129,7 +129,8 @@ export class S3 {
             const buffer = Buffer.concat(chunks);
 
             Logger.logInfo(`Retrieved ${key} from ${S3.bucketName}`);
-            return buffer;
+            return buffer.toString('utf-8');
+
         } catch (error: any) {
             Logger.logInfo(`Error retrieving ${key} from ${S3.bucketName}`);
             Logger.logDebug(error);

@@ -89,9 +89,13 @@ export class PackageQueryController {
           res.status(400).json(PackageQueryController.MSG_INVALID);
           return;
         }
-        
-      }catch(Error){
 
+        let pckg : any = await PackageQueryController.packageService.getPackageById(req.params.packageID); 
+        res.status(200).json(pckg.json());
+      }catch(error){
+        if(error instanceof Error && error.message.includes('404')){
+          res.status(404).send({description: 'Package does not exist'});
+        }
       }
 
     }

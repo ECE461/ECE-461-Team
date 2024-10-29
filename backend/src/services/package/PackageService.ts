@@ -38,7 +38,38 @@ export class PackageService {
         }
     }
 
-    async getPackageById() {
+    async getPackageById(packageID: string) {
+        try{
+            
+            let packageExist: any = await this.db.packageExists(packageID); 
+            
+            if(!packageExist){
+                throw new Error("404: Package does not exist"); 
+            }
+            
+            let details: any = this.db.getDetails(packageID); 
+
+            if(details == null){
+                throw new Error("404: Package does not exist");
+            }
+
+            //metadata
+            let metadata: PackageMetadata =  new PackageMetadata(details.name, details.version);
+            
+            let file = await S3.getFileByKey(packageID);
+
+            if(file == null){
+                throw new Error("404: Package does not exist");
+            }
+            
+            //data
+            let data: any = PackageData.create(file, details.jsprogram);
+        
+            const pack = new Package(metadata, data); 
+            return pack;
+        } catch(err: any){ 
+
+        }
     }
 
     async uploadPackage(packageData: PackageData) {
