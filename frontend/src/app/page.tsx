@@ -1,23 +1,37 @@
 "use client";
 
-import { Input, Button } from "@nextui-org/react";
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import * as S from "../styles/searchPage.module"; 
-import {useRouter} from 'next/router';
-import Link from 'next/link';
+import {usePathname,useRouter} from 'next/navigation';
+import * as A from "./utils/api";
+
+
+type QueryInput = { name: string; version: string };
+type RegexInput = { name: string };
+type InputType = QueryInput | RegexInput;
 
 function App() {
 
-  const [inputs, setInputs] = useState([{ name: "", version: "" }]); // Holds multiple packages
-  const [id, setId] = useState([]);
+  const [inputs, setInputs] =useState<InputType[]>([{ name: "", version: "" }]);  // Holds multiple packages
   const [error, setError] = useState(""); // For error handling
-  const [isMounted, setIsMounted] = useState(false);
-  const [activePage, setActivePage] = useState("search");
+  const [message , setMessage] = useState(""); // For message handling
+  const [queryResults, setQueryResults] = useState<any[]>([]); 
+  const [regexResults, setRegexResults] = useState<any[]>([]);
+  const pathname = usePathname(); // Get the current pathname
+  const [currentPage, setCurrentPage] = useState("");
+  const [searchType, setSearchType] = useState<"Query" | "Regex">("Query");
+  const [inputValue, setInputValue] = useState("");
 
+  const router = useRouter();
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (pathname === "/") {
+      setCurrentPage("search");
+    } else if (pathname.includes("/upload")) {
+      setCurrentPage("upload");
+    } else if (pathname.includes("/update")) {
+      setCurrentPage("update");
+    }
+  }, [pathname]);
 
   // Handle input field changes
   const handleChange = (index: number, field: string, value: string) => {
@@ -26,97 +40,193 @@ function App() {
     setInputs(newInputs);
   };
 
-  // Handle adding more input fields for more packages
-  const handleAddInput = () => {
-    setInputs([...inputs, { name: "", version: "" }]); // Adds an additional input for name and version
+  const handleChangeSearchType = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSearchType(event.target.value as "Query" | "Regex");
+    setInputValue(""); // Reset input when changing search type
+    setInputs([{ name: "", version: "" }]);
+    setMessage("");
   };
 
-  // Handle form submission
+  const handleAddInput = () => {
+    if (searchType === "Query") {
+    setInputs([...inputs, { name: "", version: "" }]);
+    }
+    else {
+      setInputs([...inputs, { name: "" }]); // Adds an additional input for Regex (name only)
+    } 
+  };
+
+  const handleDeleteInput = (index: number) => {
+    if (inputs.length > 1) { 
+      const newInputs = [...inputs];
+      newInputs.splice(index, 1); 
+      setInputs(newInputs);
+    }
+  };
+  const handleReset = async() => {
+
+    try{
+      const response = await A.resetPackage();
+      console.log("Reset response:", response);
+      setMessage(response.message)
+    }
+    catch (error: any) {
+      console.error("Error deleting items:", error);
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message); // Display the error message from API
+      } else {
+        setError("An error occurred while resetting. Please try again.");
+      }
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    setId([]);
+    setMessage("");
+
+    let formattedInputs;
+    if (searchType === "Query") {
+      formattedInputs = (inputs as QueryInput[]).map((input) => ({
+        Version: input.version,
+        Name: input.name,
+      }));
+    } else {
+      // Construct the payload for Regex type (only one input)
+      formattedInputs = { RegEx: inputValue.trim()};
+    }
   
-    console.log(inputs);
-    // Construct the payload directly without the 'packages' wrapper
-    const formattedInputs = inputs.map((input) => ({
-      Version: input.version,
-      Name: input.name,
-    }));
-  
-    // Log the payload for debugging
+
     console.log("Request Payload:", JSON.stringify(formattedInputs));
   
     try {
-      // Send the payload directly as an array, no 'packages' wrapper
-      const response = await axios.post("http://localhost:3000/api/v1/packages", formattedInputs, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      setId(response.data);
-    } catch (error) {
-      console.error("Error fetching ID:", error);
-      if (error.response) {
-        console.error("Response Data:", error.response.data);
-        setError(`Error: ${error.response.data.message || 'ID not found for the given versions and names.'}`);
+      let response;
+      if (searchType === "Query") {
+        response = await A.fetchQueryResults(formattedInputs);
+        if (response && response.length > 0) {
+          setQueryResults(response);
+          setMessage(""); // Clear message if there are results
+        } else {
+          setQueryResults([]);
+          // setMessage(response.message);
+        }
+      } else {
+        response = await A.fetchRegexResults(formattedInputs);
+        if (response && response.length > 0) {
+          setRegexResults(response);
+          setMessage(""); // Clear message if there are results
+        } else {
+          setRegexResults([]);
+          // setMessage("No matching results for the regex pattern.");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error fetching results:", error);
+      // Check if the error response has a message matching the API response for missing fields or invalid token
+      if (error.response && error.response.data && error.response.data.message) {
+        const apiMessage = error.response.data.message;
+        if (apiMessage.includes("There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.")) {
+          setMessage(apiMessage);
+        } else {
+          setError(`Error: ${apiMessage}`);
+        }
       } else {
         setError("An unknown error occurred.");
       }
     }
   };
-  
-  
-  
+  const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(event.target.value);
+  };
+
   return (
     <div>
-      <S.NavBar>
-        <S.NavItem className={activePage === "search" ? S.active : ""}
-          onClick={() => setActivePage("search")}>
-          Search</S.NavItem>
-        <S.NavItem>Upload</S.NavItem>
-        <S.NavItem>Update</S.NavItem>
-      </S.NavBar>
       <S.SearchBox>
-      <form onSubmit={handleSubmit}>
-        {inputs.map((input, index) => (
-          <div key={index} style={{ marginBottom: "10px" }}>
-            <Input
-              label={`Version ${index + 1}`}
-              placeholder="Enter version"
-              value={input.version}
-              onChange={(e) => handleChange(index, "version", e.target.value)}
-            />
-            <Input
-              label={`Name ${index + 1}`}
-              placeholder="Enter name"
-              value={input.name}
-              onChange={(e) => handleChange(index, "name", e.target.value)}
-            />
-          </div>
-        ))}
-        <Button onClick={handleAddInput} type="button">
-          Add More
-        </Button>
-        <Button type="submit">Find IDs</Button>
-      </form>
-      </S.SearchBox>
+        <form onSubmit={handleSubmit}>
+        <S.DropdownContainer onChange={handleChangeSearchType} value={searchType}>
+            <option value="Query">Query</option>
+            <option value="Regex">Regex</option>
+        </S.DropdownContainer>
 
-      {id.length > 0 && (
+          {inputs.map((input, index) => (
+            <div key={index} style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+              {searchType === "Query" ? (
+                <>
+                  <S.InputField
+                    type = "text"
+                    placeholder="Enter version"
+                    value={(input as QueryInput).version}
+                    onChange={(e) => handleChange(index, "version", e.target.value)}
+                    style={{ marginRight: "10px" }}
+                  />
+                  <S.InputField
+                    placeholder="Enter name"
+                    value={input.name}
+                    onChange={(e) => handleChange(index, "name", e.target.value)}
+                    style={{ marginRight: "10px" }}
+                  />
+                </>
+              ) : (
+                <S.InputField
+                  
+                  placeholder="Enter regex pattern"
+                  value={inputValue}
+                  onChange={handleChangeInput}
+                  style={{ marginRight: "10px" }}
+                />
+              )}
+              {inputs.length > 1 && (
+                <S.StyledButton type="button" onClick={() => handleDeleteInput(index)} >
+                  Delete
+                </S.StyledButton>
+              )}
+            </div>
+          ))}
+
+          <S.StyledButton onClick={handleAddInput} type="button">
+            Add More
+          </S.StyledButton>
+          <S.StyledButton type="submit">Find IDs</S.StyledButton>
+        </form>
+      </S.SearchBox>
+     
         <div>
-          <h2>Results:</h2>
-          <ul>
-          {id.map((result, index) => (
-        <li key={index}>
-         
-          <strong>Name:</strong> {result.Name} <br />
-          <strong>Version:</strong> {result.Version}  <br />
-          <strong>ID:</strong> {result.ID} <br />
-        </li>
-      ))}
-          </ul>
+          <p style={{ color: "red" }}>{message}</p>
         </div>
+      
+
+      {searchType === "Query" && (
+        <S.ResultBox>
+          <S.ResultTitle>Results</S.ResultTitle>
+          <S.ResultList>
+          <S.ResultItem>
+            {queryResults.map((result: any, index: number) => (
+              <S.Result key={index}>
+                <strong>Name:</strong> {result.Name} <br />
+                <strong>Version:</strong> {result.Version} <br />
+                <strong>ID:</strong> {result.ID} <br />
+              </S.Result>
+            ))}
+          </S.ResultItem>
+          </S.ResultList>
+        </S.ResultBox>
+      )}
+
+      {searchType === "Regex" && regexResults.length > 0 && (
+        <S.ResultBox>
+          <S.ResultTitle>Results</S.ResultTitle>
+          <S.ResultList>
+          <S.ResultItem>
+            {regexResults.map((result: any, index: number) => (
+              <S.Result key={index}>
+                <strong>Name:</strong> {result["Name: "]} <br />
+                <strong>Version:</strong> {result["Version: "]} <br />
+                <strong>ID:</strong> {result["ID: "]} <br />
+              </S.Result>
+            ))}
+          </S.ResultItem>
+          </S.ResultList>
+        </S.ResultBox>
       )}
 
       {error && (
@@ -124,9 +234,10 @@ function App() {
           <p style={{ color: "red" }}>{error}</p>
         </div>
       )}
-     
+      <S.StyledButton type="button" onClick={handleReset}>
+        Reset
+      </S.StyledButton>
     </div>
   );
 }
-
 export default App;
