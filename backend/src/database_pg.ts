@@ -1,5 +1,12 @@
 import { Pool } from 'pg';
 import { Logger } from './utils/Logger';
+import { error } from 'console';
+
+export interface PackageDetails {
+    name : string;
+    readme?: string; 
+    jsprogram?: string
+}
 
 /**
  * @class Database
@@ -8,6 +15,8 @@ import { Logger } from './utils/Logger';
  * @method getInstance: gets the singleton instance of the Database
  * @method addPackage: adds a new package to the database
  * @method packageExists: checks if a package exists in the database
+ * @method deleteAllPackages: delete all entries form the packages_table table 
+ * @method close: close the instance
  */
 export class Database {
     private static instance: Database;
@@ -46,12 +55,13 @@ export class Database {
     private async initialize() {
         try {
             // Create "packages" table if it does not exist
-            await this.pool.query(`CREATE TABLE IF NOT EXISTS packages (
+            await this.pool.query(`CREATE TABLE IF NOT EXISTS packages_table (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 version TEXT NOT NULL,
                 readme TEXT,
-                url TEXT
+                url TEXT,
+                jsprogram TEXT
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
@@ -59,10 +69,10 @@ export class Database {
         }
     }
 
-    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string) {
-        const sql = `INSERT INTO packages (id, name, version, readme, url) VALUES ($1, $2, $3, $4, $5)`;
+    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string) {
+        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram) VALUES ($1, $2, $3, $4, $5, $6)`;
         try {
-            const res = await this.pool.query(sql, [packageId, name, version, readme, url]);
+            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram]);
             console.log(`A new package has been inserted with id: ${packageId}`);
         } catch (err: any) {
             console.error('Error inserting data:', err.message);
@@ -70,7 +80,7 @@ export class Database {
     }
 
     public async packageExists(packageId: string): Promise<boolean> {
-        const sql = `SELECT COUNT(*) as count FROM packages WHERE id = $1`; // Use $1 for parameterized queries
+        const sql = `SELECT COUNT(*) as count FROM packages_table WHERE id = $1`; // Use $1 for parameterized queries
         try {
             const res = await this.pool.query(sql, [packageId]); // Execute the query using pool
             return res.rows[0].count > 0; // Check if count is greater than 0
@@ -82,11 +92,11 @@ export class Database {
 
     public async deleteAllPackages() {
         
-        // Delete all entries from the "packages" table
-        const sql = `DELETE FROM packages`;
+        // Delete all entries from the "packages_table" table
+        const sql = `DELETE FROM packages_table`;
         try {
             const res = await this.pool.query(sql);
-            console.log(`Deleted ${res.rowCount} entries from the packages table.`);
+            console.log(`Deleted ${res.rowCount} entries from the packages_table table.`);
         } catch (err: any) {
             console.error('Error deleting entries:', err.message);
             throw err;
@@ -99,6 +109,39 @@ export class Database {
             console.log('Closed the database connection.');
         } catch (err: any) {
             console.error('Error closing the database connection:', err.message);
+        }
+    }
+
+    /**
+     * 
+     * @param packageID 
+     * @returns {Promise<{PackageDetails} | null>}: return null if package details if empty
+     *                                              current implementation requires user to check whether or not the fields are empty. 
+     */
+
+    public async getDetails(packageID: string): Promise< PackageDetails | null>{
+        const sql = `SELECT (name, version, readme, url, jsprogram) FROM packages_table WHERE id = $1`;
+        try{
+            
+            const res = await this.pool.query(sql, [packageID]);
+
+            if (!res) {
+                return null;
+            }
+            
+            const cleanedRow :string = res.rows[0].row.slice(1, -1);
+            //consider implementing a check to see which fields are left blank and whether or not to return null;
+            const regex = /(?:,|\s)+(?=(?:[^"]|"[^"]*")*[^"]*$)/g;
+  
+            // Split the string using the regex
+            const fields = cleanedRow.split(regex).map(field => field.trim());
+            
+            return {name: fields[0], readme: fields[1], jsprogram: fields[4]};
+            // return [fields[0], fields[1], fields[4]];
+
+        } catch(err: any){
+            console.error('Error fetching details associated with your package ID', err.message);
+            throw err;
         }
     }
 }

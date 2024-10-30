@@ -1,4 +1,4 @@
-import { S3Client, HeadBucketCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadObjectCommand} from '@aws-sdk/client-s3';
+import { S3Client, HeadBucketCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadObjectCommand, GetObjectCommand} from '@aws-sdk/client-s3';
 import { Logger } from './Logger';
 
 /** 
@@ -100,6 +100,41 @@ export class S3 {
             Logger.logInfo('Error checking if package exists in S3');
             Logger.logDebug(error);
             throw error;
+        }
+    }
+
+    /**
+     * @method getFileByKey: Retrieves a file from S3 bucket by its key
+     * @param key : string - the key of the file to retrieve
+     * @returns {string | null} - the file content as a buffer -> string or null if dne 
+     */
+    static async getFileByKey(key: string) {
+        try {
+            // Create command to get object from S3 bucket
+            const getObjectCommand = new GetObjectCommand({
+                Bucket: S3.bucketName,
+                Key: key,
+            });
+
+            // Send command to S3
+            const response = await S3.s3Client.send(getObjectCommand);
+
+            // Read the response body as a buffer
+            const chunks: any[] = [];
+            for await (const chunk of response.Body as any) {
+                chunks.push(chunk);
+            }
+
+            // Combine the chunks into a single buffer
+            const buffer = Buffer.concat(chunks);
+
+            Logger.logInfo(`Retrieved ${key} from ${S3.bucketName}`);
+            return buffer.toString('base64');
+
+        } catch (error: any) {
+            Logger.logInfo(`Error retrieving ${key} from ${S3.bucketName}`);
+            Logger.logDebug(error);
+            return null; // Handle error (return null if file not found or another error)
         }
     }
 }

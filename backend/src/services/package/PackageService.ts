@@ -38,7 +38,38 @@ export class PackageService {
         }
     }
 
-    async getPackageById() {
+    async getPackageById(packageID: string) {
+        try{
+            let packageExist: any = await this.db.packageExists(packageID); 
+            
+            if(!packageExist){
+                throw new Error("404: Package does not exist"); 
+            }
+            
+            let details: any = await this.db.getDetails(packageID); 
+
+            if(details == null){
+                throw new Error("404: Package does not exist");
+            }
+
+            //metadata
+            let metadata: PackageMetadata = new PackageMetadata(details.name, details.readme);
+            
+            let file = await S3.getFileByKey(packageID);
+
+            if(file == null){
+                throw new Error("404: Package does not exist");
+            }
+            
+            //data
+            let data: any = await PackageData.create(file, details.jsprogram);
+        
+            const pack = new Package(metadata, data);
+            Logger.logInfo("Successfully retrieved package from S3.");
+            return pack;
+        } catch(err: any){ 
+            throw err; 
+        }  
     }
 
     async uploadPackage(packageData: PackageData) {
@@ -51,7 +82,7 @@ export class PackageService {
             if (await this.db.packageExists(packageMetadata.getId())) {
                 throw new Error('409: Package already exists');
             }
-            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl());
+            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram());
 
             // Upload to S3 Database
             Logger.logInfo("Uploading package to S3"); //---------------------------------------------------------------
