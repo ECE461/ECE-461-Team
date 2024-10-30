@@ -10,8 +10,9 @@ REMOTE_PORT=5432
 EC2_USER="ubuntu"
 EC2_IP="3.129.240.110"
 
+
 # Path to your SSH key file (if needed)
-SSH_KEY_PATH="C:\Users\tiana\Documents\461\ECE-461-Team\ECE461.pem"
+SSH_KEY_PATH="$SSH_KEY_PATH_"
 
 # Create the SSH tunnel in the background
 ssh -i $SSH_KEY_PATH -L $LOCAL_PORT:$REMOTE_HOST:$REMOTE_PORT $EC2_USER@$EC2_IP -N & 
