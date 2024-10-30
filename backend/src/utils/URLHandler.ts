@@ -57,6 +57,9 @@ export class URLHandler {
   githubURL: string | null = null; // the GitHub repository URL
   baseAPI: string | null = null;  // the base API URL
   constructor(url: string) {
+    if(url.startsWith("git+")) {
+      url = url.replace("git+", "");
+    }
     this.url = url;
   }
 
@@ -114,7 +117,7 @@ export class URLHandler {
         this.githubURL = await URLHandler.getGithubURLFromNpmURL(this.url);
       }
       else if (this.url.startsWith('https://github.com/')) {  // set github URL directly
-        this.githubURL = this.url;
+        this.githubURL = URLHandler.convertGithubURLToHttps(this.url);
       }
 
       if(this.githubURL !== null) {  // set base API URL if github URL is set

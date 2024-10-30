@@ -3,6 +3,7 @@ import axios from 'axios';
 export class RampUp {
     private repoOwner: string;
     private repoName: string;
+    private latency: number = 0;
     private static readonly MAX_FILE_COUNT = 1000;
     //private static readonly MAX_LINE_COUNT = 100000;
     private static readonly MAX_DEPENDENCIES_COUNT = 100;
@@ -17,6 +18,7 @@ export class RampUp {
 
     public async getRampUpScore(): Promise<number> {
         try {
+            let startTime = performance.now();
             const response = await axios.get(`https://api.github.com/repos/${this.repoOwner}/${this.repoName}`, {
                 headers: {
                     Authorization: `token ${process.env.GITHUB_TOKEN}`
@@ -45,6 +47,8 @@ export class RampUp {
                 //stargazers_count,
                 //forks_count
             });
+
+            this.latency = (performance.now() - startTime) / 1000;
 
             return parseFloat(score.toFixed(3));
 
@@ -136,6 +140,10 @@ export class RampUp {
         const totalScore = (fileCountScore + dependenciesCountScore + sizeScore) / 3;
 
         return totalScore;
+    }
+
+    public getLatency(): number {
+        return this.latency;
     }
 
 }

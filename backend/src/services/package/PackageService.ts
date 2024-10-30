@@ -5,12 +5,12 @@ import { PackageDownloadService } from './PackageDownloadService';
 import { Database } from '../../database_pg';
 import { PackageData } from '../../models/package/PackageData';
 import { PackageID } from '../../models/package/PackageID';
+import { PackageRating } from '../../models/package/PackageRating';
 import { PackageMetadata } from '../../models/package/PackageMetadata';
 import { S3 } from '../../utils/S3';
 import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
 import {MetricManager} from '../../services/metrics/MetricManager';
-import { PackageRating } from '../../models/package/PackageRating';
 
 export class PackageService {
     private db: Database;
@@ -75,24 +75,23 @@ export class PackageService {
     async updatePackage() {
     }
 
-    async getRating(packageID: string) {
-        // get the URL of the package from the database
-        // TODO: Implement this method in Database class
-        // const url = await this.db.getPackageURL(packageID.getId());
-        const url = "https://github.com/cloudinary/cloudinary_npm";
+    async getRating(package_id: string) {
+        const package_url = await this.db.getPackageURL(package_id);
+        const packageManager = new MetricManager(package_url);
+        await packageManager.setProperties(); // Set properties of package manager (MUST DO THIS BEFORE GETTING METRICS)
+        console.log("Owner: " +  packageManager.getOwner());
+        console.log("Repo: " + packageManager.getRepoName());
+        console.log("Base URL: " + packageManager.urlHandler.getRepoURL());
 
-        // use the Metric Manager class to get the rating
-        try
-        {
-            const metricManager = new MetricManager(url);
-            const rating = await metricManager.getMetrics();
-            const package_rating = new PackageRating(rating.busFactorValue, rating.correctnessValue, rating.rampUpValue, rating.maintainerValue, rating.licenseValue, 0, 0, rating.netScore);
-            return package_rating.getJson();
-        }
-        catch (error)
-        {
-            console.error('Error in getRating:', error);
-            throw new Error('Failed to fetch rating');
+        try {
+            const packageRating = await packageManager.getMetrics(); // Get metrics from package manager
+            // TO-DO: Add the following to the packageRating object: goodPinningPractice, pullRequest
+            const metricRating = new PackageRating(packageRating.busFactorValue, packageRating.correctnessValue, packageRating.rampUpValue, packageRating.maintainerValue, packageRating.licenseValue, 0, 0, packageRating.netScore); // Convert to PackageRating object to JSON-ify later
+            return metricRating;
+        } catch (error) {
+            Logger.logInfo("Error fetching package ratings");
+            Logger.logDebug(error);
+            throw error;
         }
     }
 

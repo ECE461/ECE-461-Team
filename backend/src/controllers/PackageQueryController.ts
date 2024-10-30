@@ -114,6 +114,13 @@ export class PackageQueryController {
         console.error('Error fetching patches: ', error);
         res.status(500).send({message: "Internal Server Error"});
       }
+
+      // Get the rating from package service
+      const package_id = req.params.id;
+      const rating = await PackageQueryController.packageService.getRating(package_id);
+      const ratingJson = rating.getJson();
+
+      res.status(200).json(ratingJson);
     }
     
     /* getPackageHistoryByName: Gets all package history (all versions)

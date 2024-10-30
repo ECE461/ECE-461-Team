@@ -6,6 +6,7 @@ const GITHUB_API = 'https://raw.githubusercontent.com';
 export class License {
   private owner: string;
   private repoName: string;
+  private latency: number = 0;
   /**
    * constructs a metrics manager for a GitHub repository
    * 
@@ -52,6 +53,7 @@ export class License {
    */
   async getRepoLicense() : Promise<number> {
     try {
+      let startTime = performance.now();
       // get the default branch of the repository
       const default_url = `https://api.github.com/repos/${this.owner}/${this.repoName}`;
       const default_response = await axios.get(default_url, 
@@ -73,6 +75,7 @@ export class License {
         //console.log('License Found: LGPLv2.1');
         return 1;
       }
+      this.latency = (performance.now() - startTime) / 1000;
       //console.log('License Not Found');
       return 0;
 
@@ -80,6 +83,15 @@ export class License {
       console.error(`getRepoLicense -> Error when fetching license in ${this.owner}/${this.repoName}:`, (error as any).message);
       return 0;
     }
+  }
+
+  /**
+   * getLatency returns the latency of the license metric
+   * 
+   * @returns the latency of the license metric
+   */
+  public getLatency(): number {
+    return this.latency;
   }
 
 

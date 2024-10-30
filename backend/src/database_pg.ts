@@ -25,15 +25,19 @@ export class Database {
             }
         });
         Logger.logInfo('Starting connection to the PostgreSQL database...');
+        Logger.logInfo(`${process.env.RDS_USER}`);
+        Logger.logInfo(`${process.env.RDS_KEY}`);
+        Logger.logInfo(`${process.env.RDS_HOST}`);
+
         // Optionally test the connection immediately
         this.pool.connect()
             .then(() => console.log('Connected to the PostgreSQL database.'))
-            .catch((err: any) => console.error('Error connecting to the database:', err.message));
+            .catch((err: any) => Logger.logDebug('Error connecting to the database:'+ err));
 
         Logger.logInfo('Initializing the database...');
         this.initialize()
             .then(() => console.log('Database initialized.'))
-            .catch((err: any) => console.error('Error initializing the database:', err.message));
+            .catch((err: any) => console.error('Error initializing the database:', err));
     }
 
     public static getInstance(): Database {
@@ -77,6 +81,17 @@ export class Database {
         } catch (err: any) {
             console.error('Error checking package existence:', err.message);
             throw err; // Rethrow the error for further handling if needed
+        }
+    }
+
+    public async getPackageURL(packageId: string): Promise<string> {
+        const sql = `SELECT url FROM packages WHERE id = $1`;
+        try {
+            const res = await this.pool.query(sql, [packageId]);
+            return res.rows[0].url;
+        } catch (err: any) {
+            console.error('Error getting package URL:', err.message);
+            throw err;
         }
     }
 
