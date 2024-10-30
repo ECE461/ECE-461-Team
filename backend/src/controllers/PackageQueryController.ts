@@ -84,17 +84,16 @@ export class PackageQueryController {
      */ 
     static async getPackageById(req: Request, res: Response) {
       try{
-
         if (!PackageID.isValidGetByIdRequest(req)) {
           res.status(400).json(PackageQueryController.MSG_INVALID);
           return;
         }
+        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
 
-        let pckg : any = await PackageQueryController.packageService.getPackageById(req.params.packageID); 
-        res.status(200).json(pckg.json());
+        res.status(200).json(pckg.getJson());
       }catch(error){
         if(error instanceof Error && error.message.includes('404')){
-          res.status(404).send({description: 'Package does not exist'});
+          res.status(500).send({description: 'Package does not exist'});
         }
       }
 

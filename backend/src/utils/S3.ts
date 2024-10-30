@@ -129,7 +129,7 @@ export class S3 {
             const buffer = Buffer.concat(chunks);
 
             Logger.logInfo(`Retrieved ${key} from ${S3.bucketName}`);
-            return buffer.toString('utf-8');
+            return buffer.toString('base64');
 
         } catch (error: any) {
             Logger.logInfo(`Error retrieving ${key} from ${S3.bucketName}`);

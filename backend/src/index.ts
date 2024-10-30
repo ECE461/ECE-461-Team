@@ -30,7 +30,8 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
             const port = process.env.PORT || 3000;
             const baseURL = '/api/v1';
             app.use(cors());
-            app.use(express.json());
+            app.use(express.json({limit: '10mb'}));
+            
             
             const packageEndpoints = new PackageEndpoints();
             app.use(baseURL, packageEndpoints.getRouter());

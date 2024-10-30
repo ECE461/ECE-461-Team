@@ -35,34 +35,34 @@ export class PackageCommandController {
      * TODO: should we rate all packages here and store for later?
      */
     static async uploadPackage(req: Request, res: Response) {
-        // if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
-        //     Logger.logInfo("Invalid Request: Not correct format");
-        //     res.status(400).json(PackageCommandController.MSG_INVALID);
-        //     return;
-        // }
+        if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
+            Logger.logInfo("Invalid Request: Not correct format");
+            res.status(400).json(PackageCommandController.MSG_INVALID);
+            return;
+        }
 
-        // const source = req.body.URL ? req.body.URL : req.body.Content;
-        // try {
-        //     Logger.logInfo("Creating Package Data Object")
-        //     const packageData = await PackageData.create(source, req.body.JSProgram);
+        const source = req.body.URL ? req.body.URL : req.body.Content;
+        try {
+            Logger.logInfo("Creating Package Data Object")
+            const packageData = await PackageData.create(source, req.body.JSProgram);
 
-        //     Logger.logInfo("Uploading Package: To S3 and RDS")
-        //     const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData);
-        //     res.status(201).json(pack.getJson());
-        // } catch (error) {
-        //     if ((error instanceof Error) && (error.message === "Package is not uploaded due to the disqualified rating.")) {
-        //         res.status(424).send({description: "Package is not uploaded due to the disqualified rating."});
-        //         return;
-        //     } else if ((error instanceof Error) && error.message.includes('400')) {
-        //         res.status(400).json(PackageCommandController.MSG_INVALID);
-        //     } else if ((error instanceof Error) && error.message.includes('409')){
-        //         res.status(409).send({description: "Package already exists"});
-        //     } else {
-        //         Logger.logDebug(error);
-        //         res.status(500).send({description: "Internal Server Error"});
-        //         return;
-        //     }
-        // }
+            Logger.logInfo("Uploading Package: To S3 and RDS")
+            const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData);
+            res.status(201).json(pack.getJson());
+        } catch (error) {
+            if ((error instanceof Error) && (error.message === "Package is not uploaded due to the disqualified rating.")) {
+                res.status(424).send({description: "Package is not uploaded due to the disqualified rating."});
+                return;
+            } else if ((error instanceof Error) && error.message.includes('400')) {
+                res.status(400).json(PackageCommandController.MSG_INVALID);
+            } else if ((error instanceof Error) && error.message.includes('409')){
+                res.status(409).send({description: "Package already exists"});
+            } else {
+                Logger.logDebug(error);
+                res.status(500).send({description: "Internal Server Error"});
+                return;
+            }
+        }
     }
 
     /* updatePackage: Updates package with new package content
