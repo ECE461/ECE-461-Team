@@ -57,7 +57,7 @@ export class Logger {
                 fs.appendFileSync(logFilePath, `[${fileLineInfo}] ${message}\n`, 'utf8');
 
                 // Log to console if LOG_CONSOLE is set to true (for development)
-                if (process.env.LOG_CONSOLE == 'true') {
+                if (process.env.LOG_CONSOLE == 'debug' || process.env.LOG_CONSOLE == 'info') {
                     console.log(`[${fileLineInfo}] ${message}`);
                 }
             } catch (error) {
@@ -79,7 +79,7 @@ export class Logger {
                 fs.appendFileSync(logFilePath, `[${fileLineInfo}] ${logMessage}\n`, 'utf8');
 
                 // Log to console if LOG_CONSOLE is set to true (for development)
-                if (process.env.LOG_CONSOLE == 'true') {
+                if (process.env.LOG_CONSOLE == 'debug') {
                     console.log(`[${fileLineInfo}] ${message}`);
                 }
             } catch (error) {

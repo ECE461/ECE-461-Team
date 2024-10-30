@@ -23,7 +23,7 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
         9. LOG_LEVEL: 2 for debug, 1 for info, 0 for silent
         10. LOG_FILE: path to log file (default is default.log)
         11. PORT: port for the server to run on (default is 3000)
-        12. LOG_CONSOLE: set to 'true' to log to console as well as file
+        12. LOG_CONSOLE: set to 'debug' or 'info' to log to console as well as file
     `);
     process.exit(1);
 } else {
