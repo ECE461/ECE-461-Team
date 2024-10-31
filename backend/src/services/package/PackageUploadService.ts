@@ -21,8 +21,9 @@ export class PackageUploadService {
         Logger.logInfo("Looping through files in repository")
         zip.getEntries().forEach((entry) => {
             const fileName = entry.entryName;
-            console.log(fileName);
-            if (fileName.endsWith('package.json')) {
+
+            const pathParts = fileName.split('/');
+            if (fileName.endsWith('package.json') && pathParts.length === 2) {
                 const packageJsonContent = entry.getData().toString('utf8');
                 const packageInfo = JSON.parse(packageJsonContent);
 
@@ -35,7 +36,15 @@ export class PackageUploadService {
 
             // TODO: What to do if no readme is found?
             if (fileName.toLowerCase().endsWith('readme.md')) {
-                readmeContent = entry.getData().toString('utf8');
+                if (readmePathParts != 0) {
+                    if (pathParts.length < readmePathParts) {
+                        readmeContent = entry.getData().toString('utf8');
+                        readmePathParts = pathParts.length;
+                    }
+                } else {
+                    readmeContent = entry.getData().toString('utf8');
+                    readmePathParts = pathParts.length;
+                }
             }
         });
 
