@@ -77,6 +77,9 @@ export class MetricManager {
         let correctnessValue = await correctnessMetric.getCorrectnessScore();
         let correctnessLatency = correctnessMetric.getLatency();
 
+        let pullRequestValue = 0.0;
+        let pullRequestLatency = 0.0;
+
         // Calculate the net score
         // (0.3 * busFactor + 0.2 * correctness + 0.2 * rampup + 0.3 * maintainer) * license
         let netScore = (0.3 * busFactorValue + 0.2 * correctnessValue + 0.2 * rampUpValue + 0.3 * maintainerValue) * licenseValue;

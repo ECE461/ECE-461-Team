@@ -57,10 +57,13 @@ export class URLHandler {
   githubURL: string | null = null; // the GitHub repository URL
   baseAPI: string | null = null;  // the base API URL
   constructor(url: string) {
-    if(url.startsWith("git+")) {
-      url = url.replace("git+", "");
+    if(url.includes('git')) {
+      let cleanedUrl = URLHandler.convertGithubURLToHttps(url);
+      this.url = cleanedUrl;
     }
-    this.url = url;
+    else{
+      this.url = url;
+    }
   }
 
   /**

@@ -36,7 +36,7 @@ export class Database {
         Logger.logInfo('Starting connection to the PostgreSQL database...');
 
         // Optionally test the connection immediately
-        this.pool.connect(
+        this.pool.connect()
             .then(() => Logger.logInfo('Connected to the PostgreSQL database.'))
             .catch((err: any) => {Logger.logError('Error connecting to the database:', err)});
 
