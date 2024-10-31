@@ -17,7 +17,8 @@ export class PackageUploadService {
 
         zip.getEntries().forEach((entry) => {
             const fileName = entry.entryName;
-            if (fileName.includes('package.json')) {  // Use includes instead of endsWith to handle nested file structures
+            console.log(fileName);
+            if (fileName.endsWith('package.json')) {
                 const packageJsonContent = entry.getData().toString('utf8');
                 const packageInfo = JSON.parse(packageJsonContent);
 
@@ -26,7 +27,7 @@ export class PackageUploadService {
             }
 
             // TODO: What to do if no readme is found?
-            if (fileName.toLowerCase().includes('readme.md')) {
+            if (fileName.toLowerCase().endsWith('readme.md')) {
                 readmeContent = entry.getData().toString('utf8');
             }
         });
