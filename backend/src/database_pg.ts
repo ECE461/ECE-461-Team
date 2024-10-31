@@ -25,14 +25,11 @@ export class Database {
             }
         });
         Logger.logInfo('Starting connection to the PostgreSQL database...');
-        Logger.logInfo(`${process.env.RDS_USER}`);
-        Logger.logInfo(`${process.env.RDS_KEY}`);
-        Logger.logInfo(`${process.env.RDS_HOST}`);
 
         // Optionally test the connection immediately
         this.pool.connect()
             .then(() => console.log('Connected to the PostgreSQL database.'))
-            .catch((err: any) => Logger.logDebug('Error connecting to the database:'+ err));
+            .catch((err: any) => console.error('Error connecting to the database:', err));
 
         Logger.logInfo('Initializing the database...');
         this.initialize()

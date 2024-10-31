@@ -79,9 +79,6 @@ export class PackageService {
         const package_url = await this.db.getPackageURL(package_id);
         const packageManager = new MetricManager(package_url);
         await packageManager.setProperties(); // Set properties of package manager (MUST DO THIS BEFORE GETTING METRICS)
-        console.log("Owner: " +  packageManager.getOwner());
-        console.log("Repo: " + packageManager.getRepoName());
-        console.log("Base URL: " + packageManager.urlHandler.getRepoURL());
 
         try {
             const packageRating = await packageManager.getMetrics(); // Get metrics from package manager

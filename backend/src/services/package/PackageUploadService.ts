@@ -17,15 +17,12 @@ export class PackageUploadService {
 
         zip.getEntries().forEach((entry) => {
             const fileName = entry.entryName;
-            console.log(fileName);
             if (fileName.includes('package.json')) {  // Use includes instead of endsWith to handle nested file structures
-                console.log('Found package.json');
                 const packageJsonContent = entry.getData().toString('utf8');
                 const packageInfo = JSON.parse(packageJsonContent);
 
                 packageMetadata = new PackageMetadata(packageInfo.name, packageInfo.version);
                 packageMetadata.setUrl(packageInfo.repository?.url);
-                console.log(packageMetadata.getUrl());
             }
 
             // TODO: What to do if no readme is found?
