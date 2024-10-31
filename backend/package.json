@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "npx ts-node src/index.ts",
-    "local": "tunnel.sh && npm run start",
+    "local": "bash tunnel.sh && npm run start",
+    "postlocal": "bash tunnel.sh --close",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "deepclean": "rm -rf node_modules && rm -f package-lock.json && npm cache clean --force",

@@ -67,7 +67,9 @@ export class CLIParser {
                 ResponsiveMaintainer: metrics.maintainerValue,
                 ResponsiveMaintainer_Latency: metrics.maintainerLatency,
                 License: metrics.licenseValue,
-                License_Latency: metrics.licenseLatency
+                License_Latency: metrics.licenseLatency,
+                PullRequest: metrics.pullRequestValue, 
+                PullRequest_Latency: metrics.pullRequestLatency
             };
             console.log(JSON.stringify(result));
         } catch (error) {

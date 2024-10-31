@@ -5,6 +5,8 @@ import { PackageQuery } from '../models/package/PackageQuery';
 import { PackageRegex } from '../models/package/PackageRegex';
 import { PackageID } from '../models/package/PackageID';
 import { PackageName } from '../models/package/PackageName';
+import { PackageMetadata } from '../models/package/PackageMetadata';
+import { Logger } from '../utils/Logger';
 
 /* PackageQueryController: Handles all API calls for read-only actions, sets "res" status and data
  * Handles Initial Request Validation
@@ -44,7 +46,7 @@ export class PackageQueryController {
           res.setHeader('offset', (offset + packages.length).toString());
           res.status(200).json(packages);
       } catch (error) {
-          console.error('Error fetching patches: ', error);
+          Logger.logError('Error fetching patches: ', error);
           res.status(500).send({message: "Internal Server Error"});
       }
     }
@@ -80,12 +82,22 @@ export class PackageQueryController {
      * Description: Given package ID, sets response as package information (see models/package/Package.ts)
      * includes metadata + data (Content + JSProgram)
      * Sets status to 200 (success), 400 (invalid request), or 404 (package does not exist)
-     */
+     */ 
     static async getPackageById(req: Request, res: Response) {
-      if (!PackageID.isValidGetByIdRequest(req)) {
-        res.status(400).json(PackageQueryController.MSG_INVALID);
-        return;
+      try{
+        if (!PackageID.isValidGetByIdRequest(req)) {
+          res.status(400).json(PackageQueryController.MSG_INVALID);
+          return;
+        }
+        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
+
+        res.status(200).json(pckg.getJson());
+      }catch(error){
+        if(error instanceof Error && error.message.includes('404')){
+          res.status(500).send({description: 'Package does not exist'});
+        }
       }
+
     }
     
     /* getRating: Gets rating of a package

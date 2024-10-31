@@ -1,6 +1,7 @@
 import express from 'express';
 import { PackageEndpoints } from './endpoints/PackageEndpoints';
 import { Logger } from './utils/Logger';
+import { exec } from 'child_process';
 
 const cors = require('cors');
 
@@ -15,12 +16,14 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
         4. AWS_ACCESS_KEY_ID (Required): IAM user access key ID for S3 permissions
         5. AWS_SECRET_ACCESS_KEY (Required): IAM user secret access key for S3 permissions
         6. GITHUB_TOKEN (Required): GitHub personal access token
+        7. SSH_KEY_PATH_ (Required): Absolute file path to the ssh key that is used to connect to RDS in tunnel.sh
 
         Optional:
-        7. NODE_ENV: set to 'FAKE_SUCCESS' to use fake data
-        8. LOG_LEVEL: 2 for debug, 1 for info, 0 for silent
-        9. LOG_FILE: path to log file (default is default.log)
-        10. PORT: port for the server to run on (default is 3000)
+        8. NODE_ENV: set to 'FAKE_SUCCESS' to use fake data
+        9. LOG_LEVEL: 2 for debug, 1 for info, 0 for silent
+        10. LOG_FILE: path to log file (default is default.log)
+        11. PORT: port for the server to run on (default is 3000)
+        12. LOG_CONSOLE: set to 'debug' or 'info' to log to console as well as file
     `);
     process.exit(1);
 } else {
@@ -30,7 +33,8 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
             const port = process.env.PORT || 3000;
             const baseURL = '/api/v1';
             app.use(cors());
-            app.use(express.json());
+            app.use(express.json({limit: '10mb'}));
+            
             
             const packageEndpoints = new PackageEndpoints();
             app.use(baseURL, packageEndpoints.getRouter());
@@ -40,6 +44,7 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
             });
         } catch (error) {
             console.error('Error starting the application:', error);
+            Logger.logError('Error starting the application:', error);
         }
     })();
 }
