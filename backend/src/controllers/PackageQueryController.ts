@@ -6,6 +6,7 @@ import { PackageRegex } from '../models/package/PackageRegex';
 import { PackageID } from '../models/package/PackageID';
 import { PackageName } from '../models/package/PackageName';
 import { PackageMetadata } from '../models/package/PackageMetadata';
+import { Logger } from '../utils/Logger';
 
 /* PackageQueryController: Handles all API calls for read-only actions, sets "res" status and data
  * Handles Initial Request Validation
@@ -45,7 +46,7 @@ export class PackageQueryController {
           res.setHeader('offset', (offset + packages.length).toString());
           res.status(200).json(packages);
       } catch (error) {
-          console.error('Error fetching patches: ', error);
+          Logger.logError('Error fetching patches: ', error);
           res.status(500).send({message: "Internal Server Error"});
       }
     }

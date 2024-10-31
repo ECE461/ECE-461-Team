@@ -35,7 +35,7 @@ export class PackageService {
 
             return mockPackages.slice(Number(offset), Number(offset)+maxItemsPerPage);
         } catch (error) {
-            console.error('Error in PackageService:', error);
+            Logger.logError('Error in PackageService getPackagesByQuery:', error);
             throw new Error('Failed to fetch packages');
         }
     }
@@ -96,8 +96,7 @@ export class PackageService {
             const pack = new Package(packageMetadata, packageData);
             return pack;
         } catch (error : any) {
-            Logger.logInfo("Error uploading package");
-            Logger.logDebug(error);
+            Logger.logError("Error uploading package: ", error);
             throw error;
         }
 
