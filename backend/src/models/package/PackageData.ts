@@ -48,7 +48,7 @@ export class PackageData {
      * @param jsProgram: string - jsProgram for sensitive data
      * @returns Promise
      */
-    static async create(source: string, jsProgram="") {
+    static async create(source: string, jsProgram : string) {
         const instance = new PackageData("", jsProgram);
         if (instance.isValidURL(source)) {
             Logger.logInfo(`Checking URL Metrics: ${source}`);
@@ -121,7 +121,7 @@ export class PackageData {
         const buffer = Buffer.from(base64String, 'base64');
     
         // Check if the buffer starts with the ZIP file signature (PK\x03\x04)
-        const zipSignature = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+        const zipSignature = Uint8Array.from([0x50, 0x4b, 0x03, 0x04]);
         return buffer.slice(0, 4).equals(zipSignature);
     }
 
@@ -137,9 +137,8 @@ export class PackageData {
             const urlDownload = `https://api.github.com/${owner}/${repo}/zipball/`;
 
             const response = await axios.get(url, { responseType: 'arraybuffer' });
-            const zipBuffer = Buffer.from(response.data, 'binary');
 
-            this.content = Base64.fromUint8Array(new Uint8Array(zipBuffer));
+            this.content = Base64.fromUint8Array(new Uint8Array(response.data));
         } catch (error) {
             throw new Error("Error fetching content from URL");
         }

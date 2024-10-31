@@ -55,6 +55,11 @@ export class Logger {
                 const stackTrace = new Error().stack || '';
                 const fileLineInfo = getFileLineInfo(stackTrace);
                 fs.appendFileSync(logFilePath, `[${fileLineInfo}] ${message}\n`, 'utf8');
+
+                // Log to console if LOG_CONSOLE is set to true (for development)
+                if (process.env.LOG_CONSOLE == 'debug' || process.env.LOG_CONSOLE == 'info') {
+                    console.log(`[${fileLineInfo}] ${message}`);
+                }
             } catch (error) {
                 console.error('Error writing to log file:', error);
             }   
@@ -72,9 +77,19 @@ export class Logger {
                 const fileLineInfo = getFileLineInfo(stackTrace);
                 const logMessage = (message instanceof Error) ? `${message.message}\n${message.stack}` : message;
                 fs.appendFileSync(logFilePath, `[${fileLineInfo}] ${logMessage}\n`, 'utf8');
+
+                // Log to console if LOG_CONSOLE is set to true (for development)
+                if (process.env.LOG_CONSOLE == 'debug') {
+                    console.log(`[${fileLineInfo}] ${message}`);
+                }
             } catch (error) {
                 console.error('Error writing to log file:', error);
             } 
         }
+    }
+
+    public static logError(message: string, error: any) {
+        Logger.logInfo(message);
+        Logger.logDebug(error);
     }
 }

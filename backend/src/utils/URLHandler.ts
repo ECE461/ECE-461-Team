@@ -252,8 +252,7 @@ public static async getGithubURLFromNpmURL(url: string): Promise<string | null> 
 
       return githubURL;
   } catch (error) {
-      Logger.logInfo('Error getting github URL from npm package');
-      Logger.logDebug(error);
+      Logger.logError('Error getting github URL from npm package:', error);
   }
   return null;
 }
