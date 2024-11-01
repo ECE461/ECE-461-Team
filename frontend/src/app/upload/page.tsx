@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import * as S from "../../styles/searchPage.module"; 
+import * as S from "../../styles/uploadPage.module"; 
 import * as A from "../utils/api";
 
 
@@ -11,6 +11,7 @@ const Upload = () => {
   const [jsProgram, setJsProgram] = useState("");
   const [message, setMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const isDisabled = !url && !file;
 
   const handleFileRead = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -62,20 +63,20 @@ const Upload = () => {
   };
 
   return (
-    <div>
-      <h1>Upload Page</h1>
+    <S.UploadContainer>
+      
       <form onSubmit={handleUpload}>
-        
-        <label>
-          GitHub URL:
-          <input
+      <S.urlHeader>GitHub URL</S.urlHeader> 
+        <S.urlContainer>
+          <S.InputField
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={!!file}
             placeholder="Enter a GitHub URL"
           />
-        </label>
+  
+        </S.urlContainer>
         <label>
           Package (ZIP file):
           <input
@@ -92,7 +93,7 @@ const Upload = () => {
     style={{ marginTop: "10px" }}
   />
         </label>
-        <div
+        <S.UploadBox
           onDrop={handleDrop}
           onDragOver={(e) => {
             e.preventDefault();
@@ -113,11 +114,13 @@ const Upload = () => {
           ) : (
             <p>Drag & drop a ZIP file here, or click to select</p>
           )}
-        </div>
-        <button type="submit">Upload</button>
+        </S.UploadBox>
+        <S.buttonContainer>
+        <S.uploadButton disabled = {isDisabled} type="submit">Upload</S.uploadButton>
+        </S.buttonContainer>
       </form>
       {message && <p>{message}</p>}
-    </div>
+    </S.UploadContainer>
   );
 };
 

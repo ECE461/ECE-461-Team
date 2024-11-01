@@ -6,24 +6,31 @@ import Link from 'next/link';
 import * as S from "../styles/searchPage.module"; 
 import { usePathname } from 'next/navigation';
 import '../styles/globals.css';
+import { AuthProvider,  } from "./context/AuthContext";
+import router from 'next/router';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname(); // Get the current pathname
   const [isMounted, setIsMounted] = useState(false);
 
-  // Set isMounted to true when the component is mounted
+  
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+
   return (
+    <AuthProvider>
+      <ProtectedRoute>
     <html lang="en">
       <head>
       </head>
       <body>
+      {isMounted && pathname !== '/' && (
         <S.NavBar>
-          <Link href="/" passHref>
-            <S.NavItem  isActive={isMounted && pathname === "/"}>
+          <Link href="/search" passHref>
+            <S.NavItem  isActive={isMounted && pathname.includes("/search")}>
               Search
             </S.NavItem>
           </Link>
@@ -37,10 +44,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               Update
             </S.NavItem>
           </Link>
-        </S.NavBar>
+        </S.NavBar>)}
         <main>{children}</main>
       </body>
     </html>
+    </ProtectedRoute>
+    </AuthProvider>
   );
 };
 
