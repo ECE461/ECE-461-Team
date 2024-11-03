@@ -54,27 +54,41 @@ export class MetricManager {
         pullRequestValue: number, 
         pullRequestLatency: number
     }> {
-        // TODO: Need to calculate in parrallel
-        let NetStartTime = performance.now();
-        let startTime = performance.now();
+        // TODO: Add the pull request and dependency metrics
+
+        // Create the metric classes
         let busFactorMetric = new BusFactor(this.owner, this.repoName);
-        let busFactorValue = await busFactorMetric.calculateBusFactor();
-        let busFactorLatency = busFactorMetric.getLatency();
-
         let rampUpMetric = new RampUp(this.owner, this.repoName);
-        let rampUpValue = await rampUpMetric.getRampUpScore();
-        let rampUpLatency = rampUpMetric.getLatency();
-
-        let licenseMetric = new License(this.owner, this.repoName)
-        let licenseValue = await licenseMetric.getRepoLicense();
-        let licenseLatency = licenseMetric.getLatency();
-
+        let licenseMetric = new License(this.owner, this.repoName);
         let maintainerMetric = new Maintainer(this.owner, this.repoName);
-        let maintainerValue = await maintainerMetric.getMaintainerScore();
-        let maintainerLatency = maintainerMetric.getLatency();
-
         let correctnessMetric = new Correctness(this.owner, this.repoName);
-        let correctnessValue = await correctnessMetric.getCorrectnessScore();
+        
+        let NetStartTime = performance.now();
+
+        // Calculate the metrics
+        const metricResults = await Promise.allSettled([busFactorMetric.calculateBusFactor(), rampUpMetric.getRampUpScore(), licenseMetric.getRepoLicense(), maintainerMetric.getMaintainerScore(), correctnessMetric.getCorrectnessScore()]);
+        const metricScores = metricResults.map((result) => {
+            if(result.status === 'fulfilled') {
+                return (result as PromiseFulfilledResult<number>).value; // Get the fulfilled value
+            }
+            else {
+                return 0; // Set the value to 0 if the promise was rejected
+            }
+        });
+
+        let netLatency = (performance.now() - NetStartTime) / 1000;
+
+        // Divide the metric scores into their respective variables (for readability)
+        let busFactorValue = metricScores[0];
+        let rampUpValue = metricScores[1];
+        let licenseValue = metricScores[2];
+        let maintainerValue = metricScores[3];
+        let correctnessValue = metricScores[4];
+
+        let busFactorLatency = busFactorMetric.getLatency();
+        let rampUpLatency = rampUpMetric.getLatency();
+        let licenseLatency = licenseMetric.getLatency();
+        let maintainerLatency = maintainerMetric.getLatency();
         let correctnessLatency = correctnessMetric.getLatency();
 
         let pullRequestValue = 0.0;
@@ -83,7 +97,6 @@ export class MetricManager {
         // Calculate the net score
         // (0.3 * busFactor + 0.2 * correctness + 0.2 * rampup + 0.3 * maintainer) * license
         let netScore = (0.3 * busFactorValue + 0.2 * correctnessValue + 0.2 * rampUpValue + 0.3 * maintainerValue) * licenseValue;
-        let netLatency = (performance.now() - NetStartTime) / 1000;
 
         return {
             netScore: parseFloat(netScore.toFixed(3)),
