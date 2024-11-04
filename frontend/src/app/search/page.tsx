@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import * as S from "../../styles/searchPage.module"; 
 import {usePathname,useRouter} from 'next/navigation';
 import * as A from "../utils/api";
-
+import { useId } from "../context/IdContext";
+import {useAuth} from "../context/AuthContext"; 
 
 type QueryInput = { name: string; version: string };
 type RegexInput = { name: string };
@@ -21,9 +22,11 @@ function App() {
   const [currentPage, setCurrentPage] = useState("");
   const [searchType, setSearchType] = useState<"Query" | "Regex">("Query");
   const [inputValue, setInputValue] = useState("");
-
+  const {setId} = useId();
   const isDisabled = !inputs.some((input) => input.name); 
   const router = useRouter();
+
+
   useEffect(() => {
     if (pathname === "/") {
       setCurrentPage("search");
@@ -34,11 +37,11 @@ function App() {
     }
   }, [pathname]);
 
-  const handleNameClick = (name: string) => {
-    router.push(`/details/name/${name}`);
-  };
-  const handleVersionClick = (version: string) => {
-    router.push(`/details/version/${version}`);
+
+
+  const handleNavigate = (name: string, version: string, id: string) => {
+    setId(id);
+    router.push(`/details/${name}/${version}`);
   };
 
   // Handle input field changes
@@ -123,8 +126,10 @@ function App() {
         if (response && response.length > 0) {
           setRegexResults(response);
           setMessage(""); // Clear message if there are results
+          console.log(response);
         } else {
           setRegexResults([]);
+        
           // setMessage("No matching results for the regex pattern.");
         }
       }
@@ -147,6 +152,8 @@ function App() {
     setInputValue(event.target.value);
   };
 
+
+
   return (
     <div>
       <S.SearchBox>
@@ -160,17 +167,18 @@ function App() {
             <div key={index} style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
               {searchType === "Query" ? (
                 <>
+                  
+                  <S.InputField
+                    placeholder="Enter name"
+                    value={input.name}
+                    onChange={(e) => handleChange(index, "name", e.target.value)}
+                    style={{ marginRight: "10px" }}
+                  />
                   <S.InputField
                     type = "text"
                     placeholder="Enter version"
                     value={(input as QueryInput).version}
                     onChange={(e) => handleChange(index, "version", e.target.value)}
-                    style={{ marginRight: "10px" }}
-                  />
-                  <S.InputField
-                    placeholder="Enter name"
-                    value={input.name}
-                    onChange={(e) => handleChange(index, "name", e.target.value)}
                     style={{ marginRight: "10px" }}
                   />
                 </>
@@ -209,15 +217,11 @@ function App() {
           <S.ResultList>
           <S.ResultItem>
             {queryResults.map((result: any, index: number) => (
-              <S.Result key={index}>
-                <strong>Name:</strong> <span
-                    style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
-                    onClick={() => handleNameClick(result.Name)}
-                  >
-                    {result.Name}
-                  </span>{" "} <br />
+              <S.Result key={index}
+              onClick={() => handleNavigate(result.Name, result.Version, result.ID)}>
+                <strong>Name:</strong> {result.Name} <br />
                 <strong>Version:</strong> {result.Version} <br />
-                
+               
               </S.Result>
             ))}
           </S.ResultItem>
@@ -231,10 +235,10 @@ function App() {
           <S.ResultList>
           <S.ResultItem>
             {regexResults.map((result: any, index: number) => (
-              <S.Result key={index}>
-                <strong>Name:</strong> {result["Name: "]} <br />
-                <strong>Version:</strong> {result["Version: "]} <br />
-                <strong>ID:</strong> {result["ID: "]} <br />
+              <S.Result key={index} onClick={() => handleNavigate(result.Name, result.Version, result.ID)}>
+                <strong>Name:</strong> {result.Name} <br />
+                <strong>Version:</strong> {result.Version} <br />
+          
               </S.Result>
             ))}
           </S.ResultItem>

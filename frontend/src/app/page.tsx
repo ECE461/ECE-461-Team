@@ -4,22 +4,41 @@
 import { useState } from "react";
 import { useAuth } from "./context/AuthContext";
 import { useRouter } from "next/navigation";
+import * as S from "../styles/loginPage.module";
 
 const LoginPage = () => {
   const { login } = useAuth();
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const Router = useRouter();
-  const handleLogin = () => {
+  const [error, setError] = useState("")
+  const router = useRouter();
   
-    Router.push('/search')  // Pass the credentials to the login function
+  const handleLogin = async () => {
+    if (!name || !password) {
+      setError("Please enter both name and password.");
+      return;
+    }
+
+    try {
+      // Call the login function from AuthContext
+      await login({ name, password });
+      router.push("/search"); // Redirect to search page on success
+    } catch (err) {
+      setError("Failed to log in. Please check your credentials.");
+    }
   };
 
   return (
     <div>
-      <h1>Login Page</h1>
+      <S.LoginContainer>
+      <S.LoginHeader>Login</S.LoginHeader>
+      <S.InputField placeholder ="username" type="text" value={name} onChange={(e) => setName(e.target.value)} />
+      <S.InputField placeholder="password"type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
       
-      <button onClick={handleLogin}>Login</button>
+      <S.LoginButton onClick={handleLogin}>Login</S.LoginButton>
+      
+      </S.LoginContainer>
+      {error && <div>{error}</div>}
     </div>
   );
 };
