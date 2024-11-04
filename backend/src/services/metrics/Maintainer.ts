@@ -7,6 +7,7 @@ const GITHUB_API = 'https://api.github.com'
 export class Maintainer {
     private owner: string;
     private repoName: string;
+    private latency: number = 0;
 
     /**
      * constructs a metrics manager for a GitHub repository
@@ -25,6 +26,8 @@ export class Maintainer {
      * @returns the maintainer score
      */
     public async getMaintainerScore(): Promise<number> {
+        let startTime = performance.now();
+
         // get the date of last commit
         const lastCommitDateStr = await this.getLastCommit();
         const lastCommitDate = new Date(lastCommitDateStr);
@@ -60,6 +63,7 @@ export class Maintainer {
             score = 0.000;
         }
 
+        this.latency = (performance.now() - startTime) / 1000;
         return parseFloat(score.toFixed(3));
     }
 
@@ -138,6 +142,15 @@ export class Maintainer {
     async correctnessChecker() {
         console.log('Correctness Checker:');
         console.log('Maintainer Score: ', await this.getMaintainerScore());
+    }
+
+    /**
+     * Returns the latency of the metric
+     * 
+     * @returns the latency of the metric
+     */
+    public getLatency(): number {
+        return this.latency;
     }
 
 }

@@ -12,6 +12,7 @@ export class Correctness {
   private repoName: string;
   private repoDir: string;
   private repoContents: string[];
+  private latency: number = 0;
 
   constructor(owner: string, repoName: string) {
     this.owner = owner;
@@ -21,6 +22,8 @@ export class Correctness {
   }
 
   public async getCorrectnessScore(): Promise<number> {
+    let startTime = performance.now();
+
     await this.fetchRepoContents();
 
     // Run checks concurrently
@@ -49,6 +52,8 @@ export class Correctness {
 
     // Clean up repository
     await this.cleanup();
+
+    this.latency = performance.now() - startTime;
 
     return parseFloat(finalScore.toFixed(3));
   }
@@ -145,5 +150,9 @@ export class Correctness {
     console.log('Dependencies defined:', checks[4]);
 
     await this.cleanup();
+  }
+
+  public getLatency(): number {
+    return this.latency;
   }
 }

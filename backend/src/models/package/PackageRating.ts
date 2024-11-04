@@ -9,7 +9,6 @@ export class PackageRating {
     private netScore: number;
 
     constructor(busFactor: number, correctness: number, rampUp: number, responsiveMaintainter: number, licenseScore: number, goodPinningPractice: number, pullRequest: number, netScore: number) {
-        // TODO: might change this to just take in the PackageID and set scores from database
         this.busFactor = busFactor;
         this.correctness = correctness;
         this.rampUp = rampUp;

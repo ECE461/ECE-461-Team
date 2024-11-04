@@ -3,6 +3,7 @@ import axios from 'axios';
 export class BusFactor {
     private repoOwner: string;
     private repoName: string;
+    private latency: number = 0;
 
     constructor(repoOwner: string, repoName: string) {
         this.repoOwner = repoOwner;
@@ -10,6 +11,7 @@ export class BusFactor {
     }
 
     public async calculateBusFactor(): Promise<number> {
+        let startTime = performance.now();
         const twoYearsAgo = new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
 
@@ -31,6 +33,7 @@ export class BusFactor {
             //return Array.from(contributors);
             const numberOfContributors = contributors.size;
             const score = this.calculateBusFactorScore(numberOfContributors);
+            this.latency = (performance.now() - startTime) / 1000;
             
             return parseFloat(score.toFixed(3));
 
@@ -60,6 +63,10 @@ export class BusFactor {
         }
 
         return parseFloat(score.toFixed(3));
+    }
+
+    public getLatency(): number {
+        return this.latency;
     }
 
 }

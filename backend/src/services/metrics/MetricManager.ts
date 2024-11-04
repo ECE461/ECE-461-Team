@@ -7,28 +7,30 @@ import { Correctness } from "./Correctness";
 import { PullRequest } from "./PullRequest"; 
 import * as dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
+import { URLHandler } from "../../utils/URLHandler";
 dotenv.config();
 
 
 
 export class MetricManager {
-    private owner: string;
-    private repoName: string;
+    public urlHandler: URLHandler;
+    private owner: string = "";
+    private repoName: string = "";
+
     /**
      * constructs a metrics manager for a GitHub repository
      * 
      * @param path the path from the URL of the GitHub repository
      */
     constructor(path: string) {
+        this.urlHandler = new URLHandler(path);
+     }
 
-        // extracts owner and repository name from the URL
-        let pathParts = path.split('/').filter(Boolean);
-        if (pathParts.length >= 2) {
-            this.owner = pathParts[0];
-            this.repoName = pathParts[1];
-        } else {
-            throw new Error('Invalid GitHub repository URL');
-        }
+    async setProperties() {
+        await this.urlHandler.setRepoURL();
+        // sets the owner and repository name
+        this.owner = this.urlHandler.getOwnerName();
+        this.repoName = this.urlHandler.getRepoName();
     }
 
     /**
@@ -57,41 +59,31 @@ export class MetricManager {
         let startTime = performance.now();
         let busFactorMetric = new BusFactor(this.owner, this.repoName);
         let busFactorValue = await busFactorMetric.calculateBusFactor();
-        let busFactorLatency = (performance.now() - startTime) / 1000;
+        let busFactorLatency = busFactorMetric.getLatency();
 
-        startTime = performance.now();
         let rampUpMetric = new RampUp(this.owner, this.repoName);
         let rampUpValue = await rampUpMetric.getRampUpScore();
-        let rampUpLatency = (performance.now() - startTime) / 1000;
+        let rampUpLatency = rampUpMetric.getLatency();
 
-        startTime = performance.now();
         let licenseMetric = new License(this.owner, this.repoName)
         let licenseValue = await licenseMetric.getRepoLicense();
-        let licenseLatency = (performance.now() - startTime) / 1000;
+        let licenseLatency = licenseMetric.getLatency();
 
-        startTime = performance.now();
         let maintainerMetric = new Maintainer(this.owner, this.repoName);
         let maintainerValue = await maintainerMetric.getMaintainerScore();
-        let maintainerLatency = (performance.now() - startTime) / 1000;
+        let maintainerLatency = maintainerMetric.getLatency();
 
-        startTime = performance.now();
         let correctnessMetric = new Correctness(this.owner, this.repoName);
         let correctnessValue = await correctnessMetric.getCorrectnessScore();
-        let correctnessLatency = (performance.now() - startTime) / 1000;
+        let correctnessLatency = correctnessMetric.getLatency();
 
-        startTime = performance.now(); 
-        let pullRequestMetric = new PullRequest(this.owner, this.repoName); 
-        let pullRequestValue = await pullRequestMetric.getPullRequest(); 
-        let pullRequestLatency = (performance.now() - startTime);
-        //console.log(`The Correctness Score is: ${correctnessValue}`);
+        let pullRequestValue = 0.0;
+        let pullRequestLatency = 0.0;
 
         // Calculate the net score
         // (0.3 * busFactor + 0.2 * correctness + 0.2 * rampup + 0.3 * maintainer) * license
-
         let netScore = (0.3 * busFactorValue + 0.2 * correctnessValue + 0.2 * rampUpValue + 0.3 * maintainerValue) * licenseValue;
         let netLatency = (performance.now() - NetStartTime) / 1000;
-        //console.log(busFactorValue);
-        // parseFloat(score.toFixed(3));
 
         return {
             netScore: parseFloat(netScore.toFixed(3)),
