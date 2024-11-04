@@ -78,7 +78,7 @@ export const StyledButton = styled.button`
 export const ResultBox = styled.div`
     display: flex;
     justify-content: center;
-    flex-direction : row;
+    flex-direction : column;
 `
 
 export const ResultTitle = styled.div`

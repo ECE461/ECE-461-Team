@@ -1,21 +1,26 @@
 // app/components/ProtectedRoute.tsx
+
 "use client";
 
-import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
-  const pathname = usePathname();
+  const { isAuthenticated ,authChecked} = useAuth();
+
+
 
   useEffect(() => {
-    if (!isAuthenticated && pathname !== "/") {
-      router.push("/");
+    if (authChecked && !isAuthenticated) {
+      router.push("/"); // Redirect to login only after auth check is complete
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authChecked, router]);
 
+  console.log("authChecked", authChecked);
+  console.log("isAuthenticated", isAuthenticated);
+  if (!authChecked) return null;
   return <>{children}</>;
 };
 
