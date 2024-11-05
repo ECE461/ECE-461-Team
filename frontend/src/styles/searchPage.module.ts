@@ -23,7 +23,7 @@ export const SearchContainer = styled.div`
 `;
 
 export const DropdownContainer = styled.select`
-  padding: 10px;
+  padding: 12px 20px;
   margin-right: 10px;
   border-radius: 5px;
   border: 1px solid #ccc;
@@ -131,3 +131,16 @@ export const resetButton = styled.button`
     background-color: #005bb5;
   }
 `
+
+export const InputContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+`
+
+export const InputFieldContainer = styled.div`
+display: flex;
+algin-items: center;
+
+`;

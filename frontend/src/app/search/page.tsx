@@ -158,13 +158,14 @@ function App() {
     <div>
       <S.SearchBox>
         <form onSubmit={handleSubmit}>
+          <S.InputContainer>
         <S.DropdownContainer onChange={handleChangeSearchType} value={searchType}>
             <option value="Query">Query</option>
             <option value="Regex">Regex</option>
         </S.DropdownContainer>
 
           {inputs.map((input, index) => (
-            <div key={index} style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}>
+            <S.InputFieldContainer>
               {searchType === "Query" ? (
                 <>
                   
@@ -191,13 +192,15 @@ function App() {
                   style={{ marginRight: "10px" }}
                 />
               )}
+             
               {inputs.length > 1 && (
                 <S.StyledButton type="button" onClick={() => handleDeleteInput(index)} >
                   Delete
                 </S.StyledButton>
               )}
-            </div>
+            </S.InputFieldContainer>
           ))}
+           </S.InputContainer>
 
           <S.StyledButton onClick={handleAddInput} type="button">
             Add More

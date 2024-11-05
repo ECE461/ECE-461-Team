@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const storedUsername = localStorage.getItem("username");
     if (storedAuth) {
       setIsAuthenticated(true);
+      setUsername(storedUsername || "");
     }
     setAuthChecked(true); 
   },[]);

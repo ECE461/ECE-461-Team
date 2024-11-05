@@ -6,23 +6,28 @@ import * as S from "../../../../styles/detailPage.module";
 import ProtectedRoute from "../../../components/ProtectedRoute";
 import { useId } from "../../../context/IdContext";
 import * as A from "../../../utils/api";
+import {useRouter} from 'next/navigation';
+
 
 const DetailPage = ({ params }: { params: { name: string; version: string , id:string} }) => {
   const {id} = useId();
   const [apiData, setApiData] = useState<any>(null);
   const { name, version } = params;
-
+  const router = useRouter();
   useEffect(() => {
     if (id) {
       const fetchData = async () => {
         const response = await A.getRatingByID(id);
-        console.log("Fetched data structure:", response);
         setApiData(response);
       };
       fetchData();
     }
   },[id]);
   console.log("Current apiData state:", apiData);
+
+  const handleUpdateClick = async () => {
+    router.push(`/update?name=${name}&version=${version}`);
+  };
 
   return (
     <ProtectedRoute>
@@ -42,6 +47,7 @@ const DetailPage = ({ params }: { params: { name: string; version: string , id:s
         ) : (
           <p>Loading...</p> 
         )}
+        <button onClick = {handleUpdateClick}>Update</button>
       </div>
    
     </ProtectedRoute>

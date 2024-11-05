@@ -33,7 +33,7 @@ const LoginPage = () => {
       <S.LoginContainer>
       <S.LoginHeader>Login</S.LoginHeader>
       <S.InputField placeholder ="username" type="text" value={name} onChange={(e) => setName(e.target.value)} />
-      <S.InputField placeholder="password"type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <S.InputField placeholder="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
       
       <S.LoginButton onClick={handleLogin}>Login</S.LoginButton>
       
