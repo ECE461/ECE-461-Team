@@ -121,7 +121,7 @@ export class Database {
         }
     }
 
-    public async deletePackage(packageID: string){
+    public async deletePackagebyID(packageID: string){
         const sql = `DELETE FROM packages_table WHERE id=$1`
         try{
             const res = await this.pool.query(sql, [packageID]);
@@ -131,6 +131,26 @@ export class Database {
             console.error(`Error deleting ${packageID}`, err.message); 
             throw err; 
         }
+    }
+
+    public async deletePackagebyName(packageName: string){
+        //get ID
+
+        const sql = `SELECT id from packages_table WHERE name=$1`;
+
+        try{
+            const res = await this.pool.query(sql, [packageName]);
+
+            if(!res){return null;}
+
+            await this.deletePackagebyID(res.rows[0].id);
+
+            return res.rows[0].id;
+        }catch(err:any){
+            console.error("Error fetching package ID from given package name", err.message);
+            throw err;
+        }
+
     }
 
     /**
@@ -162,22 +182,6 @@ export class Database {
 
         } catch(err: any){
             console.error('Error fetching details associated with your package ID', err.message);
-            throw err;
-        }
-    }
-
-    public async getID(packageName: string){
-        const sql = `SELECT id from packages_table WHERE name=$1`;
-
-        try{
-            const res = await this.pool.query(sql, [packageName]);
-
-            if(!res){return null;}
-
-            return res.rows[0].id;
-
-        }catch(err:any){
-            console.error("Error fetching package ID from given package name", err.message);
             throw err;
         }
     }

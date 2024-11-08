@@ -124,11 +124,16 @@ export class PackageService {
             if(!packageExist){
                 throw new Error("404: Package does not exist.")
             }
+            
+            Logger.logInfo("Deleting package from RDS...");
+            let packageID = await this.db.deletePackagebyName(packageName);
+            
+            if(!packageID){
+                throw new Error("404: Package does not exist.")
+            }
 
-            
-            let packageID = await this.db.getID(packageName);
-            
-            await this.deletePackageById(packageID);
+            Logger.logInfo("Deleting package from S3...");
+            await S3.deletePackage(packageID);
             
         }catch(err: any){
             throw err;
@@ -145,7 +150,7 @@ export class PackageService {
             }     
 
             Logger.logInfo("Deleting package data from RDS...");
-            await this.db.deletePackage(packageID); 
+            await this.db.deletePackagebyID(packageID); 
 
             Logger.logInfo("Deleting package from S3...");
             await S3.deletePackage(packageID);
