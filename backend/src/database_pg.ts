@@ -16,6 +16,9 @@ export interface PackageDetails {
  * @method addPackage: adds a new package to the database
  * @method packageExists: checks if a package exists in the database
  * @method deleteAllPackages: delete all entries form the packages_table table 
+ * @method deletePackage: delete a package from packages_table table through id
+ * @method getDetails: @returns {PackageDetails} associated with an id
+ * @method getID: converts the name of repository to its id
  * @method close: close the instance
  */
 export class Database {
@@ -90,6 +93,21 @@ export class Database {
         }
     }
 
+    public async packageExistsbyName(packageName: string): Promise<boolean> {
+
+        const sql = `SELECT COUNT(*) as count FROM packages_table WHERE name = $1`; // Use $1 for parameterized queries
+        try {
+            
+            const res = await this.pool.query(sql, [packageName]); // Execute the query using pool
+
+            return res.rows[0].count > 0; // Check if count is greater than 0
+        } catch (err: any) {
+            console.error('Error checking package existence:', err.message);
+            throw err; // Rethrow the error for further handling if needed
+        }
+    }
+
+
     public async deleteAllPackages() {
         
         // Delete all entries from the "packages_table" table
@@ -103,12 +121,15 @@ export class Database {
         }
     }
 
-    public async close() {
-        try {
-            await this.pool.end();
-            console.log('Closed the database connection.');
-        } catch (err: any) {
-            console.error('Error closing the database connection:', err.message);
+    public async deletePackage(packageID: string){
+        const sql = `DELETE FROM packages_table WHERE id=$1`
+        try{
+            const res = await this.pool.query(sql, [packageID]);
+            Logger.logInfo(`Deleted ${packageID} from packages_table database`)
+            
+        } catch(err: any){
+            console.error(`Error deleting ${packageID}`, err.message); 
+            throw err; 
         }
     }
 
@@ -142,6 +163,31 @@ export class Database {
         } catch(err: any){
             console.error('Error fetching details associated with your package ID', err.message);
             throw err;
+        }
+    }
+
+    public async getID(packageName: string){
+        const sql = `SELECT id from packages_table WHERE name=$1`;
+
+        try{
+            const res = await this.pool.query(sql, [packageName]);
+
+            if(!res){return null;}
+
+            return res.rows[0].id;
+
+        }catch(err:any){
+            console.error("Error fetching package ID from given package name", err.message);
+            throw err;
+        }
+    }
+
+    public async close() {
+        try {
+            await this.pool.end();
+            console.log('Closed the database connection.');
+        } catch (err: any) {
+            console.error('Error closing the database connection:', err.message);
         }
     }
 }

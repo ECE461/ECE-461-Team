@@ -1,4 +1,4 @@
-import { S3Client, HeadBucketCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, HeadObjectCommand, GetObjectCommand} from '@aws-sdk/client-s3';
+import { S3Client, HeadBucketCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand} from '@aws-sdk/client-s3';
 import { Logger } from './Logger';
 
 /** 
@@ -137,4 +137,35 @@ export class S3 {
             return null; // Handle error (return null if file not found or another error)
         }
     }
+
+        /**
+     * @method deletePackage: Deletes a specific package from S3 bucket by its key 
+     * */
+        static async deletePackage(key: string): Promise<boolean> {
+            try {
+                // Check if the package exists first
+                const exists = await S3.checkIfPackageExists(key);
+                if (!exists) {
+                    Logger.logInfo(`Package ${key} not found in ${S3.bucketName}, so nothing to delete.`);
+                    return false;
+                }
+    
+                // Create a command to delete the specific object
+                const deleteObjectCommand = new DeleteObjectCommand({
+                    Bucket: S3.bucketName,
+                    Key: key
+                });
+    
+                // Send the delete command
+                await S3.s3Client.send(deleteObjectCommand);
+                Logger.logInfo(`Deleted package ${key} from ${S3.bucketName}`);
+                return true;
+    
+            } catch (error: any) {
+                Logger.logInfo(`Error deleting package ${key} from ${S3.bucketName}`);
+                Logger.logDebug(error);
+                throw error;
+            }
+        }
+        
 }

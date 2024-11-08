@@ -117,10 +117,42 @@ export class PackageService {
         // TODO: Delete users?
     }
 
-    async deletePackageByName() {
+    async deletePackageByName(packageName: string) {
+        try{
+            let packageExist: any = await this.db.packageExistsbyName(packageName); 
+            
+            if(!packageExist){
+                throw new Error("404: Package does not exist.")
+            }
+
+            
+            let packageID = await this.db.getID(packageName);
+            
+            await this.deletePackageById(packageID);
+            
+        }catch(err: any){
+            throw err;
+        }
     }
 
-    async deletePackageById() { // NON-BASELINE
+    async deletePackageById(packageID: string) { // NON-BASELINE
+        try{
+            
+            let packageExist: any = await this.db.packageExists(packageID); 
+            
+            if(!packageExist){
+                throw new Error("404: Package does not exist.")
+            }     
+
+            Logger.logInfo("Deleting package data from RDS...");
+            await this.db.deletePackage(packageID); 
+
+            Logger.logInfo("Deleting package from S3...");
+            await S3.deletePackage(packageID);
+
+        }catch(err: any){
+            throw err;
+        }
     }
 
     async getPackageHistoryByName() { // NON-BASELINE
