@@ -50,7 +50,7 @@ export const InputField = styled.input`
   outline: none;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
-
+  flex-grow: 1;
   &:focus {
     border-color: #0070f3;
     box-shadow: 0 2px 8px rgba(0, 112, 243, 0.2);
@@ -142,5 +142,29 @@ export const InputContainer = styled.div`
 export const InputFieldContainer = styled.div`
 display: flex;
 algin-items: center;
+flex-direction: row;
 
 `;
+
+export const InitialInputContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;  
+  gap: 10px;
+`
+
+export const AdditionalInputContainer = styled.div`
+display: flex;
+flex-direction: column;
+gap: 10px;
+width: 100%;
+
+`;
+
+export const InitialRow = styled.div`
+display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+

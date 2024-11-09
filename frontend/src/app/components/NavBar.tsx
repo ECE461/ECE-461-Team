@@ -15,13 +15,13 @@ const NavBar = () => {
   return (
     
     <S.NavBar>
-      <Link href="/search" passHref>
+      <Link href="/search" >
         <S.NavItem isActive={pathname.includes("/search")}>Search</S.NavItem>
       </Link>
-      <Link href="/upload" passHref>
+      <Link href="/upload" >
         <S.NavItem isActive={pathname.includes("/upload")}>Upload</S.NavItem>
       </Link>
-      <Link href="/update" passHref>
+      <Link href="/update">
         <S.NavItem isActive={pathname.includes("/update")}>Update</S.NavItem>
       </Link>
     </S.NavBar>
