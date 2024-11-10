@@ -74,6 +74,24 @@ export class FakeController {
         
     }
 
+    static getCost(req: Request, res: Response) {
+        if (!PackageID.isValidGetByIdRequest(req)) {
+            res.status(400).json(PackageQueryController.MSG_INVALID);
+            return;
+        }
+        
+        if(req.query.dependency == "true")
+        {
+            res.status(200).json({Cost: 1});
+            return;
+        }
+
+        const fakeRes = {
+            "Cost": 0
+        }
+        res.status(200).json(fakeRes);
+    }
+
     static getPackageHistoryByName(req: Request, res: Response) {
         if (!PackageName.isValidGetByNameRequest(req)) {
             res.status(400).json(PackageQueryController.MSG_INVALID);

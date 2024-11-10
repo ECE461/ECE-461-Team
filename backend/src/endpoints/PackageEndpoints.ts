@@ -44,6 +44,9 @@ export class PackageEndpoints {
         // Get ratings for package with specific ID (RATING)
         this.router.get('/package/:id/rate', PackageQueryController.getRating); // (BASELINE)
 
+        // Get cost for package with specific ID (COST)
+        this.router.get('/package/:id/cost', PackageQueryController.getCost); // (NON-BASELINE)
+
         // Given ID, return history of package for all versions (HISTORY) (extension)
         this.router.get('/package/byName/:name', PackageQueryController.getPackageHistoryByName); // (NON-BASELINE)
 
@@ -80,6 +83,7 @@ export class PackageEndpoints {
         this.router.post('/package/byRegEx', FakeController.getPackagesByRegex); // (BASELINE)
         this.router.get('/package/:id', FakeController.getPackageById); // (BASELINE)
         this.router.get('/package/:id/rate', FakeController.getRating); // (BASELINE)
+        this.router.get('/package/:id/cost', FakeController.getCost); // (NON-BASELINE)
         this.router.get('/package/byName/:name', FakeController.getPackageHistoryByName); // (NON-BASELINE)
         this.router.put('/package/:id', FakeController.updatePackage); // (BASELINE)
         this.router.post('/package', FakeController.uploadPackage); // (BASELINE)

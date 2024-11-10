@@ -43,6 +43,7 @@ export class PackageService {
     async getPackageById(packageID: string) {
         try{
             let packageExist: any = await this.db.packageExists(packageID); 
+            Logger.logInfo(`Checking if package exists in database: ${packageExist}`);
             
             if(!packageExist){
                 throw new Error("404: Package does not exist"); 
@@ -105,9 +106,14 @@ export class PackageService {
     async updatePackage() {
     }
 
-    async getRating(package_id: string) {
-        const package_url = await this.db.getPackageURL(package_id);
-        const packageManager = new MetricManager(package_url);
+    async getRating(packageId: string) {
+        // Check that package exists
+        if (!await this.db.packageExists(packageId)) {
+            throw new Error('404: Package not found');
+        }
+
+        const packageUrl = await this.db.getPackageURL(packageId);
+        const packageManager = new MetricManager(packageUrl);
         await packageManager.setProperties(); // Set properties of package manager (MUST DO THIS BEFORE GETTING METRICS)
 
         try {
@@ -118,6 +124,38 @@ export class PackageService {
         } catch (error) {
             Logger.logInfo("Error fetching package ratings");
             Logger.logDebug(error);
+            throw error;
+        }
+    }
+
+    async getCost(packageId: string, dependency: boolean) {
+        try {
+            // Get the package cost from the database
+            if(!await this.db.packageExists(packageId)) {
+                throw new Error('404: Package not found');
+            }
+
+            if (!await S3.checkIfPackageExists(packageId)) {
+                throw new Error('404: Package not found');
+            }
+
+            // Retreive the ZIP info from S3
+            const zipBuffer = await S3.getFileByKey(packageId);
+            if(zipBuffer == null){
+                throw new Error('404: Package not found');
+            }
+
+            // Estimate the standalone cost of the package
+            const standaloneCost =  Math.floor((zipBuffer.length *3) / 4); // Based on ratio of base64 encoding
+            if(!dependency) {
+                return standaloneCost;
+            }
+
+            // Estimate the cost of the package with dependencies
+            
+            return standaloneCost + 1000;
+        } catch (error) {
+            Logger.logError("Error fetching package cost: ", error);
             throw error;
         }
     }

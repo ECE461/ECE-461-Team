@@ -97,7 +97,6 @@ export class PackageQueryController {
           res.status(500).send({description: 'Package does not exist'});
         }
       }
-
     }
     
     /* getRating: Gets rating of a package
@@ -122,6 +121,39 @@ export class PackageQueryController {
         const packageId = req.params.id;
         const rating = await PackageQueryController.packageService.getRating(packageId);
         res.status(200).json(rating.getJson());
+      }
+      catch (error) {
+        console.error('Error fetching patches: ', error);
+        res.status(500).send({message: "Internal Server Error"});
+      };
+    }
+
+    /* getCost: Gets cost of a package
+     * @param req: Request object
+     * @param res: Response object
+     * 
+     * Method: GET
+     * Route: /package/{id}/cost
+     * 
+     * Description: User gives id of package in params.
+     * Sets response to Cost if all metrics were computed successfully
+     * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package cost system broke)
+     */
+    static async getCost(req: Request, res: Response) {
+      try {
+        if (!PackageID.isValidGetByIdRequest(req)) {
+          res.status(400).json(PackageQueryController.MSG_INVALID);
+          return;
+        }
+
+        // Get the package key from the id (for S3)
+        const packageId = req.params.id;
+        const dependency = req.query.dependency === 'true';
+
+        // Get the package id from the request
+        const cost = await PackageQueryController.packageService.getCost(packageId, dependency);
+
+        res.status(200).json({test_cost: cost});
       }
       catch (error) {
         console.error('Error fetching patches: ', error);

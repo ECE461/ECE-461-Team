@@ -55,7 +55,7 @@ export class Database {
 
     private async initialize() {
         try {
-            // Create "packages" table if it does not exist
+            // Create "packages_table" table if it does not exist
             await this.pool.query(`CREATE TABLE IF NOT EXISTS packages_table (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -84,6 +84,10 @@ export class Database {
         const sql = `SELECT COUNT(*) as count FROM packages_table WHERE id = $1`; // Use $1 for parameterized queries
         try {
             const res = await this.pool.query(sql, [packageId]); // Execute the query using pool
+            if(res.rows.length === 0){
+                Logger.logInfo(`No package found with id: ${packageId}`);
+                return false;
+            }
             return res.rows[0].count > 0; // Check if count is greater than 0
         } catch (err: any) {
             Logger.logError('Error checking package existence:', err.message);
@@ -92,7 +96,7 @@ export class Database {
     }
 
     public async getPackageURL(packageId: string): Promise<string> {
-        const sql = `SELECT url FROM packages WHERE id = $1`;
+        const sql = `SELECT url FROM packages_table WHERE id = $1`;
         try {
             const res = await this.pool.query(sql, [packageId]);
             return res.rows[0].url;
@@ -103,7 +107,6 @@ export class Database {
     }
 
     public async deleteAllPackages() {
-        
         // Delete all entries from the "packages_table" table
         const sql = `DELETE FROM packages_table`;
         try {
@@ -132,25 +135,23 @@ export class Database {
      */
 
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
-        const sql = `SELECT (name, version, readme, url, jsprogram) FROM packages_table WHERE id = $1`;
+        const sql = `SELECT name, version, readme, url, jsprogram FROM packages_table WHERE id = $1`;
         try{
             
             const res = await this.pool.query(sql, [packageID]);
+            Logger.logDebug(`Fetched details associated with package ID: ${packageID}`);
+            Logger.logDebug(`Number of rows fetched: ${res.rows.length}`);
+            Logger.logDebug(`Raw data: ${res.rows}`);
 
-            if (!res) {
+            if (res.rows.length === 0) {
+                Logger.logInfo(`No package found with id: ${packageID}`);
+                throw new Error("404: Package does not exist");
                 return null;
             }
             
-            const cleanedRow :string = res.rows[0].row.slice(1, -1);
-            //consider implementing a check to see which fields are left blank and whether or not to return null;
-            const regex = /(?:,|\s)+(?=(?:[^"]|"[^"]*")*[^"]*$)/g;
-  
-            // Split the string using the regex
-            const fields = cleanedRow.split(regex).map(field => field.trim());
+            const row = res.rows[0]; // Get the first row
             
-            return {name: fields[0], readme: fields[1], jsprogram: fields[4]};
-            // return [fields[0], fields[1], fields[4]];
-
+            return {name: row.name, readme: row.readme, jsprogram: row.jsprogram};
         } catch(err: any){
             Logger.logError('Error fetching details associated with your package ID', err.message);
             throw err;
