@@ -130,21 +130,3 @@ export async function processPackages(repoOwner: string, repoName: string, matri
         }
     }
 }
-
-
-// Example usage
-(async function main() {
-    const metric = new DependencyMetric();
-
-    // List of repositories to process
-    const repos = [
-        ['facebook', 'react'],
-        ['vuejs', 'vue'],
-        ['angular', 'angular']
-    ];
-
-    // Process each repository
-    for (const [repoOwner, repoName] of repos) {
-        await processPackages(repoOwner, repoName, metric);
-    }
-})();
