@@ -11,6 +11,7 @@ import { S3 } from '../../utils/S3';
 import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
 import {MetricManager} from '../../services/metrics/MetricManager';
+import { URLHandler } from '../../utils/URLHandler';
 
 export class PackageService {
     private db: Database;
@@ -152,7 +153,13 @@ export class PackageService {
             }
 
             // Estimate the cost of the package with dependencies
-            
+            // Get the package URL from the database
+            const packageUrl = await this.db.getPackageURL(packageId);
+            const metricManager = new MetricManager(packageUrl);
+            // const dependency = new Dependency(metricManager.getOwner(), metricManager.getRepoName());
+            // const packageJson = await dependency.getPackageJson();
+            // const dependencies = packageJson.dependencies;
+
             return standaloneCost + 1000;
         } catch (error) {
             Logger.logError("Error fetching package cost: ", error);
