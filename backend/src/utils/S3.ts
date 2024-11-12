@@ -141,7 +141,7 @@ export class S3 {
         /**
      * @method deletePackage: Deletes a specific package from S3 bucket by its key 
      * */
-        static async deletePackage(key: string): Promise<boolean> {
+        static async deletePackagebyID(key: string): Promise<boolean> {
             try {
                 // Check if the package exists first
                 const exists = await S3.checkIfPackageExists(key);

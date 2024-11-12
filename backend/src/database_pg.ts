@@ -134,7 +134,6 @@ export class Database {
     }
 
     public async deletePackagebyName(packageName: string){
-        //get ID
 
         const sql = `SELECT id from packages_table WHERE name=$1`;
 
@@ -142,10 +141,15 @@ export class Database {
             const res = await this.pool.query(sql, [packageName]);
 
             if(!res){return null;}
+            
+            res.rows.forEach(async(row) => {
 
-            await this.deletePackagebyID(res.rows[0].id);
+                await this.deletePackagebyID(row.id);
 
-            return res.rows[0].id;
+            })
+            
+            return res.rows; 
+
         }catch(err:any){
             console.error("Error fetching package ID from given package name", err.message);
             throw err;

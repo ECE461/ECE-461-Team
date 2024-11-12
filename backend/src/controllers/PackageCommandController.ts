@@ -144,6 +144,8 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageByName(req: Request, res: Response) {
+
+        
         if (!PackageName.isValidGetByNameRequest(req)) {
             res.status(400).json(PackageCommandController.MSG_INVALID);
             return;

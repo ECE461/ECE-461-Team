@@ -118,6 +118,7 @@ export class PackageService {
     }
 
     async deletePackageByName(packageName: string) {
+
         try{
             let packageExist: any = await this.db.packageExistsbyName(packageName); 
             
@@ -125,15 +126,21 @@ export class PackageService {
                 throw new Error("404: Package does not exist.")
             }
             
+            //packageID returns an array of [{id: blahbalbh}, {id:blahb}]
             Logger.logInfo("Deleting package from RDS...");
-            let packageID = await this.db.deletePackagebyName(packageName);
+            let packageIDs = await this.db.deletePackagebyName(packageName);
             
-            if(!packageID){
+            if(!packageIDs){
                 throw new Error("404: Package does not exist.")
             }
 
             Logger.logInfo("Deleting package from S3...");
-            await S3.deletePackage(packageID);
+
+            packageIDs.forEach(async(obj) =>{
+
+                await S3.deletePackagebyID(obj.id); 
+
+            });
             
         }catch(err: any){
             throw err;
@@ -153,7 +160,7 @@ export class PackageService {
             await this.db.deletePackagebyID(packageID); 
 
             Logger.logInfo("Deleting package from S3...");
-            await S3.deletePackage(packageID);
+            await S3.deletePackagebyID(packageID);
 
         }catch(err: any){
             throw err;
