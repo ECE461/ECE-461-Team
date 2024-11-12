@@ -12,6 +12,8 @@ import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
 import {MetricManager} from '../../services/metrics/MetricManager';
 import { URLHandler } from '../../utils/URLHandler';
+import axios from 'axios';
+
 
 export class PackageService {
     private db: Database;
@@ -153,13 +155,24 @@ export class PackageService {
             }
 
             // Estimate the cost of the package with dependencies
-            // Get the package URL from the database
+            // Setup the package URL
             const packageUrl = await this.db.getPackageURL(packageId);
-            const metricManager = new MetricManager(packageUrl);
-            // const dependency = new Dependency(metricManager.getOwner(), metricManager.getRepoName());
-            // const packageJson = await dependency.getPackageJson();
-            // const dependencies = packageJson.dependencies;
+            const urlHandler = new URLHandler(packageUrl);
+            await urlHandler.setRepoURL();
 
+            // Fetch the package.json file from the GitHub repository
+            const url = `https://api.github.com/repos/${urlHandler.getOwnerName()}/${urlHandler.getRepoName()}/contents/package.json`;
+            const response = await axios.get(url, {
+                headers: { 'Accept': 'application/vnd.github.v3.raw' }
+            });
+            const packageJson = response.data;
+
+            const dependencies = packageJson.dependencies || {};
+            const devDependencies = packageJson.devDependencies || {};
+
+            console.log("Dependencies: ", dependencies);
+            console.log("Dev Dependencies: ", devDependencies);
+            
             return standaloneCost + 1000;
         } catch (error) {
             Logger.logError("Error fetching package cost: ", error);
