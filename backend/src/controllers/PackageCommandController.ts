@@ -120,9 +120,21 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageById(req: Request, res: Response) { // NON-BASELINE
+
         if (!PackageID.isValidGetByIdRequest(req)) {
             res.status(400).json(PackageCommandController.MSG_INVALID);
             return;
+        }
+
+        try{
+            await PackageCommandController.packageService.deletePackageById(req.params.id); 
+            
+            res.status(200).send({message: "Successfully deleted package via ID."});
+            console.log(`Package ${req.params.id} has been successfully deleted.`)
+        }catch(error){
+            if(error instanceof Error && error.message.includes('404')){
+                res.status(404).send({description: 'Package does not exist'});
+              }
         }
     }
 
@@ -137,9 +149,22 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageByName(req: Request, res: Response) {
+
+        
         if (!PackageName.isValidGetByNameRequest(req)) {
             res.status(400).json(PackageCommandController.MSG_INVALID);
             return;
+        }
+        
+        try{
+            await PackageCommandController.packageService.deletePackageByName(req.params.name);
+
+            res.status(200).send({message: "Successfully deleted package via name."})
+
+        }catch(error){
+            if(error instanceof Error && error.message.includes('404')) {
+                res.status(404).send({description: 'Package does not exist'});
+              }
         }
     }
 

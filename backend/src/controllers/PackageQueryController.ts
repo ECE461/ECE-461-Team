@@ -94,7 +94,7 @@ export class PackageQueryController {
         res.status(200).json(pckg.getJson());
       }catch(error){
         if(error instanceof Error && error.message.includes('404')){
-          res.status(500).send({description: 'Package does not exist'});
+          res.status(404).send({description: 'Package does not exist'});
         }
       }
 
