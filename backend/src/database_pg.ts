@@ -102,7 +102,7 @@ export class Database {
 
             return res.rows[0].count > 0; // Check if count is greater than 0
         } catch (err: any) {
-            console.error('Error checking package existence:', err.message);
+            Logger.logDebug('Error checking package existence:' + err.message);
             throw err; // Rethrow the error for further handling if needed
         }
     }
@@ -128,7 +128,7 @@ export class Database {
             Logger.logInfo(`Deleted ${packageID} from packages_table database`)
             
         } catch(err: any){
-            console.error(`Error deleting ${packageID}`, err.message); 
+            Logger.logDebug(`Error deleting ${packageID}`+ err.message); 
             throw err; 
         }
     }
@@ -145,9 +145,10 @@ export class Database {
             res.rows.forEach(async(row) => {
 
                 await this.deletePackagebyID(row.id);
-
+            
             })
             
+            Logger.logDebug(`${res.rows.length} rows have been deleted from the database.`)
             return res.rows; 
 
         }catch(err:any){
@@ -193,9 +194,9 @@ export class Database {
     public async close() {
         try {
             await this.pool.end();
-            console.log('Closed the database connection.');
+            Logger.logInfo('Closed the database connection.');
         } catch (err: any) {
-            console.error('Error closing the database connection:', err.message);
+            Logger.logDebug('Error closing the database connection:' + err.message);
         }
     }
 }
