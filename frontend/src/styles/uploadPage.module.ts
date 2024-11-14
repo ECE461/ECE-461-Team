@@ -1,0 +1,77 @@
+import styled from '@emotion/styled';
+
+
+export const UploadContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+`;
+
+export const UploadBox = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  flex-direction: column;
+`;
+
+export const InputField = styled.input`
+  width: 100%;
+  max-width: 600px;
+  padding: 12px 20px;
+  margin: 10px 0;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 25px;
+  outline: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: #0070f3;
+    box-shadow: 0 2px 8px rgba(0, 112, 243, 0.2);
+  }
+`;
+
+export const uploadButton = styled.button`
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  background-color: #0070f3;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  opacity: 1;
+
+  &:hover {
+    background-color: #005bb5;
+  }
+
+  &:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+`;
+
+export const buttonContainer = styled.div` 
+  display: flex;
+  justify-content: center;
+`
+export const urlContainer = styled.div`
+
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+`
+export const urlHeader = styled.div`
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+`

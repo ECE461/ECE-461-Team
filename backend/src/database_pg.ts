@@ -37,15 +37,16 @@ export class Database {
             }
         });
         Logger.logInfo('Starting connection to the PostgreSQL database...');
+
         // Optionally test the connection immediately
         this.pool.connect()
-            .then(() => console.log('Connected to the PostgreSQL database.'))
-            .catch((err: any) => console.error('Error connecting to the database:', err.message));
+            .then(() => Logger.logInfo('Connected to the PostgreSQL database.'))
+            .catch((err: any) => {Logger.logError('Error connecting to the database:', err)});
 
         Logger.logInfo('Initializing the database...');
         this.initialize()
-            .then(() => console.log('Database initialized.'))
-            .catch((err: any) => console.error('Error initializing the database:', err.message));
+            .then(() => Logger.logInfo('Database initialized.'))
+            .catch((err: any) => {Logger.logError('Error initializing the database:', err)});
     }
 
     public static getInstance(): Database {
@@ -68,7 +69,7 @@ export class Database {
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
-            console.error('Error creating table:', err.message);
+            Logger.logError('Error creating table:', err);
         }
     }
 
@@ -76,9 +77,9 @@ export class Database {
         const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram) VALUES ($1, $2, $3, $4, $5, $6)`;
         try {
             const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram]);
-            console.log(`A new package has been inserted with id: ${packageId}`);
+            Logger.logInfo(`A new package has been inserted with id: ${packageId}`);
         } catch (err: any) {
-            console.error('Error inserting data:', err.message);
+            Logger.logError(`Error inserting data with id=${packageId} into database: `, err.message);
         }
     }
 
@@ -88,7 +89,7 @@ export class Database {
             const res = await this.pool.query(sql, [packageId]); // Execute the query using pool
             return res.rows[0].count > 0; // Check if count is greater than 0
         } catch (err: any) {
-            console.error('Error checking package existence:', err.message);
+            Logger.logError('Error checking package existence:', err.message);
             throw err; // Rethrow the error for further handling if needed
         }
     }
@@ -107,6 +108,16 @@ export class Database {
         }
     }
 
+    public async getPackageURL(packageId: string): Promise<string> {
+        const sql = `SELECT url FROM packages WHERE id = $1`;
+        try {
+            const res = await this.pool.query(sql, [packageId]);
+            return res.rows[0].url;
+        } catch (err: any) {
+            console.error('Error getting package URL:', err.message);
+            throw err;
+        }
+    }
 
     public async deleteAllPackages() {
         
@@ -114,9 +125,9 @@ export class Database {
         const sql = `DELETE FROM packages_table`;
         try {
             const res = await this.pool.query(sql);
-            console.log(`Deleted ${res.rowCount} entries from the packages_table table.`);
+            Logger.logInfo(`Deleted ${res.rowCount} entries from the packages_table table.`);
         } catch (err: any) {
-            console.error('Error deleting entries:', err.message);
+            Logger.logError('Error deleting entries:', err.message);
             throw err;
         }
     }
@@ -154,9 +165,6 @@ export class Database {
         }catch(err:any){
             console.error("Error fetching package ID from given package name", err.message);
             throw err;
-        }
-
-    }
 
     /**
      * 
@@ -186,7 +194,7 @@ export class Database {
             // return [fields[0], fields[1], fields[4]];
 
         } catch(err: any){
-            console.error('Error fetching details associated with your package ID', err.message);
+            Logger.logError('Error fetching details associated with your package ID', err.message);
             throw err;
         }
     }

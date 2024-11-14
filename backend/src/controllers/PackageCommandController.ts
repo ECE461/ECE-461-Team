@@ -35,6 +35,7 @@ export class PackageCommandController {
      * TODO: should we rate all packages here and store for later?
      */
     static async uploadPackage(req: Request, res: Response) {
+        // Check if request is valid + has all required fields
         if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
             Logger.logInfo("Invalid Request: Not correct format");
             res.status(400).json(PackageCommandController.MSG_INVALID);
@@ -44,21 +45,25 @@ export class PackageCommandController {
         const source = req.body.URL ? req.body.URL : req.body.Content;
         try {
             Logger.logInfo("Creating Package Data Object")
-            const packageData = await PackageData.create(source, req.body.JSProgram);
+            const jsProgram : string = req.body.JSProgram ? req.body.JSProgram : "";
+            const packageData = await PackageData.create(source, jsProgram);
 
             Logger.logInfo("Uploading Package: To S3 and RDS")
             const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData);
             res.status(201).json(pack.getJson());
         } catch (error) {
             if ((error instanceof Error) && (error.message === "Package is not uploaded due to the disqualified rating.")) {
+                Logger.logDebug(error);
                 res.status(424).send({description: "Package is not uploaded due to the disqualified rating."});
                 return;
             } else if ((error instanceof Error) && error.message.includes('400')) {
+                Logger.logError("Invalid Request: Not correct format", error);
                 res.status(400).json(PackageCommandController.MSG_INVALID);
             } else if ((error instanceof Error) && error.message.includes('409')){
+                Logger.logError("Package already exists", error);
                 res.status(409).send({description: "Package already exists"});
             } else {
-                Logger.logDebug(error);
+                Logger.logError("Internal Error hile uploading package: ", error);
                 res.status(500).send({description: "Internal Server Error"});
                 return;
             }
@@ -99,7 +104,7 @@ export class PackageCommandController {
             await PackageCommandController.packageService.reset();
             res.status(200).send({message: "Registry is reset."});
         } catch (error) {
-            Logger.logDebug(error);
+            Logger.logError("Internal Server Error", error);
             res.status(500).send({description: "Internal Server Error"});
         }
     }

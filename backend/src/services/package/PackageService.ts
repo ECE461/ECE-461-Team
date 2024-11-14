@@ -5,10 +5,12 @@ import { PackageDownloadService } from './PackageDownloadService';
 import { Database } from '../../database_pg';
 import { PackageData } from '../../models/package/PackageData';
 import { PackageID } from '../../models/package/PackageID';
+import { PackageRating } from '../../models/package/PackageRating';
 import { PackageMetadata } from '../../models/package/PackageMetadata';
 import { S3 } from '../../utils/S3';
 import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
+import {MetricManager} from '../../services/metrics/MetricManager';
 
 export class PackageService {
     private db: Database;
@@ -33,7 +35,7 @@ export class PackageService {
 
             return mockPackages.slice(Number(offset), Number(offset)+maxItemsPerPage);
         } catch (error) {
-            console.error('Error in PackageService:', error);
+            Logger.logError('Error in PackageService getPackagesByQuery:', error);
             throw new Error('Failed to fetch packages');
         }
     }
@@ -94,8 +96,7 @@ export class PackageService {
             const pack = new Package(packageMetadata, packageData);
             return pack;
         } catch (error : any) {
-            Logger.logInfo("Error uploading package");
-            Logger.logDebug(error);
+            Logger.logError("Error uploading package: ", error);
             throw error;
         }
 
@@ -104,7 +105,21 @@ export class PackageService {
     async updatePackage() {
     }
 
-    async getRating() {
+    async getRating(package_id: string) {
+        const package_url = await this.db.getPackageURL(package_id);
+        const packageManager = new MetricManager(package_url);
+        await packageManager.setProperties(); // Set properties of package manager (MUST DO THIS BEFORE GETTING METRICS)
+
+        try {
+            const packageRating = await packageManager.getMetrics(); // Get metrics from package manager
+            // TO-DO: Add the following to the packageRating object: goodPinningPractice, pullRequest
+            const metricRating = new PackageRating(packageRating.busFactorValue, packageRating.correctnessValue, packageRating.rampUpValue, packageRating.maintainerValue, packageRating.licenseValue, 0, 0, packageRating.netScore); // Convert to PackageRating object to JSON-ify later
+            return metricRating;
+        } catch (error) {
+            Logger.logInfo("Error fetching package ratings");
+            Logger.logDebug(error);
+            throw error;
+        }
     }
 
     async reset() {

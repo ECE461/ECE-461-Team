@@ -41,7 +41,7 @@ export class S3 {
             await S3.s3Client.send(putObjectCommand);
             Logger.logInfo(`Uploaded ${key} to ${S3.bucketName}`);
         } catch (error: any) {
-            console.error(`Error uploading ${key} to ${S3.bucketName}:`, error);
+            Logger.logError(`Error uploading ${key} to ${S3.bucketName}:`, error);
         }
     }
 
@@ -73,8 +73,7 @@ export class S3 {
                 Logger.logInfo('No objects found to delete.');
             }
         } catch (error: any) {
-            Logger.logInfo('Error deleting objects from S3');
-            Logger.logDebug(error);
+            Logger.logError('Error deleting objects from S3:', error);
             throw error;
         }
     }
@@ -97,8 +96,7 @@ export class S3 {
                 Logger.logInfo(`Package ${key} does not exist in ${S3.bucketName}`);
                 return false;
             }
-            Logger.logInfo('Error checking if package exists in S3');
-            Logger.logDebug(error);
+            Logger.logError('Error checking if package exists in S3:', error);
             throw error;
         }
     }
@@ -132,8 +130,7 @@ export class S3 {
             return buffer.toString('base64');
 
         } catch (error: any) {
-            Logger.logInfo(`Error retrieving ${key} from ${S3.bucketName}`);
-            Logger.logDebug(error);
+            Logger.logError(`Error retrieving ${key} from ${S3.bucketName}:`, error);
             return null; // Handle error (return null if file not found or another error)
         }
     }
