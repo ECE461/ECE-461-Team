@@ -46,8 +46,6 @@ export class PackageEndpoints {
 
         this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
 
-        this.router.get('/tracks', PackageQueryController.getTracks); // (NON-BASELINE)
-
         // READ-WRITE Endpoints -----------------------------------------------------------------------------------------------------------------
 
         // Updates stored package information for specific Package ID (UPDATE)
