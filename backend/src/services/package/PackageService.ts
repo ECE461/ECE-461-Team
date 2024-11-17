@@ -2,6 +2,7 @@ import { PackageUpdateService } from './PackageUpdateService';
 import { PackageUploadService } from './PackageUploadService';
 import { PackageDeleteService } from './PackageDeleteService';
 import { PackageDownloadService } from './PackageDownloadService';
+import { PackageCostService } from './PackageCostService';
 import { Database } from '../../database_pg';
 import { PackageData } from '../../models/package/PackageData';
 import { PackageID } from '../../models/package/PackageID';
@@ -11,8 +12,6 @@ import { S3 } from '../../utils/S3';
 import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
 import {MetricManager} from '../../services/metrics/MetricManager';
-import { URLHandler } from '../../utils/URLHandler';
-import axios from 'axios';
 
 
 export class PackageService {
@@ -131,53 +130,10 @@ export class PackageService {
         }
     }
 
-    async getCost(packageId: string, dependency: boolean) {
-        try {
-            // Get the package cost from the database
-            if(!await this.db.packageExists(packageId)) {
-                throw new Error('404: Package not found');
-            }
-
-            if (!await S3.checkIfPackageExists(packageId)) {
-                throw new Error('404: Package not found');
-            }
-
-            // Retreive the ZIP info from S3
-            const zipBuffer = await S3.getFileByKey(packageId);
-            if(zipBuffer == null){
-                throw new Error('404: Package not found');
-            }
-
-            // Estimate the standalone cost of the package
-            const standaloneCost =  Math.floor((zipBuffer.length *3) / 4); // Based on ratio of base64 encoding
-            if(!dependency) {
-                return standaloneCost;
-            }
-
-            // Estimate the cost of the package with dependencies
-            // Setup the package URL
-            const packageUrl = await this.db.getPackageURL(packageId);
-            const urlHandler = new URLHandler(packageUrl);
-            await urlHandler.setRepoURL();
-
-            // Fetch the package.json file from the GitHub repository
-            const url = `https://api.github.com/repos/${urlHandler.getOwnerName()}/${urlHandler.getRepoName()}/contents/package.json`;
-            const response = await axios.get(url, {
-                headers: { 'Accept': 'application/vnd.github.v3.raw' }
-            });
-            const packageJson = response.data;
-
-            const dependencies = packageJson.dependencies || {};
-            const devDependencies = packageJson.devDependencies || {};
-
-            console.log("Dependencies: ", dependencies);
-            console.log("Dev Dependencies: ", devDependencies);
-            
-            return standaloneCost + 1000;
-        } catch (error) {
-            Logger.logError("Error fetching package cost: ", error);
-            throw error;
-        }
+    async getCost(packageId: string, dependencies: boolean)
+    {
+        const packageCost = new PackageCostService().getCost(packageId, dependencies);
+        return packageCost;
     }
 
     async reset() {
