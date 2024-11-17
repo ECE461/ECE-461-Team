@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { Logger } from './utils/Logger';
 import { error } from 'console';
+import { PackageMetadata } from './models/package/PackageMetadata';
 
 export interface PackageDetails {
     name : string;
@@ -164,6 +165,18 @@ export class Database {
 
         }catch(err:any){
             console.error("Error fetching package ID from given package name", err.message);
+            throw err;
+        }
+    }
+
+    public async getAllPackageMetadata(): Promise<PackageMetadata[]> {
+        const sql = `SELECT name, version FROM packages_table`;
+        try {
+            const res = await this.pool.query(sql);
+            const allPackagesMetadata = res.rows.map((row: any) => new PackageMetadata(row.name, row.version));
+            return allPackagesMetadata;
+        } catch (err: any) {
+            Logger.logError("500 Error fetching all package metadata", err.message);
             throw err;
         }
     }

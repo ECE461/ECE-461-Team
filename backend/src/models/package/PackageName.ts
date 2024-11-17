@@ -10,9 +10,9 @@ export class PackageName {
 
     static isValidName(name: string): boolean {
         // Check that name is not just empty
-        // Check name is <= 214 char, must have URL-safe characters
+        // Check name is <= 214 char, must have only non-Unicode characters
 
-        return name.length > 0 && name.length <= 214 && /^[a-zA-Z0-9-_.@/]+$/.test(name);
+        return name.length > 0 && name.length <= 214 && /^[\x20-\x7E]+$/.test(name);
     }
 
     static isValidGetByNameRequest(req: Request): boolean {
