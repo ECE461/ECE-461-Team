@@ -165,6 +165,8 @@ export class Database {
         }catch(err:any){
             console.error("Error fetching package ID from given package name", err.message);
             throw err;
+        }
+    }
 
     /**
      * 
@@ -172,7 +174,6 @@ export class Database {
      * @returns {Promise<{PackageDetails} | null>}: return null if package details if empty
      *                                              current implementation requires user to check whether or not the fields are empty. 
      */
-
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
         const sql = `SELECT (name, version, readme, url, jsprogram) FROM packages_table WHERE id = $1`;
         try{
