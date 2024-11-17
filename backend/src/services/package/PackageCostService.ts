@@ -8,13 +8,14 @@ import { parse } from 'path';
 
 export class PackageCostService {
     private db: Database;
+    private standaloneCost: number;
 
     constructor() {
         this.db = Database.getInstance();
+        this.standaloneCost = 0;
     }
 
-
-    async getCost(packageId: string, dependency: boolean) {
+    async getStandaloneCost(packageId: string) {
         try {
             // Get the package cost from the database
             if(!await this.db.packageExists(packageId)) {
@@ -32,11 +33,16 @@ export class PackageCostService {
             }
 
             // Estimate the standalone cost of the package
-            const standaloneCost =  Math.floor((zipBuffer.length *3) / 4); // Based on ratio of base64 encoding
-            if(!dependency) {
-                return standaloneCost;
-            }
+            this.standaloneCost =  Math.floor((zipBuffer.length *3) / 4); // Based on ratio of base64 encoding
+            return this.standaloneCost;
+        } catch (error) {
+            Logger.logError("Error fetching package cost: ", error);
+            throw error;
+        }
+    }
 
+    async getCost(packageId: string) {
+        try {
             // Estimate the cost of the package with dependencies
             // Setup the package URL
             const packageUrl = await this.db.getPackageURL(packageId);
@@ -65,7 +71,7 @@ export class PackageCostService {
                 dependencyCost += await this.getDependencyCost(packageName, packageVersion as string);
             }
 
-            return standaloneCost + dependencyCost;
+            return this.standaloneCost + dependencyCost;
         } catch (error) {
             Logger.logError("Error fetching package cost: ", error);
             throw error;

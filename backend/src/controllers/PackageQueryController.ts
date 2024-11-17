@@ -153,11 +153,16 @@ export class PackageQueryController {
         // Get the package id from the request
         const cost = await PackageQueryController.packageService.getCost(packageId, dependency);
 
-        res.status(200).json({test_cost: cost});
+        res.status(200).json(cost);
       }
       catch (error) {
-        console.error('Error fetching patches: ', error);
-        res.status(500).send({message: "Internal Server Error"});
+        if(error instanceof Error && error.message.includes('404')){
+          res.status(404).send({description: 'Package does not exist'});
+        }
+        else
+        {
+          res.status(500).send({message: "The package rating system choked on at least one of the metrics."});
+        }
       };
     }
     

@@ -132,8 +132,18 @@ export class PackageService {
 
     async getCost(packageId: string, dependencies: boolean)
     {
-        const packageCost = new PackageCostService().getCost(packageId, dependencies);
-        return packageCost;
+        let returnDict: { [key: string]: any } = {};
+        const packageCostService= new PackageCostService()
+        const standaloneCost = await packageCostService.getStandaloneCost(packageId);
+        if(!dependencies)
+        {
+            returnDict[packageId as string] = {totalCost : standaloneCost};
+            return returnDict;
+        }
+
+        const totalCost = await packageCostService.getCost(packageId);
+        returnDict[packageId as string] = {standaloneCost : standaloneCost, totalCost : totalCost};
+        return returnDict;
     }
 
     async reset() {
