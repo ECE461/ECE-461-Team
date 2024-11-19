@@ -7,10 +7,14 @@ import { MetricManager } from '../../services/metrics/MetricManager';
 import { URLHandler } from '../../utils/URLHandler';
 import { Logger } from '../../utils/Logger';
 import { Request } from 'express';
+import { PackageName } from './PackageName';
+import { PackageVersion } from './PackageVersion';
+import { PackageID } from './PackageID';
 
 export class PackageData {
     private content; // Zipped content converted to base-64
     private JSProgram; // TODO: Extension
+    private uploadUrl;
 
     private static packageUploadSchema = Joi.object({
         Content: Joi.string()
@@ -21,13 +25,72 @@ export class PackageData {
                 return value;
             }),
         URL: Joi.string().uri(),
+        debloat: Joi.boolean()
+            .when('Content', { is: Joi.exist(), then: Joi.required() }), // debloat is required only if Content exists
+        Name: Joi.string()
+            .custom((value, helpers) => {
+                if (!PackageName.isValidName(value)) {
+                    return helpers.error('any.invalid');
+                }
+                return value;
+            })
+            .when('Content', { is: Joi.exist(), then: Joi.required() }), // Name is required only if Content exists
         JSProgram: Joi.string().optional()
             .custom((value, helpers) => {
                 if (value && !PackageData.isValidJavaScript(value)) {
                     return helpers.error('any.invalid');
                 }
             })
-    }).xor('Content', 'URL');
+    }).xor('Content', 'URL').required();
+
+    private static packageUpdateSchema = Joi.object({
+        metadata: Joi.object({
+            Name: Joi.string().required()
+                .custom((value, helpers) => {
+                    if (!PackageName.isValidName(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                    return value;
+                }),
+            Version: Joi.string().required()
+                .custom((value, helpers) => {
+                    if (!PackageVersion.isValidVersion(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                }),
+            ID: Joi.string().required()
+                .custom((value, helpers) => {
+                    if (!PackageID.isValidID(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                }),
+        }).required(),
+        data: Joi.object({
+            Name: Joi.string().when('Content', { is: Joi.exist(), then: Joi.required() })
+                .custom((value, helpers) => {
+                    if (!PackageName.isValidName(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                    return value;
+                }),
+            Content: Joi.string()
+                .custom((value, helpers) => {
+                    if (!PackageData.isValidBase64Zip(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                    return value;
+                }),
+            URL: Joi.string().uri(),
+            debloat: Joi.boolean().when('Content', { is: Joi.exist(), then: Joi.required() }),
+            JSProgram: Joi.string().optional()
+                .custom((value, helpers) => {
+                    if (value && !PackageData.isValidJavaScript(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                })
+        }).xor('Content', 'URL').required()
+        
+    }).required();
 
     /* Private Constructor : (only can be used in create method)
      * - Uses create method becasue setContentFromURL is async 
@@ -35,10 +98,11 @@ export class PackageData {
      * @param source: string - initially "" to initialize "content", "content" will be set in create method
      * @param jsProgram: string - jsProgram for sensitive data
      */
-    private constructor(source: string, jsProgram: string) {
+    private constructor(source: string, jsProgram: string, uploadUrl: string) {
         //TODO: might change this to take in an object?? to check that Content/URL not set at same time
         this.JSProgram = jsProgram;
         this.content = source;
+        this.uploadUrl = uploadUrl;
     }
 
     /* create : Static method to create an instance
@@ -48,9 +112,12 @@ export class PackageData {
      * @param jsProgram: string - jsProgram for sensitive data
      * @returns Promise
      */
-    static async create(source: string, jsProgram : string) {
-        const instance = new PackageData("", jsProgram);
-        if (instance.isValidURL(source)) {
+    static async create(source: string, jsProgram : string, uploadUrl="") {
+        // Create new instance
+        const instance = new PackageData("", jsProgram, uploadUrl);
+
+        // If Content has not been set from URL
+        if (source == "" && instance.hasValidURL()) {
             Logger.logInfo(`Checking URL Metrics: ${source}`);
             // Need to check that URL passes rating stuff:
             if (!await PackageData.metricCheck(source)) {
@@ -60,8 +127,7 @@ export class PackageData {
             Logger.logInfo(`Setting content from URL: ${source}`);
             await instance.setContentFromURL(source);
         } else {
-            Logger.logInfo(`Setting content from base-64 encoded string`);
-            instance.content = source;
+            Logger.logInfo(`Content not being updated from URL`);
         }
         return instance;
     }
@@ -81,19 +147,27 @@ export class PackageData {
         } 
     }
 
-    // isValidURL : Checks if URL is valid
+    // hasValidURL : Checks if URL is valid
     // @param url: string - URL to check
-    private isValidURL(url: string): boolean {
+    private hasValidURL(): boolean {
         try {
-            new URL(url);
+            new URL(this.uploadUrl);
             return true;
         } catch (e) {
             return false;
         }
     }
 
-    static isValidUploadOrUpdateRequest(reqBody: Request): boolean {
+    static isValidUploadRequestBody(reqBody: Request): boolean {
         const { error } = PackageData.packageUploadSchema.validate(reqBody);
+        if (error) {
+            return false;
+        }
+        return true;
+    }
+
+    static isValidUpdateRequestBody(reqBody: Request): boolean {
+        const { error } = PackageData.packageUpdateSchema.validate(reqBody);
         if (error) {
             return false;
         }
@@ -153,10 +227,15 @@ export class PackageData {
     }
 
     getJson() {
-        // API never sends URL back as response
-        return {
+        const json: {[key:string]: any} = {
             Content: this.content,
             JSProgram: this.JSProgram // TODO: might not need to include if empty string
         }
+
+        if (this.uploadUrl != "") {
+            json.URL = this.uploadUrl;
+        }
+
+        return json;
     }
 }

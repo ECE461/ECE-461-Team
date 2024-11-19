@@ -18,7 +18,6 @@ import { AuthenticationRequest } from '../models/authentication/AuthenticationRe
  */
 export class PackageCommandController {
     static packageService = new PackageService();
-    static readonly MSG_INVALID = {description: "There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."};
 
     /* uploadPackage: Uploads package from content or ingests package from URL.
      * @param req: Request object
@@ -35,10 +34,11 @@ export class PackageCommandController {
      * TODO: should we rate all packages here and store for later?
      */
     static async uploadPackage(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageData or it is formed improperly (e.g. Content and URL ar both set)";
         // Check if request is valid + has all required fields
-        if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
-            Logger.logInfo("Invalid Request: Not correct format");
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+        if (!PackageData.isValidUploadRequestBody(req.body)) {
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -55,17 +55,15 @@ export class PackageCommandController {
             if ((error instanceof Error) && (error.message === "Package is not uploaded due to the disqualified rating.")) {
                 Logger.logDebug(error);
                 res.status(424).send({description: "Package is not uploaded due to the disqualified rating."});
-                return;
             } else if ((error instanceof Error) && error.message.includes('400')) {
                 Logger.logError("Invalid Request: Not correct format", error);
-                res.status(400).json(PackageCommandController.MSG_INVALID);
+                res.status(400).json({description: msg_invalid});
             } else if ((error instanceof Error) && error.message.includes('409')){
                 Logger.logError("Package already exists", error);
                 res.status(409).send({description: "Package already exists"});
             } else {
                 Logger.logError("Internal Error hile uploading package: ", error);
                 res.status(500).send({description: "Internal Server Error"});
-                return;
             }
         }
     }
@@ -81,9 +79,11 @@ export class PackageCommandController {
      * Updates database/storage with new package information
      * Sets response status to 200 (success), 400 (invalid request), 404 (package does not exist)
      */
-    static async updatePackage(req: Request, res: Response) {      
-        if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+    static async updatePackage(req: Request, res: Response) {     
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
+        if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
             return;
         }
     }
@@ -120,9 +120,22 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageById(req: Request, res: Response) { // NON-BASELINE
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
         if (!PackageID.isValidGetByIdRequest(req)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
             return;
+        }
+
+        try{
+            await PackageCommandController.packageService.deletePackageById(req.params.id); 
+            
+            res.status(200).send({message: "Successfully deleted package via ID."});
+            console.log(`Package ${req.params.id} has been successfully deleted.`)
+        }catch(error){
+            if(error instanceof Error && error.message.includes('404')){
+                res.status(404).send({description: 'Package does not exist'});
+              }
         }
     }
 
@@ -137,9 +150,23 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageByName(req: Request, res: Response) {
+
+        const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid."
         if (!PackageName.isValidGetByNameRequest(req)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
             return;
+        }
+        
+        try{
+            await PackageCommandController.packageService.deletePackageByName(req.params.name);
+
+            res.status(200).send({message: "Successfully deleted package via name."})
+
+        }catch(error){
+            if(error instanceof Error && error.message.includes('404')) {
+                res.status(404).send({description: 'Package does not exist'});
+              }
         }
     }
 
@@ -155,8 +182,10 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
+        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
         if (!AuthenticationRequest.isValidRequest(req)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
             return;
         }
     }

@@ -11,15 +11,16 @@ export class PackageID {
     }
 
     static isValidGetByIdRequest (req: Request) {
-
-        //the only endpoints that have an id are /packages/{id} endpoints, so don't need to consider the possibility that it's in a formatted req body
-        const regex = /^[a-zA-Z0-9\-]+$/;
-
         if(req.params.id){
-            return regex.test(req.params.id);
+            return PackageID.isValidID(req.params.id);
         }
         
         return false;
+    }
+
+    static isValidID(id: string): boolean {
+        // only allow alphanumeric characters for sha256 hash
+        return /^[a-zA-Z0-9\-]+$/.test(id);
     }
 
     getId(): string {

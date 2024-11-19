@@ -50,7 +50,7 @@ export class PackageEndpoints {
         // READ-WRITE Endpoints -----------------------------------------------------------------------------------------------------------------
 
         // Updates stored package information for specific Package ID (UPDATE)
-        this.router.put('/package/:id', PackageCommandController.updatePackage); // (BASELINE)
+        this.router.post('/package/:id', PackageCommandController.updatePackage); // (BASELINE)
         
         // User gives Content (base-64 encoded zipped content) or Package URL, and JSProgram (Extension)
         // Stores package as PackageMetadata + PackageData (UPLOAD/INGEST)
@@ -80,11 +80,16 @@ export class PackageEndpoints {
         this.router.get('/package/:id', FakeController.getPackageById); // (BASELINE)
         this.router.get('/package/:id/rate', FakeController.getRating); // (BASELINE)
         this.router.put('/package/:id', FakeController.updatePackage); // (BASELINE)
+        this.router.post('/package/:id', FakeController.updatePackage); // (BASELINE)
         this.router.post('/package', FakeController.uploadPackage); // (BASELINE)
         this.router.delete('/reset', FakeController.reset); // (BASELINE)
         this.router.delete('/package/:id', FakeController.deletePackageById); // (NON-BASELINE)
         this.router.delete('/package/byName/:name', FakeController.deletePackageByName); // (NON-BASELINE)
         this.router.put('/authenticate', FakeController.createAccessToken);
+        this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
+        this.router.get('/package/:id/cost', FakeController.getCost); // (BASELINE)
+
+        // TODO: Add user endpoints
     }
 
     // Returns router to be used in backend/src/index.ts

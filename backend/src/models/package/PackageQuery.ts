@@ -10,8 +10,8 @@ export class PackageQuery {
 
     private static packageQuerySchema = Joi.array().items(
         Joi.object({
-            Name: Joi.string().
-                required()
+            Name: Joi.string()
+                .required()
                 .custom((value, helpers) => {
                     value = value.replace(/\s/g, '');
                     if (!PackageName.isValidName(value)) {
@@ -28,7 +28,7 @@ export class PackageQuery {
                     }
                     return value;
                 }),
-        })
+        }).required()
     ).required();
 
     constructor(name: string, versionQuery: string) {

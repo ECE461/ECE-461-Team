@@ -19,7 +19,6 @@ import { Logger } from '../utils/Logger';
 export class PackageQueryController {
 
     static packageService = new PackageService();
-    static readonly MSG_INVALID = {message: "There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid."};
 
     /* getPackagesByQuery: Gets any packages fitting query (see models/package/PackageQuery.ts)
     *  @param req: Request object
@@ -33,10 +32,12 @@ export class PackageQueryController {
     *  Also sets status code to 200 (success), 400 (invalid request), or 413 (too many packages returned - if no pagination?) 
     */
     static async getPackagesByQuery(req: Request, res: Response) : Promise<void> {
+      const msg_invalid = "There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid."
       try {
           // Package Query Validation
           if (!PackageQuery.isValidQuery(req)) {
-              res.status(400).json(PackageQueryController.MSG_INVALID);
+              Logger.logInfo(msg_invalid);
+              res.status(400).json({description: msg_invalid});
               return;
           }
 
@@ -66,12 +67,14 @@ export class PackageQueryController {
     *  TODO: (1) check no need for pagination, (2) Check if need to return ID also (see yaml file)
     */
     static async getPackagesByRegex(req: Request, res: Response) {
+      const msg_invalid = "There is missing field(s) in the PackageRegEx or it is formed improperly, or is invalid";
       if (!PackageRegex.isValidRegexRequest(req)) {
-        res.status(400).json(PackageQueryController.MSG_INVALID);
+        Logger.logInfo(msg_invalid);
+        res.status(400).json({description: msg_invalid});
         return;
       }
     }
-    
+
     /* getPackageById: Gets single package by ID (download package).
      * @param req: Request object
      * @param res: Response object
@@ -84,9 +87,11 @@ export class PackageQueryController {
      * Sets status to 200 (success), 400 (invalid request), or 404 (package does not exist)
      */ 
     static async getPackageById(req: Request, res: Response) {
+      const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
       try{
         if (!PackageID.isValidGetByIdRequest(req)) {
-          res.status(400).json(PackageQueryController.MSG_INVALID);
+          Logger.logInfo(msg_invalid);
+          res.status(400).json({description: msg_invalid});
           return;
         }
         let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
@@ -94,7 +99,7 @@ export class PackageQueryController {
         res.status(200).json(pckg.getJson());
       }catch(error){
         if(error instanceof Error && error.message.includes('404')){
-          res.status(500).send({description: 'Package does not exist'});
+          res.status(404).send({description: 'Package does not exist'});
         }
       }
     }
@@ -111,9 +116,11 @@ export class PackageQueryController {
      * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package rating system broke on at least one metric)
      */
     static async getRating(req: Request, res: Response) {
+      const msg_invalid = "There is missing field(s) in the PackageID";
       try {
         if (!PackageID.isValidGetByIdRequest(req)) {
-          res.status(400).json(PackageQueryController.MSG_INVALID);
+          Logger.logInfo(msg_invalid);
+          res.status(400).json({description: msg_invalid});
           return;
         }
 
