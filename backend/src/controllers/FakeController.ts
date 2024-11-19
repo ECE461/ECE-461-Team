@@ -59,7 +59,6 @@ export class FakeController {
     }
 
     static getRating(req: Request, res: Response) {
-
         const msg_invalid = "There is missing field(s) in the PackageID";
         if (!PackageID.isValidGetByIdRequest(req)) {
             res.status(400).json({description: msg_invalid});
@@ -81,8 +80,9 @@ export class FakeController {
     }
 
     static getPackageHistoryByName(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
         if (!PackageName.isValidGetByNameRequest(req)) {
-            res.status(400).json(PackageQueryController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
