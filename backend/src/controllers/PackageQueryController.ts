@@ -141,6 +141,10 @@ export class PackageQueryController {
      */
     static async getCost(req: Request, res: Response) {
       try {
+        if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
+          res.status(400).json(PackageQueryController.MSG_INVALID);
+          return;
+        }
         if (!PackageID.isValidGetByIdRequest(req)) {
           res.status(400).json(PackageQueryController.MSG_INVALID);
           return;
@@ -164,22 +168,5 @@ export class PackageQueryController {
           res.status(500).send({message: "The package rating system choked on at least one of the metrics."});
         }
       };
-    }
-    
-    /* getPackageHistoryByName: Gets all package history (all versions)
-     * @param req: Request object
-     * @param res: Response object
-     * 
-     * Method: GET
-     * Route: /package/byName/{name}
-     * 
-     * Description: Given package name, sets response to array of PackageHistoryEntry (see /models/package/PackageHistoryEntry)
-     * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
-     */
-    static async getPackageHistoryByName(req: Request, res: Response) { // NON-BASELINE
-      if (!PackageName.isValidGetByNameRequest(req)) {
-        res.status(400).json(PackageQueryController.MSG_INVALID);
-        return;
-      }
     }
 }
