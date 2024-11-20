@@ -49,22 +49,23 @@ export const getPackageByID = async (id: string) => {
     }
 };
 
-export const updatePackageByID = async (id: string, metadata: { Name: string; Version: string; ID: string }, data: { Content: string; URL: string; JSProgram: string }) => {
-    try {
-      const payload = {
-        metadata,
-        data
-      };
-      const response = await axios.put(`${apiURL}/api/v1/package/${id}`, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error("Error updating package:", error);
-      throw error.response ? error.response.data : error;
+export const updatePackageByID = async (id: string, requestPayload: any) => {
+  try {
+    const response = await axios.post(`/package/${id}`, requestPayload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating package by ID:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      console.error("Response headers:", error.response.headers);
     }
+    throw error; // Re-throw the error for higher-level handling
+  }
 };
 
 export const deletePackageByID = async (id: string) => {
