@@ -17,8 +17,10 @@ export class FakeController {
 
     static getPackagesByQuery(req: Request, res: Response) {
         // Query Validation
+        const msg_invalid = "There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid."
+        // Package Query Validation
         if (!PackageQuery.isValidQuery(req)) {
-            res.status(400).json(PackageQueryController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -30,8 +32,9 @@ export class FakeController {
     }
 
     static getPackagesByRegex(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageRegEx or it is formed improperly, or is invalid";
         if (!PackageRegex.isValidRegexRequest(req)) {
-            res.status(400).json(PackageQueryController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -43,8 +46,9 @@ export class FakeController {
     }
 
    static async getPackageById(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
         if (!PackageID.isValidGetByIdRequest(req)) {
-            res.status(400).json(PackageQueryController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -55,8 +59,10 @@ export class FakeController {
     }
 
     static getRating(req: Request, res: Response) {
+
+        const msg_invalid = "There is missing field(s) in the PackageID";
         if (!PackageID.isValidGetByIdRequest(req)) {
-            res.status(400).json(PackageQueryController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -74,37 +80,21 @@ export class FakeController {
         
     }
 
-    static getPackageHistoryByName(req: Request, res: Response) {
-        if (!PackageName.isValidGetByNameRequest(req)) {
-            res.status(400).json(PackageQueryController.MSG_INVALID);
-            return;
-        }
-
-        const user = new User("James Davis", true);
-        const metadata = new PackageMetadata("React", "2.2.3");
-        const entry1 = new PackageHistoryEntry(user, new Date().toISOString(), metadata, PackageHistoryEntry.Action.CREATE);
-        const entry2 = new PackageHistoryEntry(user, new Date().toISOString(), metadata, PackageHistoryEntry.Action.RATE);
-        const entry3 = new PackageHistoryEntry(user, new Date().toISOString(), metadata, PackageHistoryEntry.Action.UPDATE);
-        const entry4 = new PackageHistoryEntry(user, new Date().toISOString(), metadata, PackageHistoryEntry.Action.DOWNLOAD);
-
-        const fakeRes = [entry4.getJson(), entry3.getJson(), entry2.getJson(), entry1.getJson()];
-        res.status(200).json(fakeRes);
-
-    }
-
     static updatePackage(req: Request, res: Response) {
-        if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
+        if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
-        res.status(200).send({message: "Version is updated."});
+        res.status(200).send({description: "Version is updated."});
     }
 
     static async uploadPackage(req: Request, res: Response) {
-        // Check format:
-        if (!PackageData.isValidUploadOrUpdateRequest(req.body)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+        const msg_invalid = "There is missing field(s) in the PackageData or it is formed improperly (e.g. Content and URL ar both set)";
+        // Check if request is valid + has all required fields
+        if (!PackageData.isValidUploadRequestBody(req.body)) {
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -116,30 +106,33 @@ export class FakeController {
 
     static reset(req: Request, res: Response) {
         // TODO: Add validity check
-        res.status(200).send({message: "Registry is reset."});
+        res.status(200).send({description: "Registry is reset."});
     }
 
     static deletePackageById(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
         if (!PackageID.isValidGetByIdRequest(req)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
-        res.status(200).send({message: "Package is deleted."});
+        res.status(200).send({description: "Package is deleted."});
     }
 
     static deletePackageByName(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid."
         if (!PackageName.isValidGetByNameRequest(req)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
-        res.status(200).send({message: "Package is deleted."});
+        res.status(200).send({description: "Package is deleted."});
     }
 
     static createAccessToken(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
         if (!AuthenticationRequest.isValidRequest(req)) {
-            res.status(400).json(PackageCommandController.MSG_INVALID);
+            res.status(400).json({description: msg_invalid});
             return;
         }
 
@@ -149,7 +142,44 @@ export class FakeController {
         res.status(200).json(fakeRes);
     }
 
+
     static registerUser(req: Request, res: Response){
         //TODO FILL IN
+    }
+  
+    static getCost(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
+        if (!PackageID.isValidGetByIdRequest(req)) {
+            res.status(400).json({description: msg_invalid});
+            return;
+        }
+
+        if (req.params.dependency == undefined) {
+            res.status(400).json({description: "Dependency not found"});
+            return;
+        }
+
+        if (req.params.dependency) {
+            const resp = {
+                "357898765": {
+                  "standaloneCost": 50,
+                  "totalCost": 95
+                },
+                "988645763": {
+                  "standaloneCost": 20,
+                  "totalCost": 45
+                }
+            }
+            res.status(200).json(resp);
+            return;
+        }    
+        else {
+            const resp = {
+                "357898765": {
+                  "totalCost": 50
+                }
+            }
+            res.status(200).json(resp);
+        }       
     }
 }

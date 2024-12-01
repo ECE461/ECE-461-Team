@@ -7,12 +7,14 @@ import ProtectedRoute from "../../../components/ProtectedRoute";
 import { useId } from "../../../context/IdContext";
 import * as A from "../../../utils/api";
 import {useRouter} from 'next/navigation';
+import { useUpdateData } from "../../../context/UpdateContext";
 
 
 const DetailPage = ({ params }: { params: { name: string; version: string , id:string} }) => {
   const {id} = useId();
   const [apiData, setApiData] = useState<any>(null);
   const { name, version } = params;
+  const { setUpdateData } = useUpdateData();
   const router = useRouter();
   useEffect(() => {
     if (id) {
@@ -23,10 +25,13 @@ const DetailPage = ({ params }: { params: { name: string; version: string , id:s
       fetchData();
     }
   },[id]);
+
+  console.log("id:",id);
   console.log("Current apiData state:", apiData);
 
   const handleUpdateClick = async () => {
-    router.push(`/update?name=${name}&version=${version}`);
+    setUpdateData(name, version, id);
+    router.push(`/update`);
   };
 
   return (
