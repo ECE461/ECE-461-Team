@@ -180,9 +180,42 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
+
         if (!AuthenticationRequest.isValidRequest(req)) {
             res.status(400).json(PackageCommandController.MSG_INVALID);
             return;
         }
+
+        try {
+            
+            let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password);
+
+            res.status(200).send(token);
+
+        } catch(err: any) {
+
+            if (err instanceof Error && err.message.includes('401')) {
+                res.status(401).send({description: 'The user or password is invalid.'});
+            }
+            else if (err instanceof Error && err.message.includes('500')){
+                res.status(500).send({description: 'This system does not support authentication.'});
+            }
+        }
     }
+
+
+    /* deletePackageByName: Deletes a package by name (all versions)
+     * @param req: Request object
+     * @param res: Response object
+     * 
+     * Method: PUT
+     * Route: /authenticate
+     * 
+     * Description: 
+     */
+    static async registerUser(){
+
+    }
+
+    
 }

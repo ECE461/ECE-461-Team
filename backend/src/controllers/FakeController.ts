@@ -148,4 +148,8 @@ export class FakeController {
         }
         res.status(200).json(fakeRes);
     }
+
+    static registerUser(req: Request, res: Response){
+        //TODO FILL IN
+    }
 }
