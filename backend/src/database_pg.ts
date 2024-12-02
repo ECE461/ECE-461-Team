@@ -8,6 +8,11 @@ export interface PackageDetails {
     jsprogram?: string
 }
 
+export interface PackageRow {
+    id: string,
+    version: string
+}
+
 /**
  * @class Database
  * @description Singleton that manages database instance and operations
@@ -24,7 +29,7 @@ export interface PackageDetails {
 export class Database {
     private static instance: Database;
     private pool: Pool;
-    
+
     private constructor() {
         this.pool = new Pool({
             user: `${process.env.RDS_USER}`,
@@ -119,6 +124,19 @@ export class Database {
             return res.rows[0].url;
         } catch (err: any) {
             console.error('Error getting package URL:', err.message);
+            throw err;
+        }
+    }
+
+    public async getPackageVersionsByName(packageName: string): Promise<PackageRow[]>
+    {
+        const sql = `SELECT id, version FROM packages_table WHERE name = $1 ORDER BY version DESC`;
+        try {
+            const res = await this.pool.query(sql, [packageName]);
+            return res.rows;
+        }
+        catch (err: any) {
+            console.error('Error getting package versions:', err.message);
             throw err;
         }
     }

@@ -86,8 +86,8 @@ export class PackageEndpoints {
         this.router.delete('/package/:id', FakeController.deletePackageById); // (NON-BASELINE)
         this.router.delete('/package/byName/:name', FakeController.deletePackageByName); // (NON-BASELINE)
         this.router.put('/authenticate', FakeController.createAccessToken);
-        this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
-        this.router.get('/package/:id/cost', FakeController.getCost); // (BASELINE)
+        // this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
+        // this.router.get('/package/:id/cost', FakeController.getCost); // (BASELINE)
 
         // TODO: Add user endpoints
     }

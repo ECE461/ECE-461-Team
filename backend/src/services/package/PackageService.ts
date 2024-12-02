@@ -141,8 +141,7 @@ export class PackageService {
             return returnDict;
         }
 
-        const totalCost = await packageCostService.getCost(packageId);
-        returnDict[packageId as string] = {standaloneCost : standaloneCost, totalCost : totalCost};
+        returnDict = await packageCostService.getTotalCost(packageId);
         return returnDict;
     }
 

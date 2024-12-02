@@ -148,12 +148,15 @@ export class PackageQueryController {
      */
     static async getCost(req: Request, res: Response) {
       try {
+        const msg_invalid = "There is missing field(s) in the PackageID";
         if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
-          res.status(400).json(PackageQueryController.MSG_INVALID);
+          Logger.logInfo(msg_invalid);
+          res.status(400).json({description: msg_invalid});
           return;
         }
         if (!PackageID.isValidGetByIdRequest(req)) {
-          res.status(400).json(PackageQueryController.MSG_INVALID);
+          Logger.logInfo(msg_invalid);
+          res.status(400).json({description: msg_invalid});
           return;
         }
 
