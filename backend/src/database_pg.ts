@@ -109,7 +109,7 @@ export class Database {
     }
 
     public async getPackageURL(packageId: string): Promise<string> {
-        const sql = `SELECT url FROM packages WHERE id = $1`;
+        const sql = `SELECT url FROM packages_table WHERE id = $1`;
         try {
             const res = await this.pool.query(sql, [packageId]);
             return res.rows[0].url;
