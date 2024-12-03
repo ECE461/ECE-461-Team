@@ -183,10 +183,43 @@ export class PackageCommandController {
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+      
         if (!AuthenticationRequest.isValidRequest(req)) {
             Logger.logInfo(msg_invalid);
             res.status(400).json({description: msg_invalid});
             return;
         }
+
+        try {
+            
+            let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password);
+
+            res.status(200).send(token);
+
+        } catch(err: any) {
+
+            if (err instanceof Error && err.message.includes('401')) {
+                res.status(401).send({description: 'The user or password is invalid.'});
+            }
+            else if (err instanceof Error && err.message.includes('500')){
+                res.status(500).send({description: 'This system does not support authentication.'});
+            }
+        }
     }
+
+
+    /* deletePackageByName: Deletes a package by name (all versions)
+     * @param req: Request object
+     * @param res: Response object
+     * 
+     * Method: PUT
+     * Route: /authenticate
+     * 
+     * Description: 
+     */
+    static async registerUser(){
+
+    }
+
+    
 }

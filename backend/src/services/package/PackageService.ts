@@ -10,7 +10,11 @@ import { PackageMetadata } from '../../models/package/PackageMetadata';
 import { S3 } from '../../utils/S3';
 import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
-import {MetricManager} from '../../services/metrics/MetricManager';
+import { MetricManager } from '../../services/metrics/MetricManager';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { TokenUrlParameterKey } from 'aws-sdk/clients/glue';
+import { DeleteBucketAnalyticsConfigurationCommand } from '@aws-sdk/client-s3';
 
 export class PackageService {
     private db: Database;
@@ -185,6 +189,55 @@ export class PackageService {
     async getPackageHistoryByName() { // NON-BASELINE
     }
 
-    async createAccessToken() { // Non-baseline --> add to user/authenticate endpoint or not
+    async createAccessToken(username: string, pwInput: string) { // Non-baseline --> add to user/authenticate endpoint or not
+        // an access token is only created if the pw is correct
+        try {
+
+            //check if user exists 
+            let user = await this.db.userExists(username); 
+            if(!user){
+                throw new Error("401: The user or password is invalid");
+            }   
+
+            //check if there  is a password associated with the username
+            let pw = await this.db.getPW(username); 
+            if(!pw){
+                throw new Error("401: The user or password is invalid");
+            }
+
+            //compare(plainText, hashed) passwords
+            const pw_correct = await bcrypt.compare(pwInput, pw); 
+            if(!pw_correct){
+                throw new Error("401: The user or password is invalid")
+            }
+            
+            const isAdmin: boolean = await this.db.isAdmin(username);
+
+            //generate token based on the above parameters
+            const payload = {
+                id: user, 
+                admin: isAdmin, 
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60, 
+                calls: 1000,
+            };
+            
+            //force throw error or it won't let me add stuff:(
+            if (!(process.env.JWT_KEY)){
+                throw new Error("501: JWT_KEY undefined. Check your environment variables.");
+            }
+
+            const token = jwt.sign(payload, process.env.JWT_KEY);
+            
+            if (!token){
+                throw new Error("501: Error creating token.")
+            }
+
+            Logger.logInfo("Successfully generated token.")
+            return "bearer " + token;
+
+        } catch (err: any) {
+            throw err; 
+        }
     }
 }
