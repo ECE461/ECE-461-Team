@@ -234,7 +234,7 @@ export class PackageService {
             }
 
             Logger.logInfo("Successfully generated token.")
-            return token;
+            return "bearer " + token;
 
         } catch (err: any) {
             throw err; 
