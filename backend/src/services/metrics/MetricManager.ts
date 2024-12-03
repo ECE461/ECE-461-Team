@@ -8,6 +8,7 @@ import { PullRequest } from "./PullRequest";
 import * as dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
 import { URLHandler } from "../../utils/URLHandler";
+import { DependencyMetric, processPackages, getPackageJson } from "./Dependency";
 dotenv.config();
 
 
@@ -52,7 +53,9 @@ export class MetricManager {
         licenseValue: number,
         licenseLatency: number
         pullRequestValue: number, 
-        pullRequestLatency: number
+        pullRequestLatency: number,
+        dependencyValue: number,
+        dependencyLatency: number
     }> {
         // TODO: Add the pull request and dependency metrics
 
@@ -62,11 +65,18 @@ export class MetricManager {
         let licenseMetric = new License(this.owner, this.repoName);
         let maintainerMetric = new Maintainer(this.owner, this.repoName);
         let correctnessMetric = new Correctness(this.owner, this.repoName);
+        let pullRequestMetric = new PullRequest(this.owner, this.repoName);
+        let dependencyMetric = new DependencyMetric()
         
         let NetStartTime = performance.now();
 
         // Calculate the metrics
-        const metricResults = await Promise.allSettled([busFactorMetric.calculateBusFactor(), rampUpMetric.getRampUpScore(), licenseMetric.getRepoLicense(), maintainerMetric.getMaintainerScore(), correctnessMetric.getCorrectnessScore()]);
+        const metricResults = await Promise.allSettled([busFactorMetric.calculateBusFactor(), 
+                                                        rampUpMetric.getRampUpScore(), 
+                                                        licenseMetric.getRepoLicense(), 
+                                                        maintainerMetric.getMaintainerScore(), 
+                                                        correctnessMetric.getCorrectnessScore(), 
+                                                        pullRequestMetric.getPullRequest()]);
         const metricScores = metricResults.map((result) => {
             if(result.status === 'fulfilled') {
                 return (result as PromiseFulfilledResult<number>).value; // Get the fulfilled value
@@ -84,19 +94,26 @@ export class MetricManager {
         let licenseValue = metricScores[2];
         let maintainerValue = metricScores[3];
         let correctnessValue = metricScores[4];
+        let pullRequestValue = metricScores[5];
+    
 
         let busFactorLatency = busFactorMetric.getLatency();
         let rampUpLatency = rampUpMetric.getLatency();
         let licenseLatency = licenseMetric.getLatency();
         let maintainerLatency = maintainerMetric.getLatency();
         let correctnessLatency = correctnessMetric.getLatency();
-
-        let pullRequestValue = 0.0;
-        let pullRequestLatency = 0.0;
+        let pullRequestLatency = pullRequestMetric.getLatency();
+        
+        let startTime = performance.now()
+        await processPackages(this.owner, this.repoName, dependencyMetric);
+        const packageMetadata = await getPackageJson(this.owner, this.repoName);
+        const packageName = packageMetadata.name;
+        const version = packageMetadata.version;
+        let dependencyValue = dependencyMetric.getPackageScore(packageName, version);
+        let dependencyLatency = (performance.now() - startTime) / 1000;
 
         // Calculate the net score
-        // (0.3 * busFactor + 0.2 * correctness + 0.2 * rampup + 0.3 * maintainer) * license
-        let netScore = (0.3 * busFactorValue + 0.2 * correctnessValue + 0.2 * rampUpValue + 0.3 * maintainerValue) * licenseValue;
+        let netScore = (0.25*busFactorValue + 0.15*correctnessValue + 0.15*rampUpValue + 0.2*maintainerValue + 0.15*pullRequestValue + 0.1*dependencyValue) * licenseValue;
 
         return {
             netScore: parseFloat(netScore.toFixed(3)),
@@ -112,7 +129,9 @@ export class MetricManager {
             licenseValue: parseFloat(licenseValue.toFixed(3)),
             licenseLatency: parseFloat(licenseLatency.toFixed(3)),
             pullRequestValue: parseFloat(pullRequestValue.toFixed(3)), 
-            pullRequestLatency: parseFloat(pullRequestLatency.toFixed(3))
+            pullRequestLatency: parseFloat(pullRequestLatency.toFixed(3)),
+            dependencyValue: parseFloat(dependencyValue.toFixed(3)),
+            dependencyLatency: parseFloat(dependencyLatency.toFixed(3))
         };
 
 
