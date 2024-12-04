@@ -7,6 +7,7 @@ import { PackageData } from '../../models/package/PackageData';
 import { PackageID } from '../../models/package/PackageID';
 import { PackageRating } from '../../models/package/PackageRating';
 import { PackageMetadata } from '../../models/package/PackageMetadata';
+import { PackageQuery } from "../../models/package/PackageQuery";
 import { S3 } from '../../utils/S3';
 import { Package } from '../../models/package/Package';
 import { Logger } from '../../utils/Logger';
@@ -29,15 +30,19 @@ export class PackageService {
     async getPackagesByQuery(packageQueries: any[], offset: number) {
         try {
             const maxItemsPerPage = 20;
+            const allPackagesMetadataList : PackageMetadata[] = await this.db.getAllPackageMetadata();
+            const matchingPackages = [];
 
-            // TODO: Implement logic to search for packages based on pacakgeQueries and offset
-            const mockPackages = [
-                { Version: '1.2.3', Name: 'Underscore', ID: 'underscore' },
-                { Version: '1.2.3-2.1.0', Name: 'Lodash', ID: 'lodash' },
-                { Version: '^1.2.3', Name: 'React', ID: 'react' }
-            ];
-
-            return mockPackages.slice(Number(offset), Number(offset)+maxItemsPerPage);
+            for (const metadata of allPackagesMetadataList) {
+                for (const query of packageQueries) {
+                    const packageQuery = new PackageQuery(query.Name, query.Version);
+                    if (packageQuery.checkMatches(metadata)) {
+                        matchingPackages.push(metadata.getJson());
+                        break;
+                    }
+                }
+            }
+            return matchingPackages.slice(Number(offset), Number(offset)+maxItemsPerPage);
         } catch (error) {
             Logger.logError('Error in PackageService getPackagesByQuery:', error);
             throw new Error('Failed to fetch packages');

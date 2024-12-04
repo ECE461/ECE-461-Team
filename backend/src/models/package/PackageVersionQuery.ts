@@ -7,6 +7,11 @@ export class PackageVersionQuery {
     constructor(versionQuery: string) {
         // Set version query with no spaces
         this.versionQuery = versionQuery.replace(/\s/g, '');
+
+        // Need to setup range like this for semver to work
+        if (this.getVersionQueryType() == "Range") {
+            this.versionQuery = this.versionQuery.replace(/-/g, ' - ');
+        }
     }
 
     static isValidVersionQuery(versionQuery: string): boolean {
