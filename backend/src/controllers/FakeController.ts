@@ -142,6 +142,11 @@ export class FakeController {
         res.status(200).json(fakeRes);
     }
 
+
+    static registerUser(req: Request, res: Response){
+        //TODO FILL IN
+    }
+  
     static getCost(req: Request, res: Response) {
         const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
         if (!PackageID.isValidGetByIdRequest(req)) {

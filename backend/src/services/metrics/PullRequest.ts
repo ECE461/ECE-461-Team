@@ -29,6 +29,7 @@ export class PullRequest{
 
     private repoOwner: string; 
     private repoName: string; 
+    private latency: number = 0;
 
     constructor (_repoOwner: string, _repoName: string){
         this.repoOwner = _repoOwner; 
@@ -171,10 +172,9 @@ export class PullRequest{
      * @return {Promise } : calculates pull request 
      */
     public async getPullRequest(): Promise<number>{
-        
-        
         try{
-            
+            let startTime = performance.now();
+
             //remember that each of these functions return [add, deleted]
             const values = await Promise.all([this.getPRChanges(), this.getTotalChanges()]);
 
@@ -191,7 +191,7 @@ export class PullRequest{
             let pr = pr_changes[0] + pr_changes[1];
             let total = total_changes[0] + total_changes[1];
 
-            console.log(`pr w code review: ${pr} total: ${total}`);
+            this.latency = (performance.now() - startTime) / 1000;
             return pr/total;
 
         } catch(Error){
@@ -200,6 +200,15 @@ export class PullRequest{
 
         return 0;
     }
+
+    /**
+   * getLatency returns the latency of the pull request metric
+   * 
+   * @returns the latency of the pull request metric
+   */
+  public getLatency(): number {
+    return this.latency;
+  }
 
 }
 

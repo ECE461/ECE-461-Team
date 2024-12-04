@@ -23,6 +23,17 @@ const Upload = () => {
   };
 
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] || null;
+    if (selectedFile && selectedFile.type === "application/zip") {
+      setFile(selectedFile);
+      setUrl("");
+      setMessage("");
+    } else {
+      setMessage("Please select a ZIP file.");
+    }
+  };
+
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
@@ -77,22 +88,9 @@ const Upload = () => {
           />
   
         </S.urlContainer>
-        <label>
-          Package (ZIP file):
-          <input
-            type="file"
-            accept=".zip"
-            onChange={(e) => setFile(e.target.files[0] || null)}
-            disabled={!!url}
-          />
-           <input
-    type="file"
-    accept=".zip"
-    onChange={(e) => setFile(e.target.files[0] || null)}
-    disabled={!!url}
-    style={{ marginTop: "10px" }}
-  />
-        </label>
+        <S.Divider>
+          <span> or </span>
+        </S.Divider> 
         <S.UploadBox
           onDrop={handleDrop}
           onDragOver={(e) => {
@@ -114,6 +112,15 @@ const Upload = () => {
           ) : (
             <p>Drag & drop a ZIP file here, or click to select</p>
           )}
+          <input
+            type="file"
+            accept=".zip"
+            onChange={handleFileSelect}
+            style={{
+              opacity: 0,
+              cursor: "pointer",
+            }}
+          />
         </S.UploadBox>
         <S.buttonContainer>
         <S.uploadButton disabled = {isDisabled} type="submit">Upload</S.uploadButton>

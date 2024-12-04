@@ -21,8 +21,13 @@ const LoginPage = () => {
 
     try {
       // Call the login function from AuthContext
-      await login({ name, password });
-      router.push("/search"); // Redirect to search page on success
+      const loginSuccess = await login({ name, password });
+      if (loginSuccess) {
+        router.push("/search"); // Redirect to search page on success
+      }
+      else {
+        setError("Failed to log in. Please check your credentials.");
+      }
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
     }

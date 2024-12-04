@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   authChecked: boolean;
   username : string;
-  login: ({ name, password }: { name: string; password: string }) => Promise<void>;
+  login: ({ name, password }: { name: string; password: string }) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -37,14 +37,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUsername(name);
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("username", name);
-      router.push("/search"); // Redirect after successful login
+      return true;
     } else {
       alert("Invalid credentials");
       setUsername("");
       setIsAuthenticated(false); 
       localStorage.removeItem("isAuthenticated");
       localStorage.removeItem("username");
-
+      return false;
     }
   };
 
