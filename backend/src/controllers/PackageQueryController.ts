@@ -32,6 +32,14 @@ export class PackageQueryController {
     *  Also sets status code to 200 (success), 400 (invalid request), or 413 (too many packages returned - if no pagination?) 
     */
     static async getPackagesByQuery(req: Request, res: Response) : Promise<void> {
+      // Log POST /packages request
+      Logger.logInfo(`**************************************
+                  POST /packages`);
+      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
+      Logger.logInfo(`**************************************`);
+
       const msg_invalid = "There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid."
       try {
           // Package Query Validation
@@ -64,9 +72,16 @@ export class PackageQueryController {
     *  Sets "res" to array of package metadata.
     *  Sets status code to 200 (success), 400 (invalid request), or 404 (no packages found matching regex)
     * 
-    *  TODO: (1) check no need for pagination, (2) Check if need to return ID also (see yaml file)
     */
     static async getPackagesByRegex(req: Request, res: Response) {
+      // Log request
+      Logger.logInfo(`**************************************
+                  POST /package/byRegEx`);
+      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
+      Logger.logInfo(`**************************************`);
+
       const msg_invalid = "There is missing field(s) in the PackageRegEx or it is formed improperly, or is invalid";
       if (!PackageRegex.isValidRegexRequest(req)) {
         Logger.logInfo(msg_invalid);
@@ -103,6 +118,14 @@ export class PackageQueryController {
      * Sets status to 200 (success), 400 (invalid request), or 404 (package does not exist)
      */ 
     static async getPackageById(req: Request, res: Response) {
+      // Log request
+      Logger.logInfo(`**************************************
+                  GET /package/:id`);
+      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
+      Logger.logInfo(`**************************************`);
+      
       const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
       try{
         if (!PackageID.isValidGetByIdRequest(req)) {
@@ -135,6 +158,14 @@ export class PackageQueryController {
      * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package rating system broke on at least one metric)
      */
     static async getRating(req: Request, res: Response) {
+      // Log request
+      Logger.logInfo(`**************************************
+                  GET /package/:id/rate`);
+      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
+      Logger.logInfo(`**************************************`);
+
       const msg_invalid = "There is missing field(s) in the PackageID";
       try {
         if (!PackageID.isValidGetByIdRequest(req)) {
@@ -198,4 +229,31 @@ export class PackageQueryController {
         }
       };
     }
+
+    /* getTrack: Return extension track that we are working on
+     */
+    static async getTracks(req: Request, res: Response) {
+      // Log request
+      Logger.logInfo(`**************************************
+                  GET /tracks`);
+      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
+      Logger.logInfo(`**************************************`);
+      try {
+
+        const plannedTracks = {
+          plannedTracks: [
+            "Access control track"
+          ]
+        };
+
+        res.status(200).json(plannedTracks);
+      } catch (err) {
+        Logger.logError('Error fetching tracks:', err);
+        res.status(500).send({description: "The system encountered an error while retrieving the student's track information."});
+      }
+    }
+
+
 }

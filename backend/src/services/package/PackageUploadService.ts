@@ -88,8 +88,6 @@ export class PackageUploadService {
             }
             else {
                 Logger.logInfo("No README.md found in the uploaded package");
-                throw new Error('400: No README.md found in the uploaded package');
-                // or (packageMetadata as PackageMetadata).setReadMe("");
             }
         }
         return packageMetadata;

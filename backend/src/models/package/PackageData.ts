@@ -172,24 +172,24 @@ export class PackageData {
     static async metricCheck(url: string) : Promise<boolean> {
         try {
             const urlH = await URLHandler.create(url);
-            console.log(urlH.getRepoURL());
-            // TODO: Metric manager needs to be able to handle github repo with specific version (not just latest)
             const Metrics : MetricManager = await MetricManager.create(URLHandler.standardizeGitHubURL(urlH.getRepoURL()));
             const metrics = await Metrics.getMetrics();
 
-            // TODO: need to add two other scores *******
-            if (metrics.netScore >= 0.5 
+            // Check if scores are above threshold
+            if (
+                metrics.netScore >= 0.5 
                 && metrics.busFactorValue >= 0.5 
                 && metrics.correctnessValue >= 0.5 
                 && metrics.maintainerValue >= 0.5 
                 && metrics.licenseValue >= 0.5
                 && metrics.pullRequestValue >= 0.5
                 && metrics.rampUpValue >= 0.5
+                && metrics.dependencyValue >= 0.5
             ) {
                 return true;
             }
             Logger.logDebug("Metrics did not pass rating: " + JSON.stringify(metrics));
-            return true;
+            return false;
         } catch (error) {
             throw new Error("Internal Error: Could not get metrics");
         } 

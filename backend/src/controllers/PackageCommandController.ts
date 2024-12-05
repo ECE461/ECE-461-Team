@@ -31,9 +31,16 @@ export class PackageCommandController {
      * Sets response to Package (see models/package/Package.ts)
      * Sets status to 201 (success), 400 (invalid req), 409 (package exists already), or 424 (package not uploaded due to disqualified rating (only for URL uploads))
      * 
-     * TODO: should we rate all packages here and store for later?
      */
     static async uploadPackage(req: Request, res: Response) {
+        // Log request
+        Logger.logInfo(`**************************************
+                    POST /package`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
+
         const msg_invalid = "There is missing field(s) in the PackageData or it is formed improperly (e.g. Content and URL ar both set)";
         // Check if request is valid + has all required fields
         if (!PackageData.isValidUploadRequestBody(req.body)) {
@@ -87,7 +94,15 @@ export class PackageCommandController {
      * Updates database/storage with new package information
      * Sets response status to 200 (success), 400 (invalid request), 404 (package does not exist), 409 (package already exists)
      */
-    static async updatePackage(req: Request, res: Response) {     
+    static async updatePackage(req: Request, res: Response) {    
+        // Log request
+        Logger.logInfo(`**************************************
+                    POST /package/:id`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
+        
         const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
         if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
             Logger.logInfo(msg_invalid);
@@ -164,7 +179,14 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 401 (no permission to reset)
      */
     static async reset(req: Request, res: Response) {
-        // TODO: Add validity check
+        // Log request
+        Logger.logInfo(`**************************************
+                    DELETE /reset`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
+
         try {
             await PackageCommandController.packageService.reset();
             res.status(200).send({message: "Registry is reset."});
@@ -185,6 +207,14 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageById(req: Request, res: Response) { // NON-BASELINE
+        // Log request
+        Logger.logInfo(`**************************************
+                    DELETE /package/:id`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
+
         const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
         if (!PackageID.isValidGetByIdRequest(req)) {
             Logger.logInfo(msg_invalid);
@@ -215,6 +245,13 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageByName(req: Request, res: Response) {
+        // Log request
+        Logger.logInfo(`**************************************
+                    DELETE /package/byName/:name`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
 
         const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid."
         if (!PackageName.isValidGetByNameRequest(req)) {
@@ -247,6 +284,14 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
+        // Log request
+        Logger.logInfo(`**************************************
+                    PUT /autenticate`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
+
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
       
         if (!AuthenticationRequest.isValidRequest(req)) {
