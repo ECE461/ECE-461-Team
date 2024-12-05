@@ -132,17 +132,25 @@ export class PackageService {
 
     async getCost(packageId: string, dependencies: boolean)
     {
-        let returnDict: { [key: string]: any } = {};
-        const packageCostService= new PackageCostService()
-        const standaloneCost = await packageCostService.getStandaloneCost(packageId);
-        if(!dependencies)
-        {
-            returnDict[packageId as string] = {totalCost : standaloneCost};
+        try {
+            let returnDict: { [key: string]: any } = {};
+            const packageCostService= new PackageCostService()
+            const standaloneCost = await packageCostService.getStandaloneCost(packageId);
+            if(!dependencies)
+            {
+                returnDict[packageId as string] = {totalCost : standaloneCost};
+                return returnDict;
+            }
+
+            returnDict = await packageCostService.getTotalCost(packageId);
             return returnDict;
         }
-
-        returnDict = await packageCostService.getTotalCost(packageId);
-        return returnDict;
+        catch(error) {
+            Logger.logInfo("Error fetching package cost");
+            Logger.logDebug(error);
+            throw error;
+        }
+        
     }
 
     async reset() {
