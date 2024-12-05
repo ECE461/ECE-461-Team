@@ -302,7 +302,7 @@ export class Database {
 
         } catch(err: any){
 
-            Logger.logError("Error registering user: ", err);
+            Logger.logError("500: Error registering user: ", err);
             throw err; 
 
         }
@@ -356,4 +356,5 @@ export class Database {
             throw err;
         }
     }
+    
 }

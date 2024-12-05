@@ -212,13 +212,34 @@ export class PackageCommandController {
      * @param req: Request object
      * @param res: Response object
      * 
-     * Method: PUT
-     * Route: /authenticate
+     * Method: POST
+     * Route: /register
      * 
-     * Description: 
+     * Description: allows admins to register 
      */
-    static async registerUser(){
+    static async registerUser(req: Request, res: Response){
 
+        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+
+        if (!AuthenticationRequest.isValidRequest(req) || !AuthenticationRequest.isValidToken(req)) {
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
+            return;
+        }
+
+        try{ 
+            await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
+            res.status(200).send({ message: 'User successfully registered' });
+
+        } catch (err: any){
+            if (err instanceof Error && err.message.includes('401')) {
+                res.status(409).send({description: 'User has already been registered'});
+            }
+            else if (err instanceof Error && err.message.includes('500')){
+                res.status(500).send({description: 'Error registering user.'});
+            }
+        }
+        
     }
 
     

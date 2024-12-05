@@ -144,7 +144,8 @@ export class FakeController {
 
 
     static registerUser(req: Request, res: Response){
-        //TODO FILL IN
+        //TODO FILL IN'
+        //have to generate dummy token
     }
   
     static getCost(req: Request, res: Response) {

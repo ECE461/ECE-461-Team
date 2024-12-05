@@ -66,8 +66,9 @@ export class PackageEndpoints {
         
         // Given User name, password, and isAdmin value + password, returns an AuthenticationToken (CREATE USER)
         this.router.put('/authenticate', PackageCommandController.createAccessToken); // (NON-BASELINE)
-
-        this.router.post('/user', PackageCommandController.registerUser);
+        
+        //
+        this.router.post('/register', PackageCommandController.registerUser);
     }
 
     /**
@@ -86,7 +87,7 @@ export class PackageEndpoints {
         this.router.delete('/package/:id', FakeController.deletePackageById); // (NON-BASELINE)
         this.router.delete('/package/byName/:name', FakeController.deletePackageByName); // (NON-BASELINE)
         this.router.put('/authenticate', FakeController.createAccessToken);
-        this.router.post('/user', FakeController.registerUser)
+        this.router.post('/register', FakeController.registerUser)
         this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
         this.router.get('/package/:id/cost', FakeController.getCost); // (BASELINE)
 
