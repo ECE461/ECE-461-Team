@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Logger } from '../../utils/Logger';
 
 // GitHub API Base URL
 const GITHUB_API_URL = 'https://api.github.com';
@@ -65,7 +66,7 @@ export async function getPackageJson(repoOwner: string, repoName: string): Promi
     try {
         const url = `${GITHUB_API_URL}/repos/${repoOwner}/${repoName}/contents/package.json`;
         const response = await axios.get(url, {
-            headers: { 'Accept': 'application/vnd.github.v3.raw' }
+            headers: { 'Accept': 'application/vnd.github.v3.raw', Authorization: `token ${process.env.GITHUB_TOKEN}` },
         });
         return response.data;
     } catch (error) {
@@ -81,13 +82,17 @@ export async function getPackageJson(repoOwner: string, repoName: string): Promi
 async function getPullRequestFraction(repoOwner: string, repoName: string): Promise<number> {
     try {
         const url = `${GITHUB_API_URL}/repos/${repoOwner}/${repoName}/pulls?state=all`;
-        const response = await axios.get(url);
+        const response = await axios.get(url, { headers: {
+            Authorization: `token ${process.env.GITHUB_TOKEN}`
+        }});
         const pulls = response.data;
         let totalCommits = 0;
         let prCommits = 0;
 
         for (const pr of pulls) {
-            const commitsResponse = await axios.get(pr.commits_url);
+            const commitsResponse = await axios.get(pr.commits_url, { headers: {
+                Authorization: `token ${process.env.GITHUB_TOKEN}`
+            }});
             const commits = commitsResponse.data;
             prCommits += commits.length;
             totalCommits += commits.length;
