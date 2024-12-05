@@ -66,16 +66,24 @@ export class FakeController {
             return;
         }
 
-        const fakeRes = {
-            "BusFactor": 0,
-            "Correctness": 0,
-            "RampUp": 0,
-            "ResponsiveMaintainer": 0,
-            "LicenseScore": 0,
-            "GoodPinningPractice": 0,
-            "PullRequest": 0,
-            "NetScore": 0
-        }
+        const fakeRes ={
+            "BusFactor": 0.1,
+            "BusFactorLatency": 0.1,
+            "Correctness": 0.1,
+            "CorrectnessLatency": 0.1,
+            "RampUp": 0.1,
+            "RampUpLatency": 0.1,
+            "ResponsiveMaintainer": 0.1,
+            "ResponsiveMaintainerLatency": 0.1,
+            "LicenseScore": 0.1,
+            "LicenseScoreLatency": 0.1,
+            "GoodPinningPractice": 0.1,
+            "GoodPinningPracticeLatency": 0.1,
+            "PullRequest": 0.1,
+            "PullRequestLatency": 0.1,
+            "NetScore": 0.1,
+            "NetScoreLatency": 0.1
+          }
         res.status(200).json(fakeRes);
         
     }
@@ -115,7 +123,6 @@ export class FakeController {
             res.status(400).json({description: msg_invalid});
             return;
         }
-
         res.status(200).send({description: "Package is deleted."});
     }
 
@@ -144,8 +151,17 @@ export class FakeController {
 
 
     static registerUser(req: Request, res: Response){
-        //TODO FILL IN'
-        //have to generate dummy token
+        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+        if (!AuthenticationRequest.isValidRequest(req)) {
+            res.status(400).json({description: msg_invalid});
+            return;
+        }
+
+        const fakeRes = {
+            message: 'User successfully registered.'
+        }
+        
+        res.status(200).json(fakeRes); 
     }
   
     static getCost(req: Request, res: Response) {
@@ -155,12 +171,12 @@ export class FakeController {
             return;
         }
 
-        if (req.params.dependency == undefined) {
+        if (req.query.dependency == undefined) {
             res.status(400).json({description: "Dependency not found"});
             return;
         }
 
-        if (req.params.dependency) {
+        if (req.query.dependency) {
             const resp = {
                 "357898765": {
                   "standaloneCost": 50,

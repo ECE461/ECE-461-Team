@@ -66,9 +66,9 @@ export class PackageEndpoints {
         
         // Given User name, password, and isAdmin value + password, returns an AuthenticationToken (CREATE USER)
         this.router.put('/authenticate', PackageCommandController.createAccessToken); // (NON-BASELINE)
-        
-        //
-        this.router.post('/register', PackageCommandController.registerUser);
+
+        //Given username, password, and isAdmin value for desired user 
+        this.router.post('/register', PackageCommandController.registerUser); //(NON-BASELINE)
     }
 
     /**
