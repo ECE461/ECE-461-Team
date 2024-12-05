@@ -73,6 +73,22 @@ export class PackageQueryController {
         res.status(400).json({description: msg_invalid});
         return;
       }
+
+      try {
+        // Call PackageService to handle business logic
+        const regex = req.body.RegEx;
+        Logger.logInfo('Matching Regex: '+ regex);
+        const packages: PackageMetadata[] = await PackageQueryController.packageService.getPackagesByRegex(regex);
+        const jsonResponse = packages.map(pkg => pkg.getJson());
+        res.status(200).json(jsonResponse);
+      } catch (error) {
+          if (error instanceof Error && error.message.includes('400')) {
+            res.status(400).json({description: msg_invalid});
+            return;
+          } else {
+            res.status(500).send({message: "Internal Server Error"});
+          }
+      }
     }
 
     /* getPackageById: Gets single package by ID (download package).

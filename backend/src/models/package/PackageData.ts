@@ -15,6 +15,7 @@ import * as tar from 'tar';
 import archiver from 'archiver';
 import * as stream from 'stream';
 import * as path from 'path';
+import * as rimraf from 'rimraf';
 
 /* PackageData : Class to handle package data
  * @method: create - constructor
@@ -29,7 +30,7 @@ import * as path from 'path';
  * @method: createZip
  * @method: cleanupTempDirectory
  * @method: hasValidURL
- * @method: getJson
+ * @method: getJson()
  * @method: getUploadUrl
  * @method: getJSProgram
  * @method: getContent
@@ -153,11 +154,6 @@ export class PackageData {
 
         // If Content has not been set from URL
         if (URLHandler.isValidURL(source) && uploadUrl == "") {
-            Logger.logInfo(`Checking URL Metrics: ${source}`);
-            // Need to check that URL passes rating stuff:
-            if (!await PackageData.metricCheck(source)) {
-                throw new Error("Error 424: Package is not uploaded due to the disqualified rating.");
-            }
             // Set uploadUrl to url source
             instance.uploadUrl = source;
 
@@ -434,18 +430,12 @@ export class PackageData {
     /* cleanupTempDirectory : Recursively deletes a directory and its contents
      * @param dirPath: string - path to the directory to delete
      */
-    private cleanupTempDirectory(dirPath: string) {
-        if (fs.existsSync(dirPath)) {
-            const files = fs.readdirSync(dirPath);
-            for (const file of files) {
-                const filePath = path.join(dirPath, file);
-                if (fs.lstatSync(filePath).isDirectory()) {
-                    this.cleanupTempDirectory(filePath);  // Recursively delete directories
-                } else {
-                    fs.unlinkSync(filePath);  // Delete file
-                }
-            }
-            fs.rmdirSync(dirPath);  // Remove the empty directory
+    private async cleanupTempDirectory(dirPath: string) {
+        try {
+            rimraf.sync(dirPath);
+            Logger.logDebug(`Deleted temporary directory: ${dirPath}`);
+        } catch (err) {
+            throw new Error(`Failed to delete temporary directory: ${dirPath}, ${err}`);
         }
     }
 

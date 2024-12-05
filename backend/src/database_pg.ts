@@ -263,6 +263,29 @@ export class Database {
         }
     }
 
+    public async getPackagesByRegex(regex: string): Promise<PackageMetadata[]> {
+        const sql = `
+            SELECT name, version 
+            FROM packages_table 
+            WHERE readme ~* $1 OR name ~* $1
+        `;
+        try {
+            const res = await this.pool.query(sql, [regex]);
+    
+            // If no rows are found, return an empty array
+            if (res.rows.length === 0) {
+                return [];
+            }
+    
+            const allPackagesMetadata = res.rows.map((row: any) => new PackageMetadata(row.name, row.version));
+            return allPackagesMetadata;
+        } catch (err: any) {
+            Logger.logError('Error fetching packages matching regex:', err.message);
+            throw err;
+        }
+    }
+    
+
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
         const sql = `SELECT name, version, readme, url, jsprogram, uploadUrl FROM packages_table WHERE id = $1`;
         try{

@@ -26,7 +26,18 @@ export class PackageService {
         this.db = Database.getInstance();
     }
 
-    async getPackagesByRegex() {
+    async getPackagesByRegex(regex: string): Promise<PackageMetadata[]> {
+        try {
+            const allPackagesMetadataList : PackageMetadata[] = await this.db.getPackagesByRegex(regex);
+            return allPackagesMetadataList;
+        } catch (error: any) {
+            Logger.logError('Error in PackageService getPackagesByQuery:', error);
+
+            if (error instanceof Error && error.message.includes('invalid regular expression')) {
+                throw new Error('400: Invalid regular expression');
+              }
+            throw new Error('Failed to fetch packages');
+        }
     }
 
     async getPackagesByQuery(packageQueries: any[], offset: number) {
@@ -37,7 +48,8 @@ export class PackageService {
 
             for (const metadata of allPackagesMetadataList) {
                 for (const query of packageQueries) {
-                    const packageQuery = new PackageQuery(query.Name, query.Version);
+                    const version = query.Version ? query.Version : "0.0.0";
+                    const packageQuery = new PackageQuery(query.Name, version);
                     if (packageQuery.checkMatches(metadata)) {
                         matchingPackages.push(metadata.getJson());
                         break;
@@ -114,6 +126,12 @@ export class PackageService {
             }
             if (await S3.checkIfPackageExists(packageMetadata.getId())) {
                 throw new Error('409: Package already exists');
+            }
+
+            Logger.logInfo(`Checking URL Metrics: ${packageData.getUploadUrl()}`);
+            // Need to check that URL passes rating stuff:
+            if (!await PackageData.metricCheck(packageData.getUploadUrl())) {
+                throw new Error("Error 424: Package is not uploaded due to the disqualified rating.");
             }
 
             // Upload metadata and readme to RDS -----------------------------------------
