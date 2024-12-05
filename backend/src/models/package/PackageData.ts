@@ -10,6 +10,11 @@ import { Request } from 'express';
 import { PackageName } from './PackageName';
 import { PackageVersion } from './PackageVersion';
 import { PackageID } from './PackageID';
+import * as zlib from 'zlib';
+import * as tar from 'tar';
+import archiver from 'archiver';
+import * as stream from 'stream';
+import * as path from 'path';
 
 export class PackageData {
     private content; // Zipped content converted to base-64
@@ -40,6 +45,7 @@ export class PackageData {
                 if (value && !PackageData.isValidJavaScript(value)) {
                     return helpers.error('any.invalid');
                 }
+                return value;
             })
     }).xor('Content', 'URL').required();
 
@@ -57,12 +63,14 @@ export class PackageData {
                     if (!PackageVersion.isValidVersion(value)) {
                         return helpers.error('any.invalid');
                     }
+                    return value;
                 }),
             ID: Joi.string().required()
                 .custom((value, helpers) => {
                     if (!PackageID.isValidID(value)) {
                         return helpers.error('any.invalid');
                     }
+                    return value;
                 }),
         }).required(),
         data: Joi.object({
@@ -87,6 +95,7 @@ export class PackageData {
                     if (value && !PackageData.isValidJavaScript(value)) {
                         return helpers.error('any.invalid');
                     }
+                    return value;
                 })
         }).xor('Content', 'URL').required()
         
@@ -111,36 +120,59 @@ export class PackageData {
      * @param source: string - URL or base-64 encoded content
      * @param jsProgram: string - jsProgram for sensitive data
      * @returns Promise
+     * 
+     * Three ways of setting this:
+     * (1) Upload/Update with URL: source is URL, no uploadUrl given -> uploadUrl=source, content will be set from URL
+     * (2) Upload/Update/Download with Content: source is base-64 encoded content & no uploadUrl given -> content=source, uploadUrl=""
+     * (3) Download with URL: source is Content, uploadUrl is given -> content=source, uploadUrl=uploadUrl
      */
     static async create(source: string, jsProgram : string, uploadUrl="") {
         // Create new instance
-        const instance = new PackageData("", jsProgram, uploadUrl);
+        const instance = new PackageData(source, jsProgram, uploadUrl);
 
         // If Content has not been set from URL
-        if (source == "" && instance.hasValidURL()) {
+        if (URLHandler.isValidURL(source) && uploadUrl == "") {
             Logger.logInfo(`Checking URL Metrics: ${source}`);
             // Need to check that URL passes rating stuff:
             if (!await PackageData.metricCheck(source)) {
-                throw new Error("Package is not uploaded due to the disqualified rating.");
+                throw new Error("Error 424: Package is not uploaded due to the disqualified rating.");
             }
+            // Set uploadUrl to url source
+            instance.uploadUrl = source;
 
+            // Update content with base-64 encoding from URL
             Logger.logInfo(`Setting content from URL: ${source}`);
             await instance.setContentFromURL(source);
-        } else {
-            Logger.logInfo(`Content not being updated from URL`);
+        } else if (!URLHandler.isValidURL(source)) {
+            Logger.logInfo(`Content being set from source.`);
+            if (uploadUrl != "") {
+                Logger.logInfo(`Content and URL both set: Used for Download of package which was uploaded with URL.`);
+            }
         }
         return instance;
     }
 
     static async metricCheck(url: string) : Promise<boolean> {
         try {
-            const Metrics = new MetricManager(url);
+            const urlH = await URLHandler.create(url);
+            console.log(urlH.getRepoURL());
+            // TODO: Metric manager needs to be able to handle github repo with specific version (not just latest)
+            const Metrics : MetricManager = await MetricManager.create(URLHandler.standardizeGitHubURL(urlH.getRepoURL()));
             const metrics = await Metrics.getMetrics();
+            return true;
 
-            // TODO: need to add two other scores
-            if (metrics.netScore >= 0.5 && metrics.busFactorValue >= 0.5 && metrics.correctnessValue >= 0.5 && metrics.maintainerValue >= 0.5 && metrics.licenseValue >= 0.5) {
+            // TODO: need to add two other scores *******
+            if (metrics.netScore >= 0.5 
+                && metrics.busFactorValue >= 0.5 
+                && metrics.correctnessValue >= 0.5 
+                && metrics.maintainerValue >= 0.5 
+                && metrics.licenseValue >= 0.5
+                && metrics.pullRequestValue >= 0.5
+                && metrics.rampUpValue >= 0.5
+            ) {
                 return true;
             }
+            Logger.logDebug("Metrics did not pass rating: " + JSON.stringify(metrics));
             return false;
         } catch (error) {
             throw new Error("Internal Error: Could not get metrics");
@@ -204,18 +236,187 @@ export class PackageData {
     private async setContentFromURL(url: string) {
         try {
             // TODO: need to get zipped content (without .git folder) from github or wherever and convert to base-64
-            const urlHandler = new URLHandler(url);
+            const urlHandler = await URLHandler.create(url);
+            
             const owner = urlHandler.getOwnerName();
             const repo = urlHandler.getRepoName();
 
-            const urlDownload = `https://api.github.com/${owner}/${repo}/zipball/`;
+            // Version: 4 cases
+            // (1) default=package.json
+            // (2) Plain github: https://github.com/{owner}/{repo}
+            // (3) Plain npm: https://www.npmjs.com/package/{package}
+            // (4) Version from github tags: https://github.com/lodash/lodash/tree/4.17.21
+            // (5) Version from github releases (w/ associated tag): https://github.com/facebook/react/releases/tag/v17.0.2
+            // (6) Version from npm: https://www.npmjs.com/package/underscore/v/1.7.0 
+            // (7) No version found: version=1.0.0
 
-            const response = await axios.get(url, { responseType: 'arraybuffer' });
+            // Case 4: Version from github tags
+            const regexTag = /^https:\/\/github\.com\/([\w-]+)\/([\w.-]+)\/tree\/([\w.-]+)$/;
+            const matchGithubTag = (urlHandler.getURL()).match(regexTag);
+            if (matchGithubTag) {
+                const rawVersion = matchGithubTag[3];
+                const urlDownload = `https://api.github.com/repos/${owner}/${repo}/zipball/${rawVersion}`;
+                Logger.logDebug(urlDownload);
+                this.content = await this.downloadGithubPackage(urlDownload);
+                return;
+            }
 
-            this.content = Base64.fromUint8Array(new Uint8Array(response.data));
+            // Case 5: Version from github releases
+            
+            const regexRelease = /^https:\/\/github\.com\/([\w-]+)\/([\w.-]+)\/releases\/tag\/([\w.-]+)$/;
+            const matchGithubRelease = (urlHandler.getURL()).match(regexRelease);
+            if (matchGithubRelease) {
+                const rawVersion = matchGithubRelease[3];
+                const urlDownload = `https://api.github.com/repos/${owner}/${repo}/zipball/${rawVersion}`;
+                Logger.logDebug(urlDownload);
+                this.content = await this.downloadGithubPackage(urlDownload);
+                return;
+            }
+
+            // Case 2: Plain github
+            const regexPlainGithub = /^https:\/\/github\.com\/([\w-]+)\/([\w.-]+)$/;
+            const matchPlainGithub = (urlHandler.getURL()).match(regexPlainGithub);
+            if (matchPlainGithub) {
+                const urlDownload = `https://api.github.com/repos/${owner}/${repo}/zipball/`;
+                Logger.logDebug(urlDownload);
+                this.content = await this.downloadGithubPackage(urlDownload);
+                return;
+            }
+
+            // Case 6: Version from npm
+            const regexNpmVersion = /^https:\/\/www\.npmjs\.com\/package\/([\w.-]+)\/v\/([\w.-]+)$/;
+            const matchNpmVersion = (urlHandler.getURL()).match(regexNpmVersion);
+            if (matchNpmVersion) {
+                const rawVersion = matchNpmVersion[2];
+                const packageName = matchNpmVersion[1];
+                this.content = await this.downloadNpmPackage(packageName, rawVersion);
+                return;
+            }
+
+            // Case 3: Plain npm
+            const regexPlainNpm = /^https:\/\/www\.npmjs\.com\/package\/([\w@./-]+)$/;
+            const matchPlainNpm = (urlHandler.getURL()).match(regexPlainNpm);
+            if (matchPlainNpm) {
+                const packageName = matchPlainNpm[1];
+                this.content = await this.downloadNpmPackage(packageName);
+                return;
+                // urlDownload = `https://api.github.com/${owner}/${repo}/zipball/`;   
+            }
+
+            // Case 7: Does not match one of the following cases
+            throw new Error("Error 400: URL does not match any of the supported formats.");
+
+            
         } catch (error) {
-            throw new Error("Error fetching content from URL");
+            throw new Error("Error fetching content from URL" + error);
         }
+    }
+
+    private async downloadGithubPackage(urlDownload: string) {
+        const response = await axios.get(urlDownload, { responseType: 'arraybuffer', headers: {
+            Authorization: `token ${process.env.GITHUB_TOKEN}`
+        }});
+
+        return Base64.fromUint8Array(new Uint8Array(response.data));
+    }
+
+    private async downloadNpmPackage(packageName: string, version: string = 'latest') {
+        try {
+            // Fetch metadata from npm
+            Logger.logDebug(`Fetching metadata for package "${packageName}" from npm...`);
+            const metadataUrl = `https://registry.npmjs.org/${packageName}`;
+            const metadataResponse = await axios.get(metadataUrl);
+            const metadata = metadataResponse.data;
+
+            // Get tarball URL for the specified version
+            if ( version === 'latest') {
+                version = metadata['dist-tags'].latest;
+            }
+            const versionInfo = metadata.versions[version];
+            if (!versionInfo) {
+                throw new Error(`Version "${version}" not found for package "${packageName}".`);
+            }
+            const tarballUrl = versionInfo.dist.tarball;
+            Logger.logInfo(`Downloading tarball for ${packageName}@${version} from ${tarballUrl}`);
+
+            // Download tarball as a buffer
+            const tarballResponse = await axios.get(tarballUrl, { responseType: 'arraybuffer' });
+            const tarballBuffer = Buffer.from(tarballResponse.data);
+
+            // Step 4: Save the tarball buffer to a temporary file
+            const tarballFilePath = path.join(__dirname, 'temp.tar.gz');
+            fs.writeFileSync(tarballFilePath, tarballBuffer);
+
+            // Step 5: Extract the tarball (.tgz) into files
+            const tempDir = path.join(__dirname, 'temp');  // Temporary directory for extracted files
+
+            // Create the temporary directory if it doesn't exist
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir);
+            }
+
+            // Extract the tarball file to the temp directory
+            await tar.x({
+                file: tarballFilePath,
+                cwd: tempDir,
+            });
+
+            // Step 6: Create a .zip archive
+            const zipBuffer = await this.createZip(tempDir);
+
+            // Step 7: Encode the .zip buffer as Base64
+            const base64Zip = zipBuffer.toString('base64');
+
+            console.log(`Successfully fetched and converted ${packageName}@${version} to Base64 .zip.`);
+
+            // Cleanup: Remove the temporary directory and its contents
+            this.cleanupTempDirectory(tempDir);
+            fs.unlinkSync(tarballFilePath);  // Delete the tarball file after extraction
+
+            return base64Zip;
+        } catch (error) {
+            // Cleanup in case of an error as well
+            this.cleanupTempDirectory(path.join(__dirname, 'temp'));
+            throw new Error(`Failed to download package "${packageName}@${version}" from npm: ${error}`);
+        }
+    }
+
+    private cleanupTempDirectory(dirPath: string) {
+        if (fs.existsSync(dirPath)) {
+            const files = fs.readdirSync(dirPath);
+            for (const file of files) {
+                const filePath = path.join(dirPath, file);
+                if (fs.lstatSync(filePath).isDirectory()) {
+                    this.cleanupTempDirectory(filePath);  // Recursively delete directories
+                } else {
+                    fs.unlinkSync(filePath);  // Delete file
+                }
+            }
+            fs.rmdirSync(dirPath);  // Remove the empty directory
+        }
+    }
+
+    private async createZip(sourceDir: string): Promise<Buffer> {
+        return new Promise<Buffer>((resolve, reject) => {
+            const chunks: Buffer[] = [];
+            const archive = archiver('zip', {
+                zlib: { level: 9 }, // Maximum compression
+            });
+    
+            archive.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+    
+            archive.on('end', () => {
+                resolve(Buffer.concat(chunks));
+            });
+    
+            archive.on('error', reject);
+    
+            // Add files from the source directory
+            archive.directory(sourceDir, false);
+            archive.finalize();
+        });
     }
 
     getContent() {
@@ -224,6 +425,18 @@ export class PackageData {
 
     getJSProgram() {
         return this.JSProgram;
+    }
+
+    getUploadUrl() {
+        return this.uploadUrl;
+    }
+
+    getSourceType() {
+        if (this.uploadUrl != "") {
+            return "URL";
+        } else {
+            return "Content";
+        }
     }
 
     getJson() {

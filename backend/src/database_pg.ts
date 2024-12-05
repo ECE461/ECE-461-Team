@@ -90,7 +90,8 @@ export class Database {
                 version TEXT NOT NULL,
                 readme TEXT,
                 url TEXT,
-                jsprogram TEXT
+                jsprogram TEXT,
+                uploadUrl TEXT
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
@@ -121,7 +122,6 @@ export class Database {
     }
 
 
-
     /**
      **PACKAGES_TABLE OPERATIONS 
      * @method addPackage
@@ -132,12 +132,14 @@ export class Database {
      * @method deletePackagebyID: delete a singular package associated with an id
      * @method deletePackagebyName: delete all versions of a package (versions of a package can have same name, diff id)
      * @method getDetails: return all data fields associated with a package
+     * @method getSourceType: return whether the package is a URL or Content
+     * @method getVersions: return all versions of a package
      */
 
-    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string) {
-        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram) VALUES ($1, $2, $3, $4, $5, $6)`;
+    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string, uploadUrl: string) {
+        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
         try {
-            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram]);
+            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram, uploadUrl]);
             Logger.logInfo(`A new package has been inserted with id: ${packageId}`);
         } catch (err: any) {
             Logger.logError(`Error inserting data with id=${packageId} into database: `, err.message);
@@ -281,7 +283,30 @@ export class Database {
         }
     }
 
+    public async getSourceType(packageID: string): Promise<string> {
+        const sql = `SELECT uploadUrl FROM packages_table WHERE id = $1`;
+        try {
+            const res = await this.pool.query(sql, [packageID]);
+            Logger.logDebug(res.rows);
+            const uploadUrl = res.rows[0].uploadUrl;
 
+            return uploadUrl === "" ? "Content" : "URL";
+        } catch (err) {
+            Logger.logError('Error fetching source type:', err);
+            throw err;
+        }
+    }
+
+    public async getVersions(packageName: string): Promise<string[]> {
+        const sql = `SELECT version FROM packages_table WHERE name = $1`;
+        try {
+            const res = await this.pool.query<{ version: string }>(sql, [packageName]);
+            return res.rows.map((row) => row.version);
+        } catch (err: any) {
+            Logger.logError('Error fetching versions:', err);
+            throw err;
+        }
+    }
 
 
     /**

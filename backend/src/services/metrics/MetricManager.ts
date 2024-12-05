@@ -14,7 +14,7 @@ dotenv.config();
 
 
 export class MetricManager {
-    public urlHandler: URLHandler;
+    public urlHandler: URLHandler | null = null;
     private owner: string = "";
     private repoName: string = "";
 
@@ -23,15 +23,19 @@ export class MetricManager {
      * 
      * @param path the path from the URL of the GitHub repository
      */
-    constructor(path: string) {
-        this.urlHandler = new URLHandler(path);
-     }
+    private constructor() {
+    }
 
-    async setProperties() {
-        await this.urlHandler.setRepoURL();
+    static async create(path: string) : Promise<MetricManager> {
+        const metricManagerInstance = new MetricManager();
+        const urlHandlerInstance = await URLHandler.create(path);
+        
+        metricManagerInstance.urlHandler = urlHandlerInstance;
         // sets the owner and repository name
-        this.owner = this.urlHandler.getOwnerName();
-        this.repoName = this.urlHandler.getRepoName();
+        metricManagerInstance.owner = metricManagerInstance.urlHandler.getOwnerName();
+        metricManagerInstance.repoName = metricManagerInstance.urlHandler.getRepoName();
+
+        return metricManagerInstance; 
     }
 
     /**
