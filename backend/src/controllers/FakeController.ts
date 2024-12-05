@@ -151,7 +151,17 @@ export class FakeController {
 
 
     static registerUser(req: Request, res: Response){
-        //TODO FILL IN
+        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+        if (!AuthenticationRequest.isValidRequest(req)) {
+            res.status(400).json({description: msg_invalid});
+            return;
+        }
+
+        const fakeRes = {
+            message: 'User successfully registered.'
+        }
+        
+        res.status(200).json(fakeRes); 
     }
   
     static getCost(req: Request, res: Response) {
