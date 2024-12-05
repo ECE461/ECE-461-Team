@@ -221,13 +221,13 @@ export class PackageCommandController {
 
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
 
-        if (!AuthenticationRequest.isValidRequest(req) || !AuthenticationRequest.isValidToken(req)) {
+        if (!AuthenticationRequest.isValidRequest(req)) {
             Logger.logInfo(msg_invalid);
             res.status(400).json({description: msg_invalid});
             return;
         }
 
-        try{ 
+        try{
             await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
             res.status(200).send({ message: 'User successfully registered' });
 
@@ -237,6 +237,9 @@ export class PackageCommandController {
             }
             else if (err instanceof Error && err.message.includes('500')){
                 res.status(500).send({description: 'Error registering user.'});
+            }
+            else if (err instanceof Error && err.message.includes('403')){
+                res.status(403).send({ description: 'Authentication failed due to invalid or missing AuthenticationToken.'})
             }
         }
         

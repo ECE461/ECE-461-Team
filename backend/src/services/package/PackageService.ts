@@ -224,7 +224,6 @@ export class PackageService {
                 admin: isAdmin, 
                 iat: Math.floor(Date.now() / 1000),
                 exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60, 
-                calls: 1000,
             };
             
             //force throw error or it won't let me add stuff:(
