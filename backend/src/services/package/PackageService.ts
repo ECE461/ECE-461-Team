@@ -268,6 +268,7 @@ export class PackageService {
         await S3.deleteAllPackages();
 
         // TODO: Delete users?
+        await this.db.deleteAllUsers();
     }
 
     async deletePackageByName(packageName: string) {

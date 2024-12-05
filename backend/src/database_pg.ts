@@ -338,10 +338,12 @@ export class Database {
 
     /**
      **USERS TABLE 
-     *@method userExists
-     *@method addUser
-     *@method deleteUser 
-     *@method isAdmin
+     * @method userExists
+     * @method addUser
+     * @method deleteUser 
+     * @method isAdmin
+     * @method getPW
+     * @method deleteAllUsers
      */
 
     public async userExists(username:string){
@@ -425,6 +427,19 @@ export class Database {
         } catch (err: any) {
             
             Logger.logError(`Error fetching password for ${username}`, error); 
+            throw err;
+        }
+    }
+
+    
+    public async deleteAllUsers() {
+        // Delete all entries from users table except for user: 'ece30861defaultadminuser'
+        const sql = `DELETE FROM users WHERE username != 'ece30861defaultadminuser'`;
+        try {
+            const res = await this.pool.query(sql);
+            Logger.logInfo(`Deleted ${res.rowCount} entries from the users table.`);
+        } catch (err: any) {
+            Logger.logError('Error deleting entries:', err.message);
             throw err;
         }
     }
