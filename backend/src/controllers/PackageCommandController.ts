@@ -182,6 +182,7 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
+
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
       
         if (!AuthenticationRequest.isValidRequest(req)) {
@@ -218,7 +219,7 @@ export class PackageCommandController {
      * Description: allows admins to register 
      */
     static async registerUser(req: Request, res: Response){
-
+        
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
 
         if (!AuthenticationRequest.isValidRequest(req)) {
@@ -227,18 +228,28 @@ export class PackageCommandController {
             return;
         }
 
+        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+        if(!authorization_token.isAdmin){
+            throw new Error("403: User is not an admin, therefore cannot register users");
+        }
+
+
         try{
             await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
             res.status(200).send({ message: 'User successfully registered' });
 
         } catch (err: any){
             if (err instanceof Error && err.message.includes('401')) {
+                Logger.logInfo(err.message);
                 res.status(409).send({description: 'User has already been registered'});
             }
             else if (err instanceof Error && err.message.includes('500')){
+                Logger.logInfo(err.message);
                 res.status(500).send({description: 'Error registering user.'});
             }
             else if (err instanceof Error && err.message.includes('403')){
+                Logger.logInfo(err.message);
                 res.status(403).send({ description: 'Authentication failed due to invalid or missing AuthenticationToken.'})
             }
         }

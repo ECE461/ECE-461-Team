@@ -238,7 +238,7 @@ export class PackageService {
             }
 
             Logger.logInfo("Successfully generated token.")
-            return "bearer " + token;
+            return `"bearer ${token}"`;
 
         } catch (err: any) {
             throw err; 
@@ -258,6 +258,16 @@ export class PackageService {
 
         } catch(err: any) {
             throw err; 
+        }
+    }
+
+    //for testing purposes
+    async addDefaultUser(){
+        try{
+            await this.db.addUser('ece30861defaultadminuser', true, "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;");
+
+        } catch (err: any){
+            throw err;
         }
     }
 
