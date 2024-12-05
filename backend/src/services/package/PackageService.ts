@@ -2,6 +2,7 @@ import { PackageUpdateService } from './PackageUpdateService';
 import { PackageUploadService } from './PackageUploadService';
 import { PackageDeleteService } from './PackageDeleteService';
 import { PackageDownloadService } from './PackageDownloadService';
+import { PackageCostService } from './PackageCostService';
 import { Database } from '../../database_pg';
 import { PackageData } from '../../models/package/PackageData';
 import { PackageID } from '../../models/package/PackageID';
@@ -16,6 +17,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { TokenUrlParameterKey } from 'aws-sdk/clients/glue';
 import { DeleteBucketAnalyticsConfigurationCommand } from '@aws-sdk/client-s3';
+
 
 export class PackageService {
     private db: Database;
@@ -52,6 +54,7 @@ export class PackageService {
     async getPackageById(packageID: string) {
         try{
             let packageExist: any = await this.db.packageExists(packageID); 
+            Logger.logInfo(`Checking if package exists in database: ${packageExist}`);
             
             if(!packageExist){
                 throw new Error("404: Package does not exist"); 
@@ -114,9 +117,14 @@ export class PackageService {
     async updatePackage() {
     }
 
-    async getRating(package_id: string) {
-        const package_url = await this.db.getPackageURL(package_id);
-        const packageManager = new MetricManager(package_url);
+    async getRating(packageId: string) {
+        // Check that package exists
+        if (!await this.db.packageExists(packageId)) {
+            throw new Error('404: Package not found');
+        }
+
+        const packageUrl = await this.db.getPackageURL(packageId);
+        const packageManager = new MetricManager(packageUrl);
         await packageManager.setProperties(); // Set properties of package manager (MUST DO THIS BEFORE GETTING METRICS)
 
         try {
@@ -129,6 +137,29 @@ export class PackageService {
             Logger.logDebug(error);
             throw error;
         }
+    }
+
+    async getCost(packageId: string, dependencies: boolean)
+    {
+        try {
+            let returnDict: { [key: string]: any } = {};
+            const packageCostService= new PackageCostService()
+            const standaloneCost = await packageCostService.getStandaloneCost(packageId);
+            if(!dependencies)
+            {
+                returnDict[packageId as string] = {totalCost : standaloneCost};
+                return returnDict;
+            }
+
+            returnDict = await packageCostService.getTotalCost(packageId);
+            return returnDict;
+        }
+        catch(error) {
+            Logger.logInfo("Error fetching package cost");
+            Logger.logDebug(error);
+            throw error;
+        }
+        
     }
 
     async reset() {

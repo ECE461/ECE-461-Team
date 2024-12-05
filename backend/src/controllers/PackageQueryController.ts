@@ -102,7 +102,6 @@ export class PackageQueryController {
           res.status(404).send({description: 'Package does not exist'});
         }
       }
-
     }
     
     /* getRating: Gets rating of a package
@@ -135,21 +134,49 @@ export class PackageQueryController {
         res.status(500).send({message: "Internal Server Error"});
       };
     }
-    /* getTrack: Return extension track that we are working on
+
+    /* getCost: Gets cost of a package
+     * @param req: Request object
+     * @param res: Response object
+     * 
+     * Method: GET
+     * Route: /package/{id}/cost
+     * 
+     * Description: User gives id of package in params.
+     * Sets response to Cost if all metrics were computed successfully
+     * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package cost system broke)
      */
-    static async getTracks(req: Request, res: Response) {
+    static async getCost(req: Request, res: Response) {
       try {
+        const msg_invalid = "There is missing field(s) in the PackageID";
+        if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
+          Logger.logInfo(msg_invalid);
+          res.status(400).json({description: msg_invalid});
+          return;
+        }
+        if (!PackageID.isValidGetByIdRequest(req)) {
+          Logger.logInfo(msg_invalid);
+          res.status(400).json({description: msg_invalid});
+          return;
+        }
 
-        const plannedTracks = {
-          plannedTracks: [
-            "Access control track"
-          ]
-        };
+        // Get the package key from the id (for S3)
+        const packageId = req.params.id;
+        const dependency = req.query.dependency === 'true';
 
-        res.status(200).json(plannedTracks);
-      } catch (err) {
-        Logger.logError('Error fetching tracks:', err);
-        res.status(500).send({description: "The system encountered an error while retrieving the student's track information."});
+        // Get the package id from the request
+        const cost = await PackageQueryController.packageService.getCost(packageId, dependency);
+
+        res.status(200).json(cost);
       }
+      catch (error) {
+        if(error instanceof Error && error.message.includes('404')){
+          res.status(404).send({description: 'Package does not exist'});
+        }
+        else
+        {
+          res.status(500).send({message: "The package rating system choked on at least one of the metrics."});
+        }
+      };
     }
 }
