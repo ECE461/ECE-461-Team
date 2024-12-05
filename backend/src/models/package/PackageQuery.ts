@@ -20,10 +20,14 @@ export class PackageQuery {
                     return value;
                 }),
             Version: Joi.string()
-                .required()
+                .when('Name', {
+                    is: Joi.string().not('*'), // Only require Version if Name is not '*'
+                    then: Joi.required(),      // Make Version required if Name is not '*'
+                    otherwise: Joi.optional()  // Make Version optional if Name is '*'
+                })
                 .custom((value, helpers) => {
                     value = value.replace(/\s/g, '');
-                    if (!PackageVersionQuery.isValidVersionQuery(value)) {
+                    if (value && !PackageVersionQuery.isValidVersionQuery(value)) {
                         return helpers.error('any.invalid');
                     }
                     return value;

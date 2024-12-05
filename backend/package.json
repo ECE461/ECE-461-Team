@@ -17,6 +17,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.675.0",
     "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "aws-sdk": "^2.1691.0",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
@@ -29,10 +30,13 @@
     "jose": "^5.9.6",
     "js-base64": "^3.7.7",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "rimraf": "^6.0.1",
+    "tar": "^7.4.3"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
+    "@types/archiver": "^6.0.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/commander": "^2.12.0",
     "@types/express": "^5.0.0",
@@ -43,6 +47,7 @@
     "@types/pg": "^8.11.10",
     "@types/semver": "^7.5.8",
     "@types/sqlite3": "^3.1.11",
+    "@types/tar": "^6.1.13",
     "commander": "^12.1.0",
     "eslint": "^7.23.0",
     "eslint-config-prettier": "^8.1.0",

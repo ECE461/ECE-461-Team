@@ -17,6 +17,10 @@ export class PackageVersionQuery {
     static isValidVersionQuery(versionQuery: string): boolean {
         const rangePattern = /^\d+\.\d+\.\d+\s*-\s*\d+\.\d+\.\d+$/;
 
+        if (versionQuery == "*") {
+            return true; // Wildcard version (e.g., '*')
+        }
+
         if (PackageVersion.isValidVersion(versionQuery)) {
             return true; // Exact version (e.g., '1.2.3')
         }
@@ -46,6 +50,9 @@ export class PackageVersionQuery {
     }
 
     matches(version: string): boolean {
+        if (version == "*") {
+            return true;
+        }
         return semver.satisfies(version, this.versionQuery);
     }
 

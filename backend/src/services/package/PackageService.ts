@@ -17,7 +17,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { TokenUrlParameterKey } from 'aws-sdk/clients/glue';
 import { DeleteBucketAnalyticsConfigurationCommand } from '@aws-sdk/client-s3';
-
+import * as semver from 'semver';
 
 export class PackageService {
     private db: Database;
@@ -26,7 +26,18 @@ export class PackageService {
         this.db = Database.getInstance();
     }
 
-    async getPackagesByRegex() {
+    async getPackagesByRegex(regex: string): Promise<PackageMetadata[]> {
+        try {
+            const allPackagesMetadataList : PackageMetadata[] = await this.db.getPackagesByRegex(regex);
+            return allPackagesMetadataList;
+        } catch (error: any) {
+            Logger.logError('Error in PackageService getPackagesByQuery:', error);
+
+            if (error instanceof Error && error.message.includes('invalid regular expression')) {
+                throw new Error('400: Invalid regular expression');
+              }
+            throw new Error('Failed to fetch packages');
+        }
     }
 
     async getPackagesByQuery(packageQueries: any[], offset: number) {
@@ -37,7 +48,8 @@ export class PackageService {
 
             for (const metadata of allPackagesMetadataList) {
                 for (const query of packageQueries) {
-                    const packageQuery = new PackageQuery(query.Name, query.Version);
+                    const version = query.Version ? query.Version : "0.0.0";
+                    const packageQuery = new PackageQuery(query.Name, version);
                     if (packageQuery.checkMatches(metadata)) {
                         matchingPackages.push(metadata.getJson());
                         break;
@@ -67,16 +79,18 @@ export class PackageService {
             }
 
             //metadata
-            let metadata: PackageMetadata = new PackageMetadata(details.name, details.readme);
+            let metadata: PackageMetadata = new PackageMetadata(details.name, details.version);
             
             let file = await S3.getFileByKey(packageID);
+
+            // TODO: Check permissions with JSProgram
 
             if(file == null){
                 throw new Error("404: Package does not exist");
             }
             
             //data
-            let data: any = await PackageData.create(file, details.jsprogram);
+            let data: any = await PackageData.create(file, details.jsprogram, details.uploadUrl);
         
             const pack = new Package(metadata, data);
             Logger.logInfo("Successfully retrieved package from S3.");
@@ -86,23 +100,46 @@ export class PackageService {
         }  
     }
 
-    async uploadPackage(packageData: PackageData) {
+    async uploadPackage(packageData: PackageData, debloat: boolean, name: string) {
         try {
-            Logger.logInfo("Extracting package metadata");
-            const packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData);
 
-            // Upload metadata and readme to RDS (SQLite (later PostgreSQL)) -----------------------------------------
-            // If pacakge does not exist already:
-            if (await this.db.packageExists(packageMetadata.getId())) {
+            // Debloat package if necessary
+            if (debloat) {
+                Logger.logInfo("Debloating package");
+                // TODO: Need to implement debloating
+                packageData = await PackageUploadService.debloatPackage(packageData);
+            }
+
+            Logger.logInfo("Extracting package metadata");
+            const isUploadByContent = packageData.getSourceType() === "Content";
+            let packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData, isUploadByContent);
+
+            // Check that Request Body "name" matches package.json's name
+            if (packageMetadata.getName() !== name && name !== "") {
+                throw new Error(`400: Package name does not match: ${packageMetadata.getName()} !== ${name}`);
+            }
+
+            // If package does already exists:
+            Logger.logInfo("Checking if package exists");
+            if (await this.db.packageExistsbyName(packageMetadata.getName())) {
                 throw new Error('409: Package already exists');
             }
-            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram());
-
-            // Upload to S3 Database
-            Logger.logInfo("Uploading package to S3"); //---------------------------------------------------------------
             if (await S3.checkIfPackageExists(packageMetadata.getId())) {
                 throw new Error('409: Package already exists');
             }
+
+            Logger.logInfo(`Checking URL Metrics: ${packageData.getUploadUrl()}`);
+            // Need to check that URL passes rating stuff:
+            if (!await PackageData.metricCheck(packageData.getUploadUrl())) {
+                throw new Error("Error 424: Package is not uploaded due to the disqualified rating.");
+            }
+
+            // Upload metadata and readme to RDS -----------------------------------------
+            Logger.logInfo("Uploading package metadata to RDS");
+            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram(), packageData.getUploadUrl());
+
+            // Upload to S3 Database
+            Logger.logInfo("Uploading package to S3");
             await S3.uploadBase64Zip(packageData.getContent(), packageMetadata.getId());
 
             const pack = new Package(packageMetadata, packageData);
@@ -114,7 +151,69 @@ export class PackageService {
 
     }
 
-    async updatePackage() {
+    async updatePackage(packageData: PackageData, debloat: boolean, name: string, version: string, oldID: string) {
+        try {
+            if (debloat) {
+                Logger.logInfo("Debloating package");
+                packageData = await PackageUploadService.debloatPackage(packageData);
+            }
+
+            Logger.logInfo("Extracting package metadata");
+            let packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData, false);
+
+            // Check that Request Body "name" matches package.json's name
+            if (packageMetadata.getName() !== name && name !== "") {
+                throw new Error('400: Package name does not match');
+            }
+
+            // Check that Request Body "version" matches package.json's version
+            if (packageMetadata.getVersion() !== version && version !== "") {
+                throw new Error('400: Package version does not match');
+            }
+
+            // Check if package exists
+            Logger.logInfo("Checking if package exists");
+            if (await this.db.packageExists(packageMetadata.getId())) {
+                throw new Error('409: Package already exists');
+            }
+
+            // Check: packages uploaded with Content must be updated with Content
+            Logger.logDebug(packageMetadata.getId());
+            if (packageData.getSourceType() !== await this.db.getSourceType(oldID)) {
+                throw new Error('400: Cannot update with different source type');
+            }
+
+            // Check: if uploaded with Content, new version must not be an old Patch version
+            if (packageData.getSourceType() === "Content") {
+                Logger.logInfo("Validating versioning rule for uploaded content");
+                const existingVersions = await this.db.getVersions(packageMetadata.getName());
+
+                // Find the latest version
+                const latestVersion = existingVersions.sort((a: string, b: string) => semver.compare(b, a))[0]; // Use `semver.compare` for semantic version comparison
+
+                if (semver.lt(packageMetadata.getVersion(), latestVersion)) {
+                    throw new Error('400: New version cannot be older than the latest patch release');
+                }
+
+            }
+
+            // Update metadata and readme to RDS -----------------------------------------
+            Logger.logInfo("Uploading package metadata to RDS");
+            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram(), packageData.getUploadUrl());
+
+            // Upload to S3 Database
+            Logger.logInfo("Uploading package to S3");
+            await S3.uploadBase64Zip(packageData.getContent(), packageMetadata.getId());
+
+
+        } catch (error) {
+            Logger.logError("Error updating package: ", error);
+            throw error;
+        }
+    }
+
+    async checkPackageIDExists(packageID: string) {
+        return await this.db.packageExists(packageID);
     }
 
     async getRating(packageId: string) {
@@ -123,9 +222,8 @@ export class PackageService {
             throw new Error('404: Package not found');
         }
 
-        const packageUrl = await this.db.getPackageURL(packageId);
-        const packageManager = new MetricManager(packageUrl);
-        await packageManager.setProperties(); // Set properties of package manager (MUST DO THIS BEFORE GETTING METRICS)
+        const package_url = await this.db.getPackageURL(packageId);
+        const packageManager = await MetricManager.create(package_url);
 
         try {
             const packageRating = await packageManager.getMetrics(); // Get metrics from package manager
@@ -170,6 +268,7 @@ export class PackageService {
         await S3.deleteAllPackages();
 
         // TODO: Delete users?
+        await this.db.deleteAllUsers();
     }
 
     async deletePackageByName(packageName: string) {
