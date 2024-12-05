@@ -9,8 +9,12 @@ const salt: number = 10; //salt round: number of times to hash (adding "salt" ha
 export interface PackageDetails {
     name : string;
     readme?: string; 
-    jsprogram?: string
+    jsprogram?: string;
+    version: string;
+    githubURL?: string;
+    uploadUrl?: string;
 }
+
 
 export interface PackageRow {
     id: string,
@@ -260,7 +264,7 @@ export class Database {
     }
 
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
-        const sql = `SELECT name, version, readme, url, jsprogram FROM packages_table WHERE id = $1`;
+        const sql = `SELECT name, version, readme, url, jsprogram, uploadUrl FROM packages_table WHERE id = $1`;
         try{
             
             const res = await this.pool.query(sql, [packageID]);
@@ -274,9 +278,9 @@ export class Database {
                 return null;
             }
             
-            const row = res.rows[0]; // Get the first row
+            const fields = res.rows[0]; // Get the first row
             
-            return {name: row.name, readme: row.readme, jsprogram: row.jsprogram};
+            return {name: fields.name, version: fields.version, readme: fields.readme, githubURL: fields.url, jsprogram: fields.jsprogram, uploadUrl: fields.uploadUrl};
         } catch(err: any){
             Logger.logError('Error fetching details associated with your package ID', err.message);
             throw err;

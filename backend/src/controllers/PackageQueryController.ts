@@ -100,6 +100,9 @@ export class PackageQueryController {
       }catch(error){
         if(error instanceof Error && error.message.includes('404')){
           res.status(404).send({description: 'Package does not exist'});
+        } else {
+          console.error('Error fetching patches: ', error);
+          res.status(500).send({message: "Internal Server Error"});
         }
       }
     }

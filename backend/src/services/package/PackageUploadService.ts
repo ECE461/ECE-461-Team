@@ -15,7 +15,6 @@ export class PackageUploadService {
         return packageData;
     }
 
-    // Need to work on this!!!!!!!
     public static extractPackageInfo(packageData: PackageData, isUpdateByContent: boolean) : PackageMetadata {
         Logger.logInfo("Extracting package metadata");
 
@@ -79,6 +78,7 @@ export class PackageUploadService {
         });
 
         if (packageMetadata === null) {
+            // If no package.json found, ABORT MISSION
             throw new Error("400: No package.json found in the uploaded package");
         }
         else {

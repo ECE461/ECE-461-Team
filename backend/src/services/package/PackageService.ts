@@ -67,16 +67,18 @@ export class PackageService {
             }
 
             //metadata
-            let metadata: PackageMetadata = new PackageMetadata(details.name, details.readme);
+            let metadata: PackageMetadata = new PackageMetadata(details.name, details.version);
             
             let file = await S3.getFileByKey(packageID);
+
+            // TODO: Check permissions with JSProgram
 
             if(file == null){
                 throw new Error("404: Package does not exist");
             }
             
             //data
-            let data: any = await PackageData.create(file, details.jsprogram);
+            let data: any = await PackageData.create(file, details.jsprogram, details.uploadUrl);
         
             const pack = new Package(metadata, data);
             Logger.logInfo("Successfully retrieved package from S3.");

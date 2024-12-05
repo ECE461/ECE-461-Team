@@ -80,25 +80,13 @@ export class PackageCommandController {
      * @param req: Request object
      * @param res: Response object
      * 
-     * Method: PUT
+     * Method: POST
      * Route: /package/{id}
      * 
      * Description: User gives id of package in params + Package information (see models/package/Package.ts) in req body
      * Updates database/storage with new package information
-     * Sets response status to 200 (success), 400 (invalid request), 404 (package does not exist)
+     * Sets response status to 200 (success), 400 (invalid request), 404 (package does not exist), 409 (package already exists)
      */
-    // {
-    //     "metadata": {
-    //       "Name": "string",
-    //       "Version": "1.2.3",
-    //       "ID": "1"
-    //     },
-    //     "data": {
-    //       "Name": "string",
-    //       "URL": "http://github.com",
-    //       "debloat": false
-    //     }
-    //   }
     static async updatePackage(req: Request, res: Response) {     
         const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
         if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
