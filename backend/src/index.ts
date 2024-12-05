@@ -6,7 +6,7 @@ import { exec } from 'child_process';
 const cors = require('cors');
 
 // Check that all required env variables have been set:
-if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.GITHUB_TOKEN) {
+if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.GITHUB_TOKEN || !process.env.SSH_KEY_PATH_ || !process.env.JWT_KEY) {
     console.error(`Missing required environment variables. 
     Please set the following environment variables:
         Required:
@@ -17,13 +17,14 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
         5. AWS_SECRET_ACCESS_KEY (Required): IAM user secret access key for S3 permissions
         6. GITHUB_TOKEN (Required): GitHub personal access token
         7. SSH_KEY_PATH_ (Required): Absolute file path to the ssh key that is used to connect to RDS in tunnel.sh
+        8. JWT_KEY (Required): xxxx bit number required to authenticate 
 
         Optional:
-        8. NODE_ENV: set to 'FAKE_SUCCESS' to use fake data
-        9. LOG_LEVEL: 2 for debug, 1 for info, 0 for silent
-        10. LOG_FILE: path to log file (default is default.log)
-        11. PORT: port for the server to run on (default is 3000)
-        12. LOG_CONSOLE: set to 'debug' or 'info' to log to console as well as file
+        9. NODE_ENV: set to 'FAKE_SUCCESS' to use fake data
+        10. LOG_LEVEL: 2 for debug, 1 for info, 0 for silent
+        11. LOG_FILE: path to log file (default is default.log)
+        12. PORT: port for the server to run on (default is 3000)
+        13. LOG_CONSOLE: set to 'debug' or 'info' to log to console as well as file
     `);
     process.exit(1);
 } else {

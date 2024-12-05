@@ -158,13 +158,35 @@ function App() {
     <div>
       <S.SearchBox>
         <form onSubmit={handleSubmit}>
-          <S.InputContainer>
+        <S.InitialInputContainer>
         <S.DropdownContainer onChange={handleChangeSearchType} value={searchType}>
             <option value="Query">Query</option>
             <option value="Regex">Regex</option>
         </S.DropdownContainer>
-
-          {inputs.map((input, index) => (
+        
+        {searchType === "Query" ? (
+        <>
+          <S.InputField
+            placeholder="Enter name"
+            value={inputs[0].name}
+            onChange={(e) => handleChange(0, "name", e.target.value)}
+          />
+          <S.InputField
+            placeholder="Enter version"
+            value={(inputs[0] as QueryInput).version}
+            onChange={(e) => handleChange(0, "version", e.target.value)}
+          />
+        </>
+      ) : (
+        <S.InputField
+          placeholder="Enter regex pattern"
+          value={inputValue}
+          onChange={handleChangeInput}
+        />
+      )}
+        </S.InitialInputContainer>
+        <S.AdditionalInputContainer>
+          {inputs.slice(1).map((input, index) => (
             <S.InputFieldContainer>
               {searchType === "Query" ? (
                 <>
@@ -172,14 +194,14 @@ function App() {
                   <S.InputField
                     placeholder="Enter name"
                     value={input.name}
-                    onChange={(e) => handleChange(index, "name", e.target.value)}
+                    onChange={(e) => handleChange(index +1, "name", e.target.value)}
                     style={{ marginRight: "10px" }}
                   />
                   <S.InputField
                     type = "text"
                     placeholder="Enter version"
                     value={(input as QueryInput).version}
-                    onChange={(e) => handleChange(index, "version", e.target.value)}
+                    onChange={(e) => handleChange(index +1 , "version", e.target.value)}
                     style={{ marginRight: "10px" }}
                   />
                 </>
@@ -193,14 +215,16 @@ function App() {
                 />
               )}
              
-              {inputs.length > 1 && (
-                <S.StyledButton type="button" onClick={() => handleDeleteInput(index)} >
+             {inputs.length > 1 && (
+                <S.StyledButton type="button" onClick={() => handleDeleteInput(index + 1)} >
                   Delete
                 </S.StyledButton>
               )}
             </S.InputFieldContainer>
           ))}
-           </S.InputContainer>
+          
+          </S.AdditionalInputContainer>
+         
 
           <S.StyledButton onClick={handleAddInput} type="button">
             Add More
@@ -214,16 +238,16 @@ function App() {
         </div>
       
 
-      {searchType === "Query" && (
+      {searchType === "Query" && queryResults.length>0 &&(
         <S.ResultBox>
           <S.ResultTitle>Results</S.ResultTitle>
           <S.ResultList>
           <S.ResultItem>
-            {queryResults.map((result: any, index: number) => (
-              <S.Result key={index}
+            {queryResults.map((result ) => (
+              <S.Result key={result.ID}
               onClick={() => handleNavigate(result.Name, result.Version, result.ID)}>
-                <strong>Name:</strong> {result.Name} <br />
-                <strong>Version:</strong> {result.Version} <br />
+                <strong>Package Name </strong> {result.Name} <br />
+                <strong>Version </strong> {result.Version} <br />
                
               </S.Result>
             ))}
@@ -232,14 +256,14 @@ function App() {
         </S.ResultBox>
       )}
 
-      {searchType === "Regex" && (
+      {searchType === "Regex" && regexResults.length > 0 &&(
         <S.ResultBox>
           <S.ResultTitle>Results</S.ResultTitle>
           <S.ResultList>
           <S.ResultItem>
-            {regexResults.map((result: any, index: number) => (
-              <S.Result key={index} onClick={() => handleNavigate(result.Name, result.Version, result.ID)}>
-                <strong>Name:</strong> {result.Name} <br />
+            {regexResults.map((result) => (
+              <S.Result key={result.ID } onClick={() => handleNavigate(result.Name, result.Version, result.ID)}>
+                <strong>Package Name </strong> {result.Name} <br />
                 <strong>Version:</strong> {result.Version} <br />
           
               </S.Result>

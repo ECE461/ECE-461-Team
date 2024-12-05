@@ -1,6 +1,10 @@
 import { Pool } from 'pg';
 import { Logger } from './utils/Logger';
 import { error } from 'console';
+import { PackageMetadata } from './models/package/PackageMetadata';
+import bcrypt from 'bcryptjs';
+
+const salt: number = 10; //salt round: number of times to hash (adding "salt" haha)
 
 export interface PackageDetails {
     name : string;
@@ -17,18 +21,29 @@ export interface PackageRow {
  * @class Database
  * @description Singleton that manages database instance and operations
  * 
- * @method getInstance: gets the singleton instance of the Database
- * @method addPackage: adds a new package to the database
- * @method packageExists: checks if a package exists in the database
- * @method deleteAllPackages: delete all entries form the packages_table table 
- * @method deletePackage: delete a package from packages_table table through id
- * @method getDetails: @returns {PackageDetails} associated with an id
- * @method getID: converts the name of repository to its id
- * @method close: close the instance
+ ** LOGISTICS
+ * @private @method constructor: DO NOT USE. use getInstance instead
+ * @method getInstance
+ * @method initializePackageTable
+ * @method initializeUsersTable
+ * 
+ ** PACKAGE TABLE
+ *
+ ** USERS TABLE
+ * 
  */
 export class Database {
     private static instance: Database;
     private pool: Pool;
+  
+    /**
+     **LOGISTICS 
+     * @private @method constructor: DO NOT USE. use getInstance instead
+     * @method getInstance
+     * @method initializePackageTable
+     * @method initializeUsersTable
+     * 
+     */
 
     private constructor() {
         this.pool = new Pool({
@@ -49,19 +64,24 @@ export class Database {
             .catch((err: any) => {Logger.logError('Error connecting to the database:', err)});
 
         Logger.logInfo('Initializing the database...');
-        this.initialize()
-            .then(() => Logger.logInfo('Database initialized.'))
-            .catch((err: any) => {Logger.logError('Error initializing the database:', err)});
+
+        Promise.all([
+            this.initializePackageTable(), 
+            this.initializeUsersTable()
+        ])
+            .then(() => Logger.logInfo('Database Initialized.'))
+            .catch((err: any) => {Logger.logError('Error initializing database:', err)})
     }
 
     public static getInstance(): Database {
         if (!Database.instance) {
             Database.instance = new Database();
-        }
+        }   
         return Database.instance;
     }
 
-    private async initialize() {
+
+    private async initializePackageTable() {
         try {
             // Create "packages_table" table if it does not exist
             await this.pool.query(`CREATE TABLE IF NOT EXISTS packages_table (
@@ -74,9 +94,45 @@ export class Database {
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
-            Logger.logError('Error creating table:', err);
+            throw new Error("error creating packages table");
         }
     }
+
+    private async initializeUsersTable(){
+        try{
+            await this.pool.query(`CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                is_admin BOOLEAN, 
+                password TEXT
+            )`);
+            Logger.logInfo('Users table created or already exists.');
+        } catch(err: any){
+            throw new Error("error creating users table");
+        }
+    }
+    
+    public async close() {
+        try {
+            await this.pool.end();
+            Logger.logInfo('Closed the database connection.');
+        } catch (err: any) {
+            Logger.logDebug('Error closing the database connection:' + err.message);
+        }
+    }
+
+
+
+    /**
+     **PACKAGES_TABLE OPERATIONS 
+     * @method addPackage
+     * @method packageExists
+     * @method packageExistsbyName
+     * @method getPackageURL
+     * @method deleteAllPackages: clears the table
+     * @method deletePackagebyID: delete a singular package associated with an id
+     * @method deletePackagebyName: delete all versions of a package (versions of a package can have same name, diff id)
+     * @method getDetails: return all data fields associated with a package
+     */
 
     public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string) {
         const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram) VALUES ($1, $2, $3, $4, $5, $6)`;
@@ -189,12 +245,18 @@ export class Database {
         }
     }
 
-    /**
-     * 
-     * @param packageID 
-     * @returns {Promise<{PackageDetails} | null>}: return null if package details if empty
-     *                                              current implementation requires user to check whether or not the fields are empty. 
-     */
+    public async getAllPackageMetadata(): Promise<PackageMetadata[]> {
+        const sql = `SELECT name, version FROM packages_table`;
+        try {
+            const res = await this.pool.query(sql);
+            const allPackagesMetadata = res.rows.map((row: any) => new PackageMetadata(row.name, row.version));
+            return allPackagesMetadata;
+        } catch (err: any) {
+            Logger.logError("500 Error fetching all package metadata", err.message);
+            throw err;
+        }
+    }
+
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
         const sql = `SELECT name, version, readme, url, jsprogram FROM packages_table WHERE id = $1`;
         try{
@@ -219,12 +281,99 @@ export class Database {
         }
     }
 
-    public async close() {
-        try {
-            await this.pool.end();
-            Logger.logInfo('Closed the database connection.');
+
+
+
+    /**
+     **USERS TABLE 
+     *@method userExists
+     *@method addUser
+     *@method deleteUser 
+     *@method isAdmin
+     */
+
+    public async userExists(username:string){
+        const sql = 'SELECT COUNT(*) as count FROM users WHERE username = $1'; 
+        
+        try{
+
+            const res = await this.pool.query(sql, [username]);
+            Logger.logInfo(`User ${username} exists.`);
+            
+            return res.rows[0].count > 0;
+
+        } catch(err: any) {
+
+            Logger.logDebug(`User ${username} does not exist. `);
+            throw err;
+
+        }
+    }
+
+    public async addUser(username: string, is_admin: boolean, pw: string){
+        let pw_hash = await bcrypt.hash(pw, salt);
+
+        const sql = 'INSERT INTO users (username, is_admin, password) VALUES ($1, $2, $3)';
+
+        try{
+
+            const res = await this.pool.query(sql, [username, is_admin, pw_hash]);
+            Logger.logInfo(`User ${username} has been registered.`)
+
+        } catch(err: any){
+
+            Logger.logError("Error registering user: ", err);
+            throw err; 
+
+        }
+    }
+
+    //figure out how to wrap this so you have to validate the user deleting. extra function mayhaps?
+    public async deleteUser(username: string){
+        const sql = 'DELETE FROM users WHERE username = $1'; 
+
+        try{
+
+            const res = await this.pool.query(sql, [username]);
+            Logger.logInfo(`Deleting ${username} from database.`);
+
+        } catch(err: any) {
+
+            Logger.logError(`Error deleting ${username} from database:`, err);
+            throw err;
+
+        }
+    }
+
+    public async isAdmin(username: string){
+        const sql = `SELECT is_admin FROM users WHERE username = $1`;
+
+        try{  
+
+            const res = await this.pool.query(sql, [username]);
+            Logger.logInfo(`Fetching admin information for user ${username}.`);
+
+            return res.rows[0].is_admin;
+
+        } catch(err: any) {
+
+            Logger.logError(`Error determining if user ${username} is an admin.`, error);
+            throw err; 
+        }
+    }
+
+    public async getPW(username: string){
+        const sql = 'SELECT password FROM users WHERE username = $1';
+
+        try{
+            const res = await this.pool.query(sql, [username]);
+            Logger.logInfo(`Fetching password for ${username}`);
+
+            return res.rows[0].password;
         } catch (err: any) {
-            Logger.logDebug('Error closing the database connection:' + err.message);
+            
+            Logger.logError(`Error fetching password for ${username}`, error); 
+            throw err;
         }
     }
 }

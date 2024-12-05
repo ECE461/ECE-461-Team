@@ -61,7 +61,7 @@ export class DependencyMetric {
 }
 
 // Fetch package.json from GitHub repository using API
-async function getPackageJson(repoOwner: string, repoName: string): Promise<any> {
+export async function getPackageJson(repoOwner: string, repoName: string): Promise<any> {
     try {
         const url = `${GITHUB_API_URL}/repos/${repoOwner}/${repoName}/contents/package.json`;
         const response = await axios.get(url, {

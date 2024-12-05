@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import "../styles/globals.css";
 import { AuthProvider } from "./context/AuthContext";
 import { IdProvider } from "./context/IdContext";
+import { UpdateProvider } from "./context/UpdateContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UserDisplay from "./components/UserDisplay";
 import NavBar from "./components/NavBar";
@@ -21,11 +22,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
 
-  const isLoginPage = pathname === "/";
-
+ 
   return (
     <AuthProvider>
       <IdProvider>
+        <UpdateProvider>
         <html lang="en">
           <head />
           <body>
@@ -42,6 +43,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             )}
           </body>
         </html>
+        </UpdateProvider>
       </IdProvider>
     </AuthProvider>
   );

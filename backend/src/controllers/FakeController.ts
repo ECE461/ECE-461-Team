@@ -65,16 +65,24 @@ export class FakeController {
             return;
         }
 
-        const fakeRes = {
-            "BusFactor": 0,
-            "Correctness": 0,
-            "RampUp": 0,
-            "ResponsiveMaintainer": 0,
-            "LicenseScore": 0,
-            "GoodPinningPractice": 0,
-            "PullRequest": 0,
-            "NetScore": 0
-        }
+        const fakeRes ={
+            "BusFactor": 0.1,
+            "BusFactorLatency": 0.1,
+            "Correctness": 0.1,
+            "CorrectnessLatency": 0.1,
+            "RampUp": 0.1,
+            "RampUpLatency": 0.1,
+            "ResponsiveMaintainer": 0.1,
+            "ResponsiveMaintainerLatency": 0.1,
+            "LicenseScore": 0.1,
+            "LicenseScoreLatency": 0.1,
+            "GoodPinningPractice": 0.1,
+            "GoodPinningPracticeLatency": 0.1,
+            "PullRequest": 0.1,
+            "PullRequestLatency": 0.1,
+            "NetScore": 0.1,
+            "NetScoreLatency": 0.1
+          }
         res.status(200).json(fakeRes);
         
     }
@@ -133,7 +141,6 @@ export class FakeController {
             res.status(400).json({description: msg_invalid});
             return;
         }
-
         res.status(200).send({description: "Package is deleted."});
     }
 
@@ -158,5 +165,45 @@ export class FakeController {
             value: '"bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"'
         }
         res.status(200).json(fakeRes);
+    }
+
+    static registerUser(req: Request, res: Response){
+        //TODO FILL IN
+    }
+  
+    static getCost(req: Request, res: Response) {
+        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
+        if (!PackageID.isValidGetByIdRequest(req)) {
+            res.status(400).json({description: msg_invalid});
+            return;
+        }
+
+        if (req.query.dependency == undefined) {
+            res.status(400).json({description: "Dependency not found"});
+            return;
+        }
+
+        if (req.query.dependency) {
+            const resp = {
+                "357898765": {
+                  "standaloneCost": 50,
+                  "totalCost": 95
+                },
+                "988645763": {
+                  "standaloneCost": 20,
+                  "totalCost": 45
+                }
+            }
+            res.status(200).json(resp);
+            return;
+        }    
+        else {
+            const resp = {
+                "357898765": {
+                  "totalCost": 50
+                }
+            }
+            res.status(200).json(resp);
+        }       
     }
 }
