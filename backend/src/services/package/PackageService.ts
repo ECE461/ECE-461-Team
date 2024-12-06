@@ -324,7 +324,7 @@ export class PackageService {
     async getPackageHistoryByName() { // NON-BASELINE
     }
 
-    async createAccessToken(username: string, pwInput: string) { // Non-baseline --> add to user/authenticate endpoint or not
+    async createAccessToken(username: string, pwInput: string, adminInput: boolean) { // Non-baseline --> add to user/authenticate endpoint or not
         // an access token is only created if the pw is correct
         try {
 
@@ -347,6 +347,9 @@ export class PackageService {
             }
             
             const isAdmin: boolean = await this.db.isAdmin(username);
+            if(isAdmin != adminInput){
+                throw new Error("401: Wrong permissions provided");
+            }
 
             //generate token based on the above parameters
             const payload = {
@@ -354,7 +357,6 @@ export class PackageService {
                 admin: isAdmin, 
                 iat: Math.floor(Date.now() / 1000),
                 exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60, 
-                calls: 1000,
             };
             
             //force throw error or it won't let me add stuff:(
@@ -369,10 +371,51 @@ export class PackageService {
             }
 
             Logger.logInfo("Successfully generated token.")
-            return "bearer " + token;
+            return `"bearer ${token}"`;
 
         } catch (err: any) {
             throw err; 
         }
     }
+
+    async registerUser(username: string, is_admin: boolean, pw: string){
+        try{
+            
+            const userExists = await this.db.userExists(username); 
+            
+            if(userExists){
+                throw new Error("409: Please choose a unique username"); //put a continue block that allows the user t
+            }
+
+            await this.db.addUser(username, is_admin, pw); 
+
+        } catch(err: any) {
+            throw err; 
+        }
+    }
+
+    //for testing purposes
+    async addDefaultUser(){
+
+        try{
+
+            await this.registerUser('ece30861defaultadminuser', true, "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;");
+
+        } catch (err: any) { 
+            return;
+        }
+    }
+
+    async dummyToken(){
+        try{
+            const token = await this.createAccessToken('ece30861defaultadminuser', "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;", true);
+
+            Logger.logInfo(token);  
+        } catch (err: any) { 
+            return;
+        }
+    }
+
+    
+
 }

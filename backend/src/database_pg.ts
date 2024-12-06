@@ -376,7 +376,7 @@ export class Database {
 
         } catch(err: any){
 
-            Logger.logError("Error registering user: ", err);
+            Logger.logError("500: Error registering user: ", err);
             throw err; 
 
         }
@@ -430,7 +430,6 @@ export class Database {
             throw err;
         }
     }
-
     
     public async deleteAllUsers() {
         // Delete all entries from users table except for user: 'ece30861defaultadminuser'
@@ -443,4 +442,5 @@ export class Database {
             throw err;
         }
     }
+
 }

@@ -284,13 +284,15 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
+
         // Log request
         Logger.logInfo(`**************************************
-                    PUT /autenticate`);
+                    PUT /authenticate`);
         Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
         Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
         Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
         Logger.logInfo(`**************************************`);
+
 
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
       
@@ -302,7 +304,7 @@ export class PackageCommandController {
 
         try {
             
-            let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password);
+            let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password, req.body.User.isAdmin);
 
             res.status(200).send(token);
 
@@ -322,13 +324,51 @@ export class PackageCommandController {
      * @param req: Request object
      * @param res: Response object
      * 
-     * Method: PUT
-     * Route: /authenticate
+     * Method: POST
+     * Route: /register
      * 
-     * Description: 
+     * Description: allows admins to register 
      */
-    static async registerUser(){
+    static async registerUser(req: Request, res: Response){
+        
+        // await PackageCommandController.packageService.addDefaultUser();
+        // await PackageCommandController.packageService.dummyToken();
 
+        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+
+        if (!AuthenticationRequest.isValidRequest(req)) {
+            Logger.logInfo(msg_invalid);
+            res.status(400).json({description: msg_invalid});
+            return;
+        }
+
+        try{
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+    
+            if(!authorization_token.isAdmin){
+                throw new Error("403: User is not an admin, therefore cannot register users");
+            }
+
+            await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
+            res.status(200).send({ message: 'User successfully registered' });
+
+        } catch (err: any){
+            if (err instanceof Error && err.message.includes('401')) {
+                Logger.logInfo(err.message);
+                res.status(409).send({description: 'User has already been registered'});
+            }
+            else if (err instanceof Error && err.message.includes('500')){
+                Logger.logInfo(err.message);
+                res.status(500).send({description: 'Error registering user.'});
+            }
+            else if (err instanceof Error && err.message.includes('403')){
+                Logger.logInfo(err.message);
+                res.status(403).send({ description: 'Authentication failed due to invalid or missing AuthenticationToken.'})
+            }
+        }
+        
     }
 
     

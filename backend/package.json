@@ -25,6 +25,7 @@
     "dotenv": "^16.4.5",
     "es6-promise": "^4.2.8",
     "express": "^4.21.0",
+    "ioredis": "^5.4.1",
     "isomorphic-git": "^1.27.1",
     "joi": "^17.13.3",
     "jose": "^5.9.6",
