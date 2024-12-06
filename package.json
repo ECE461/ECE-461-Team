@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "@types/jszip": "^3.4.0",
+    "semver": "^7.6.3"
   }
 }

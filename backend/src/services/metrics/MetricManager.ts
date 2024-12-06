@@ -9,12 +9,13 @@ import * as dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
 import { URLHandler } from "../../utils/URLHandler";
 import { DependencyMetric, processPackages, getPackageJson } from "./Dependency";
+import { Logger } from "../../utils/Logger";
 dotenv.config();
 
 
 
 export class MetricManager {
-    public urlHandler: URLHandler;
+    public urlHandler: URLHandler | null = null;
     private owner: string = "";
     private repoName: string = "";
 
@@ -23,15 +24,19 @@ export class MetricManager {
      * 
      * @param path the path from the URL of the GitHub repository
      */
-    constructor(path: string) {
-        this.urlHandler = new URLHandler(path);
-     }
+    private constructor() {
+    }
 
-    async setProperties() {
-        await this.urlHandler.setRepoURL();
+    static async create(path: string) : Promise<MetricManager> {
+        const metricManagerInstance = new MetricManager();
+        const urlHandlerInstance = await URLHandler.create(path);
+        
+        metricManagerInstance.urlHandler = urlHandlerInstance;
         // sets the owner and repository name
-        this.owner = this.urlHandler.getOwnerName();
-        this.repoName = this.urlHandler.getRepoName();
+        metricManagerInstance.owner = metricManagerInstance.urlHandler.getOwnerName();
+        metricManagerInstance.repoName = metricManagerInstance.urlHandler.getRepoName();
+
+        return metricManagerInstance; 
     }
 
     /**
@@ -111,6 +116,7 @@ export class MetricManager {
         const version = packageMetadata.version;
         let dependencyValue = dependencyMetric.getPackageScore(packageName, version);
         let dependencyLatency = (performance.now() - startTime) / 1000;
+        netLatency += dependencyLatency;
 
         // Calculate the net score
         let netScore = (0.25*busFactorValue + 0.15*correctnessValue + 0.15*rampUpValue + 0.2*maintainerValue + 0.15*pullRequestValue + 0.1*dependencyValue) * licenseValue;

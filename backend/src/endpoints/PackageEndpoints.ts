@@ -44,7 +44,12 @@ export class PackageEndpoints {
         // Get ratings for package with specific ID (RATING)
         this.router.get('/package/:id/rate', PackageQueryController.getRating); // (BASELINE)
 
+
+        // Get cost for package with specific ID (COST)
+        this.router.get('/package/:id/cost', PackageQueryController.getCost); // (NON-BASELINE)
+      
         this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
+
 
         // READ-WRITE Endpoints -----------------------------------------------------------------------------------------------------------------
 
@@ -81,13 +86,14 @@ export class PackageEndpoints {
         this.router.post('/package/byRegEx', FakeController.getPackagesByRegex); // (BASELINE)
         this.router.get('/package/:id', FakeController.getPackageById); // (BASELINE)
         this.router.get('/package/:id/rate', FakeController.getRating); // (BASELINE)
+        this.router.put('/package/:id', FakeController.updatePackage); // (BASELINE)
         this.router.post('/package/:id', FakeController.updatePackage); // (BASELINE)
         this.router.post('/package', FakeController.uploadPackage); // (BASELINE)
         this.router.delete('/reset', FakeController.reset); // (BASELINE)
         this.router.delete('/package/:id', FakeController.deletePackageById); // (NON-BASELINE)
         this.router.delete('/package/byName/:name', FakeController.deletePackageByName); // (NON-BASELINE)
-        this.router.put('/authenticate', FakeController.createAccessToken);
-        this.router.post('/register', FakeController.registerUser)
+        this.router.put('/authenticate', FakeController.createAccessToken); //(NON-BASELINE)
+        this.router.post('/register', FakeController.registerUser) //(NON-BASELINE)
         this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
         this.router.get('/package/:id/cost', FakeController.getCost); // (BASELINE)
 
