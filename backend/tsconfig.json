@@ -7,10 +7,10 @@
       "skipLibCheck": true,                   // Skip type checking of declaration files
       "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
       "outDir": "./dist",                     // Redirect output structure to the directory
-      "rootDir": "."   ,                       // Specify the root directory of input files
+      "rootDir": "./src"   ,                       // Specify the root directory of input files
       "allowSyntheticDefaultImports": true,   // Allow default imports from modules with no default export
     },
     
-    "include": ["./src/**/*.ts", "./**/*.ts"], // Include all TypeScript files in the src directory and root
-    "exclude": ["node_modules", "dist"]       // Exclude node_modules and dist directories
+    "include": ["./src/**/*.ts"], // Include all TypeScript files in the src directory and root
+    "exclude": ["node_modules", "dist", "**/*.test.ts"]       // Exclude node_modules and dist directories
 }
