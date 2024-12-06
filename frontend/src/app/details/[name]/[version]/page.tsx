@@ -9,10 +9,14 @@ import * as A from "../../../utils/api";
 import {useRouter} from 'next/navigation';
 import { useUpdateData } from "../../../context/UpdateContext";
 
+type RateData = {
+  [key: string]: string | number | null;
+};
+
 
 const DetailPage = ({ params }: { params: { name: string; version: string , id:string} }) => {
   const {id,setId} = useId();
-  const [rateData, setRateData] = useState<any>(null);
+  const [rateData, setRateData] = useState<RateData | null>(null);
   const [costData,setCostData] = useState<any>(null);
   const [dependency, setDependency] = useState(false);
   const { name, version } = params;
@@ -20,22 +24,23 @@ const DetailPage = ({ params }: { params: { name: string; version: string , id:s
   const router = useRouter();
   
   useEffect(() => {
-    if(!id) {
-      setId(params.id);
-    }
     if (id) {
       const fetchRateData = async () => {
         const response = await A.getRatingByID(id);
         setRateData(response);
       };
-      const fetchCostData = async() => {
-        const response = await A.getCostByID(id,dependency);
-        setCostData(response);
-      }
       fetchRateData();
+    }
+  }, [id]);
+  useEffect(() => {
+    if (id) {
+      const fetchCostData = async () => {
+        const response = await A.getCostByID(id, dependency);
+        setCostData(response);
+      };
       fetchCostData();
     }
-  },[id,dependency,params.id,setId]);
+  }, [id, dependency]);
 
   console.log("id:",id);
   console.log("Current apiData state:", rateData);
@@ -44,6 +49,10 @@ const DetailPage = ({ params }: { params: { name: string; version: string , id:s
   const handleUpdateClick = async () => {
     setUpdateData(name, version, id);
     router.push(`/update`);
+  };
+
+  const handleDependencyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDependency(event.target.checked);
   };
 
   const handleDeleteClick = async () => {
@@ -61,12 +70,17 @@ const DetailPage = ({ params }: { params: { name: string; version: string , id:s
 const handleDownloadClick = async () => {
   try {
     const packageData = await A.getPackageByID(id); 
-    const blob = new Blob([JSON.stringify(packageData, null, 2)], { type: "application/json" });
+    const base64Content = packageData.data.Content;
+    const binaryContent = atob(base64Content);
+
+    const binaryArray = Uint8Array.from(binaryContent, char => char.charCodeAt(0));
+    
+    const blob = new Blob([binaryArray], { type: "application/zip" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${name}-${version}.json`; 
+    a.download = `${packageData.metadata.Name}-${packageData.metadata.Version}.zip`; 
     a.click();
 
     URL.revokeObjectURL(url); 
@@ -80,64 +94,76 @@ const handleDownloadClick = async () => {
   return (
     <ProtectedRoute>
     <div>
-      <S.Header>{name} {version} </S.Header>
-      {rateData ? ( 
-          <div>
-            <p><strong>Bus Factor:</strong> {rateData.BusFactor }</p>
-            <p><strong>Bus Factor Latency:</strong> {rateData.BusFactorLatency}</p>
-            <p><strong>Correctness:</strong> {rateData.Correctness}</p>
-            <p><strong>Correctness Latency:</strong> {rateData.CorrectnessLatency}</p>
-            <p><strong>Ramp Up:</strong> {rateData.RampUp}</p>
-            <p><strong>Ramp Up Latency:</strong> {rateData.RampUpLatency}</p>
-            <p><strong>Responsive Maintainer:</strong> {rateData.ResponsiveMaintainer}</p>
-            <p><strong>Responsive Maintainer Latency:</strong> {rateData.ResponsiveMaintainerLatency}</p>
-            <p><strong>License Score:</strong> {rateData.LicenseScore}</p>
-            <p><strong>License Score Latency:</strong> {rateData.LicenseScoreLatency}</p>
-            <p><strong>Good Pinning Practice:</strong> {rateData.GoodPinningPractice}</p>
-            <p><strong>Good Pinning Practice Latency:</strong> {rateData.GoodPinningPracticeLatency}</p>
-            <p><strong>Pull Request:</strong> {rateData.PullRequest}</p>
-            <p><strong>Pull Request Latency:</strong>{rateData.PullRequestLatency}</p>
-            <p><strong>Net Score:</strong> {rateData.NetScore}</p>
-            <p><strong>Net Score Latency:</strong> {rateData.NetScoreLatency}</p>
-            <button onClick={() => setDependency(!dependency)}>
-          {dependency ? "View Without Dependency" : "View With Dependency"}
-        </button>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Standalone Cost</th>
-                  <th>Total Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {costData &&
-                  Object.entries(costData).map(([costId, costs]: [string, any]) => (
-                    <tr key={costId}>
-                      <td>{costId}</td>
-                      <td>{costs.standaloneCost || "N/A"}</td>
-                      <td>{costs.totalCost || "N/A"}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            
-          </div>
-          
-        ) : (
-          <p>Loading...</p> 
-        )}
-        <button onClick = {handleUpdateClick}>Update</button>
-        <button onClick={handleDeleteClick} style={{ color: "red" }}>
+      <S.Header>
+        {name} {version}
+      </S.Header>
+      {rateData ? (
+        <div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" }}>
+        {rateData &&
+          Object.entries(rateData).map(([key, value]) => {
+            if (typeof value === "string" || typeof value === "number" || value === null) {
+              return (
+                <div
+                  key={key}
+                  style={{
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    padding: "10px",
+                    backgroundColor: "#f9f9f9",
+                  }}
+                >
+                  <strong>{key.replace(/([A-Z])/g, " $1")}</strong>
+                  <p>{value ?? "N/A"}</p>
+                </div>
+        );
+      }
+      return null;
+    })}
+</div>
+
+<label>
+                <input
+                  type="checkbox"
+                  checked={dependency}
+                  onChange={handleDependencyChange}
+                />
+                View With Dependency
+              </label>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Standalone Cost</th>
+                <th>Total Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {costData &&
+                Object.entries(costData).map(([costId, costs]: [string, any]) => (
+                  <tr key={costId}>
+                    <td>{costId}</td>
+                    <td>{costs.standaloneCost || "N/A"}</td>
+                    <td>{costs.totalCost || "N/A"}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p>Loading...</p>
+      )}
+      <button onClick={handleUpdateClick}>Update</button>
+      <button onClick={handleDeleteClick} style={{ color: "red" }}>
         Delete Package
       </button>
       <button onClick={handleDownloadClick} style={{ color: "blue" }}>
-          Download Package
-        </button>
-      </div>
-   
-    </ProtectedRoute>
-  );
+        Download Package
+      </button>
+    </div>
+  </ProtectedRoute>
+);
 };
+
 
 export default DetailPage;
