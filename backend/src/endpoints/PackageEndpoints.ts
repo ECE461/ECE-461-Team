@@ -16,7 +16,7 @@ export class PackageEndpoints {
     // Initialize router and endpoints
     constructor() {
         this.router = Router();
-        if (process.env.NODE_ENV === 'FAKE_SUCCESS') {
+        if (process.env.RESPONSE_TYPE === 'FAKE_SUCCESS') {
             this.initializeFakeRoutes();
         }
         else {

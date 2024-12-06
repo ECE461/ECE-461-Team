@@ -3,6 +3,7 @@ import { URL } from 'url';
 import { MetricManager } from './MetricManager';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
+import { URLHandler } from '../../utils/URLHandler';
 dotenv.config();
 
 export class CLIParser {
@@ -50,8 +51,13 @@ export class CLIParser {
             // Parse the URL
             const parsedUrl = new URL(repoLink);
 
-            // Extract owner and repository name and get metrics
-            let Metrics = new MetricManager(parsedUrl.pathname);
+            // Extract owner and repository name and get metricsss
+            if (!parsedUrl.pathname) {
+                throw new Error('Invalid URL pathname');
+            }
+
+            const urlH = await URLHandler.create(repoLink);
+            let Metrics = await MetricManager.create(urlH.getRepoURL());
             const metrics = await Metrics.getMetrics();
 
             const result = {
