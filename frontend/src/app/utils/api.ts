@@ -1,12 +1,33 @@
 
 import axios from 'axios';
+import { config } from 'process';
 
 const apiURL = 'http://localhost:3000';
 // const apiURL =  'http://3.129.240.110'
 
+const api = axios.create({
+  baseURL: apiURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+api.interceptors.request.use(
+  (config) =>{
+    const token = localStorage.getItem('authToken');
+    if(token){
+      config.headers.Authorization = `${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+export default api;
+
 export const fetchQueryResults = async (inputs: { name: string; version: string }[]) => {
   try {
-    const response = await axios.post(`${apiURL}/api/packages`, inputs, {
+    const response = await axios.post(`/api/packages`, inputs, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -19,7 +40,7 @@ export const fetchQueryResults = async (inputs: { name: string; version: string 
 
 export const fetchRegexResults = async (regexPattern: string) => {
   try {
-    const response = await axios.post(`${apiURL}/api/package/byRegex`, { RegEx: regexPattern }, {
+    const response = await axios.post(`/api/package/byRegex`, { RegEx: regexPattern }, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -33,7 +54,7 @@ export const fetchRegexResults = async (regexPattern: string) => {
 
 export const resetPackage = async () => {
     try {
-        const response = await axios.delete(`${apiURL}/api/reset`);
+        const response = await axios.delete(`/api/reset`);
         return response.data;
     } catch (error) {
         console.error("Error deleting package:", error);
@@ -64,7 +85,7 @@ export const updatePackageByID = async (id: string, requestPayload: any) => {
       console.error("Response status:", error.response.status);
       console.error("Response headers:", error.response.headers);
     }
-    throw error; // Re-throw the error for higher-level handling
+    throw error; 
   }
 };
 
