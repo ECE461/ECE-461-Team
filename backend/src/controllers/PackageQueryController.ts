@@ -7,6 +7,7 @@ import { PackageID } from '../models/package/PackageID';
 import { PackageName } from '../models/package/PackageName';
 import { PackageMetadata } from '../models/package/PackageMetadata';
 import { Logger } from '../utils/Logger';
+import { AuthenticationRequest } from '../models/authentication/AuthenticationRequest';
 
 /* PackageQueryController: Handles all API calls for read-only actions, sets "res" status and data
  * Handles Initial Request Validation
@@ -49,6 +50,8 @@ export class PackageQueryController {
               return;
           }
 
+          let authorization_token = new AuthenticationRequest(req);
+
           // Call PackageService to handle business logic
           const offset = req.query.offset ? Number(req.query.offset) : 0;
           const packages = await PackageQueryController.packageService.getPackagesByQuery(req.body, offset);
@@ -90,6 +93,11 @@ export class PackageQueryController {
       }
 
       try {
+
+        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+
         // Call PackageService to handle business logic
         const regex = req.body.RegEx;
         Logger.logInfo('Matching Regex: '+ regex);
@@ -128,6 +136,10 @@ export class PackageQueryController {
       
       const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
       try{
+        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+
         if (!PackageID.isValidGetByIdRequest(req)) {
           Logger.logInfo(msg_invalid);
           res.status(400).json({description: msg_invalid});
@@ -168,6 +180,16 @@ export class PackageQueryController {
 
       const msg_invalid = "There is missing field(s) in the PackageID";
       try {
+
+        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+
+        if(!authorization_token.isAdmin){
+            throw new Error("403: User is not an admin, therefore cannot register users");
+        }
+
+        
         if (!PackageID.isValidGetByIdRequest(req)) {
           Logger.logInfo(msg_invalid);
           res.status(400).json({description: msg_invalid});
@@ -197,7 +219,11 @@ export class PackageQueryController {
      * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package cost system broke)
      */
     static async getCost(req: Request, res: Response) {
-      try {
+      try { 
+        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+
         const msg_invalid = "There is missing field(s) in the PackageID";
         if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
           Logger.logInfo(msg_invalid);

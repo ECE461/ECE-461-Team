@@ -53,6 +53,10 @@ export class PackageCommandController {
         const source = req.body.URL ? req.body.URL : req.body.Content;
         
         try {
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status
+
             Logger.logInfo("Parsing request data")
             const jsProgram : string = req.body.JSProgram ? req.body.JSProgram : "";
 
@@ -134,6 +138,12 @@ export class PackageCommandController {
 
         // Parse information:
         try {
+
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+
+
             const source = req.body.data.URL ? req.body.data.URL : req.body.data.Content;
             const jsProgram : string = req.body.data.JSProgram ? req.body.data.JSProgram : "";
             const debloat: boolean = req.body.data.debloat ? req.body.data.debloat : false;
@@ -223,6 +233,8 @@ export class PackageCommandController {
         }
 
         try{
+            let authorization_token = new AuthenticationRequest(req);
+            
             await PackageCommandController.packageService.deletePackageById(req.params.id); 
             
             res.status(200).send({message: "Successfully deleted package via ID."});
@@ -261,6 +273,8 @@ export class PackageCommandController {
         }
         
         try{
+            let authorization_token = new AuthenticationRequest(req);
+            
             await PackageCommandController.packageService.deletePackageByName(req.params.name);
 
             res.status(200).send({message: "Successfully deleted package via name."})
