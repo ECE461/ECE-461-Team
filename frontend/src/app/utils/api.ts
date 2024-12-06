@@ -1,12 +1,12 @@
 
 import axios from 'axios';
 
-// const apiURL = 'http://localhost:3000';
-const apiURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const apiURL = 'http://localhost:3000';
+// const apiURL =  'http://3.129.240.110'
 
 export const fetchQueryResults = async (inputs: { name: string; version: string }[]) => {
   try {
-    const response = await axios.post(`${apiURL}/api/v1/packages`, inputs, {
+    const response = await axios.post(`${apiURL}/api/packages`, inputs, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -19,7 +19,7 @@ export const fetchQueryResults = async (inputs: { name: string; version: string 
 
 export const fetchRegexResults = async (regexPattern: string) => {
   try {
-    const response = await axios.post(`${apiURL}/api/v1/package/byRegex`, { RegEx: regexPattern }, {
+    const response = await axios.post(`${apiURL}/api/package/byRegex`, { RegEx: regexPattern }, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -33,7 +33,7 @@ export const fetchRegexResults = async (regexPattern: string) => {
 
 export const resetPackage = async () => {
     try {
-        const response = await axios.delete(`${apiURL}/api/v1/reset`);
+        const response = await axios.delete(`${apiURL}/api/reset`);
         return response.data;
     } catch (error) {
         console.error("Error deleting package:", error);
@@ -42,7 +42,7 @@ export const resetPackage = async () => {
 
 export const getPackageByID = async (id: string) => {
     try {
-        const response = await axios.get(`${apiURL}/api/v1/package/${id}`);
+        const response = await axios.get(`${apiURL}/api/package/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error fetching package by ID:", error);
@@ -51,7 +51,7 @@ export const getPackageByID = async (id: string) => {
 
 export const updatePackageByID = async (id: string, requestPayload: any) => {
   try {
-    const response = await axios.post(`${apiURL}/api/v1/package/${id}`, requestPayload, {
+    const response = await axios.post(`${apiURL}/api/package/${id}`, requestPayload, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -70,7 +70,7 @@ export const updatePackageByID = async (id: string, requestPayload: any) => {
 
 export const getCostByID = async (id: string, dependency: boolean) => {
     try{
-        const response = await axios.get(`${apiURL}/api/v1/package/${id}/cost?dependency=${dependency}`);
+        const response = await axios.get(`${apiURL}/api/package/${id}/cost?dependency=${dependency}`);
         return response.data;
     }
     catch(error){
@@ -79,8 +79,8 @@ export const getCostByID = async (id: string, dependency: boolean) => {
 }
 export const deletePackageByID = async (id: string) => {
     try {
-      console.log("Request URL:", `${apiURL}/api/v1/package/${id}`);
-      const response = await axios.delete(`${apiURL}/api/v1/package/${id}`);
+      console.log("Request URL:", `${apiURL}/api/package/${id}`);
+      const response = await axios.delete(`${apiURL}/api/package/${id}`);
       return response.data;
     } catch (error) {
       console.error("Error deleting package:", error);
@@ -94,7 +94,7 @@ export const uploadPackage = async (data: { JSProgram: string; URL?: string; Con
   };
 
   try {
-    const response = await axios.post(`${apiURL}/api/v1/package`, payload, {
+    const response = await axios.post(`${apiURL}/api/package`, payload, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -109,7 +109,7 @@ export const uploadPackage = async (data: { JSProgram: string; URL?: string; Con
   
 export const getRatingByID = async (id: string) => {
     try{
-        const response = await axios.get(`${apiURL}/api/v1/package/${id}/rate`);
+        const response = await axios.get(`${apiURL}/api/package/${id}/rate`);
         return response.data;
     }
     catch(error){
@@ -128,11 +128,13 @@ export const createToken = async (name : string, password: string, isAdmin : boo
                 password
             },
         };
-        const response = await axios.put(`${apiURL}/api/v1/authenticate`, payload, {
+        console.log("Payload being sent:", payload);
+        const response = await axios.put(`${apiURL}/api/authenticate`, payload, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
+        console.log("API response:", response.data);
         return response.data;
     }
     catch(error){
@@ -142,7 +144,7 @@ export const createToken = async (name : string, password: string, isAdmin : boo
 
 export const getPackageHistoryByName = async (name: string) => {
     try{
-        const response = await axios.get(`${apiURL}/api/v1/package/byName/${name}`);
+        const response = await axios.get(`${apiURL}/api/package/byName/${name}`);
         return response.data;
     }
     catch(error){
@@ -152,10 +154,33 @@ export const getPackageHistoryByName = async (name: string) => {
 
 export const deletePackageById = async (name: string) => {
     try{
-        const response = await axios.delete(`${apiURL}/api/v1/package/${name}`);
+        const response = await axios.delete(`${apiURL}/api/package/${name}`);
         return response.data;
     }
     catch(error){
         console.error("Error deleting package by name:", error);
     }
 }
+
+export const registerUser = async (userData: { name: string; isadmin: boolean; password: string }) => {
+  try {
+    const requestBody = {
+      User: {
+        name: userData.name,
+        isadmin: userData.isadmin,
+      },
+      Secret: {
+        password: userData.password,
+      },
+    };
+    const response = await axios.post(`${apiURL}/api/register`, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error registering user:", error);
+    throw error.response?.data || error.message;
+  }
+};

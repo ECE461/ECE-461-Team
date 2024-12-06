@@ -4,6 +4,7 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 const UserDisplay = () => {
   const { username, isAuthenticated, logout } = useAuth();
@@ -14,7 +15,9 @@ const UserDisplay = () => {
 
   return (
     <div style={{ position: "absolute", top: "10px", right: "10px", display: "flex", alignItems: "center" }}>
-      <p style={{ marginRight: "10px" }}>Hello, {username}</p>
+      <Link href="/user" style={{ marginRight: "10px", textDecoration: "none"}}>
+        Hello, {username}
+      </Link>
       <button onClick={logout}>Logout</button>
     </div>
   );

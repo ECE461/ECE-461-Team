@@ -8,7 +8,7 @@ import { useAuth } from "../context/AuthContext";
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
-  const { isAuthenticated ,authChecked} = useAuth();
+  const { isAuthenticated ,authChecked,authToken} = useAuth();
 
 
 
@@ -20,6 +20,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   console.log("authChecked", authChecked);
   console.log("isAuthenticated", isAuthenticated);
+  console.log("authToken", authToken);
   if (!authChecked) return null;
   return <>{children}</>;
 };
