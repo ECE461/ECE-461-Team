@@ -193,7 +193,7 @@ export class PackageCommandController {
 
         try {
             
-            let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password);
+            let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password, req.body.User.isAdmin);
 
             res.status(200).send(token);
 
@@ -220,6 +220,9 @@ export class PackageCommandController {
      */
     static async registerUser(req: Request, res: Response){
         
+        // await PackageCommandController.packageService.addDefaultUser();
+        // await PackageCommandController.packageService.dummyToken();
+
         const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
 
         if (!AuthenticationRequest.isValidRequest(req)) {
@@ -228,14 +231,15 @@ export class PackageCommandController {
             return;
         }
 
-        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        if(!authorization_token.isAdmin){
-            throw new Error("403: User is not an admin, therefore cannot register users");
-        }
-
-
         try{
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        
+            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+    
+            if(!authorization_token.isAdmin){
+                throw new Error("403: User is not an admin, therefore cannot register users");
+            }
+
             await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
             res.status(200).send({ message: 'User successfully registered' });
 

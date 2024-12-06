@@ -194,7 +194,7 @@ export class PackageService {
     async getPackageHistoryByName() { // NON-BASELINE
     }
 
-    async createAccessToken(username: string, pwInput: string) { // Non-baseline --> add to user/authenticate endpoint or not
+    async createAccessToken(username: string, pwInput: string, adminInput: boolean) { // Non-baseline --> add to user/authenticate endpoint or not
         // an access token is only created if the pw is correct
         try {
 
@@ -217,6 +217,9 @@ export class PackageService {
             }
             
             const isAdmin: boolean = await this.db.isAdmin(username);
+            if(isAdmin != adminInput){
+                throw new Error("401: Wrong permissions provided");
+            }
 
             //generate token based on the above parameters
             const payload = {
@@ -263,12 +266,26 @@ export class PackageService {
 
     //for testing purposes
     async addDefaultUser(){
-        try{
-            await this.db.addUser('ece30861defaultadminuser', true, "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;");
 
-        } catch (err: any){
-            throw err;
+        try{
+
+            await this.registerUser('ece30861defaultadminuser', true, "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;");
+
+        } catch (err: any) { 
+            return;
         }
     }
+
+    async dummyToken(){
+        try{
+            const token = await this.createAccessToken('ece30861defaultadminuser', "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;", true);
+
+            Logger.logInfo(token);  
+        } catch (err: any) { 
+            return;
+        }
+    }
+
+    
 
 }
