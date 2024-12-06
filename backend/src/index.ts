@@ -27,6 +27,7 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
         11. LOG_FILE: path to log file (default is default.log)
         12. PORT: port for the server to run on (default is 3000)
         13. LOG_CONSOLE: set to 'debug' or 'info' to log to console as well as file
+        14. HOST: host for the server to run on (default is localhost)
     `);
     process.exit(1);
 } else {
