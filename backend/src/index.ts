@@ -57,8 +57,17 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
                 Logger.logInfo(`Frontend server running at http://localhost:${port}`);
             });
         } catch (error) {
-            console.error('Error starting the application:', error);
-            Logger.logError('Error starting the application:', error);
+            if (error instanceof Error && error.message.includes('next build')) {
+                console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                console.error("FRONTEND HAS NOT BEEN BUILT YET.");
+                console.error("Please run 'npm run build' in the frontend directory.");
+                console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            } else {
+                console.error('Error starting the application:', error);
+                Logger.logError('Error starting the application:', error);
+            }
+            
+            
         }
     })();
 }
