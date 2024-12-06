@@ -20,5 +20,20 @@ jobs:
 
         - name: SSH into EC2 and navgiate to app
           run: |
-              ssh -o StrictHostKeyChecking=no ubuntu@3.129.240.110 "export PATH=\$PATH:/home/ubuntu/.nvm/versions/node/v20.18.0/bin/ && cd ECE-461-Team/ && git pull && cd backend/ && npx pm2 start npm --name backend-ece461"
+              ssh -o StrictHostKeyChecking=no ubuntu@3.129.240.110 "export PATH=\$PATH:/home/ubuntu/.nvm/versions/node/v20.18.0/bin/ \
+              && . ./set_env.sh \
+              && cd ECE-461-Team/ \
+              && git pull \
+              && npm install \
+              && npm audit fix \
+              && cd backend/ \
+              && npm install \
+              && npm audit fix \
+              && npm run build \
+              && cd ../frontends \
+              && npm install \
+              && npm audit fix \
+              && npm run build \
+              && sudo -E forever stopall \
+              && sudo -E forever start ../backend/dist/index.js"
           
