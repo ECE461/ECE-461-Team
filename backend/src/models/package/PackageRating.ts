@@ -1,34 +1,29 @@
 export class PackageRating {
-    private busFactor: number;
-    private correctness: number;
-    private rampUp: number;
-    private responsiveMaintainter: number;
-    private licenseScore: number;
-    private goodPinningPractice: number;
-    private pullRequest: number;
-    private netScore: number;
+    private packageRating: any;
 
-    constructor(busFactor: number, correctness: number, rampUp: number, responsiveMaintainter: number, licenseScore: number, goodPinningPractice: number, pullRequest: number, netScore: number) {
-        this.busFactor = busFactor;
-        this.correctness = correctness;
-        this.rampUp = rampUp;
-        this.responsiveMaintainter = responsiveMaintainter;
-        this.licenseScore = licenseScore;
-        this.goodPinningPractice = goodPinningPractice;
-        this.pullRequest = pullRequest;
-        this.netScore = netScore;
+    // Set up with the getMetrics 
+    constructor(packageRating: any) {
+        this.packageRating = packageRating
     }
 
     getJson() {
         return {
-            BusFactor: this.busFactor,
-            Correctness: this.correctness,
-            RampUp: this.rampUp,
-            ResponsiveMaintainter: this.responsiveMaintainter,
-            LicenseScore: this.licenseScore,
-            GoodPinningPractice: this.goodPinningPractice,
-            PullRequest: this.pullRequest,
-            NetScore: this.netScore
+            BusFactor: this.packageRating.busFactorValue,
+            BusFactorLatency: this.packageRating.busFactorLatency,
+            Correctness: this.packageRating.correctnessValue,
+            CorrectnessLatency: this.packageRating.correctnessLatency,
+            RampUp: this.packageRating.rampUpValue,
+            RampUpLatency:this.packageRating.rampUpLatency,
+            ResponsiveMaintainter: this.packageRating.maintainerValue,
+            ResponsiveMaintainerLatency: this.packageRating.maintainerLatency,
+            LicenseScore: this.packageRating.licenseValue,
+            LicenseScoreLatency: this.packageRating.licenseLatency,
+            GoodPinningPractice: this.packageRating.dependencyValue,
+            GoodPinningPracticeLatency: this.packageRating.dependencyLatency,
+            PullRequest: this.packageRating.pullRequestValue,
+            PullRequestLatency: this.packageRating.pullRequestLatency,
+            NetScore: this.packageRating.netScore,
+            NetScoreLatency: this.packageRating.netLatency
         }
     }
 }

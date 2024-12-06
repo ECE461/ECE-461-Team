@@ -180,7 +180,7 @@ export class PackageQueryController {
         res.status(200).json(rating.getJson());
       }
       catch (error) {
-        console.error('Error fetching patches: ', error);
+        console.error('Error calculating scores: ', error);
         res.status(500).send({message: "Internal Server Error"});
       };
     }

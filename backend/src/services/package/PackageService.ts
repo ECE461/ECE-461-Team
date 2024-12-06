@@ -130,7 +130,7 @@ export class PackageService {
 
             Logger.logInfo(`Checking URL Metrics: ${packageData.getUploadUrl()}`);
             // Need to check that URL passes rating stuff:
-            if (!await PackageData.metricCheck(packageData.getUploadUrl())) {
+            if (packageData.getSourceType() === "URL" && !await PackageData.metricCheck(packageData.getUploadUrl())) {
                 throw new Error("Error 424: Package is not uploaded due to the disqualified rating.");
             }
 
@@ -227,8 +227,8 @@ export class PackageService {
 
         try {
             const packageRating = await packageManager.getMetrics(); // Get metrics from package manager
-            // TO-DO: Add the following to the packageRating object: goodPinningPractice, pullRequest
-            const metricRating = new PackageRating(packageRating.busFactorValue, packageRating.correctnessValue, packageRating.rampUpValue, packageRating.maintainerValue, packageRating.licenseValue, 0, 0, packageRating.netScore); // Convert to PackageRating object to JSON-ify later
+            const metricRating = new PackageRating(packageRating); // Convert to PackageRating object to JSON-ify later
+            Logger.logInfo(`Package Ratings: ${JSON.stringify(packageRating)}`);
             return metricRating;
         } catch (error) {
             Logger.logInfo("Error fetching package ratings");

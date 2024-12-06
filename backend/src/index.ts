@@ -2,8 +2,10 @@ import express from 'express';
 import { PackageEndpoints } from './endpoints/PackageEndpoints';
 import { Logger } from './utils/Logger';
 import { exec } from 'child_process';
+import path from 'path';
 
 const cors = require('cors');
+const next = require('next');
 
 // Check that all required env variables have been set:
 if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.GITHUB_TOKEN || !process.env.SSH_KEY_PATH_ || !process.env.JWT_KEY) {
@@ -25,27 +27,47 @@ if (!process.env.RDS_USER || !process.env.RDS_KEY || !process.env.RDS_HOST || !p
         11. LOG_FILE: path to log file (default is default.log)
         12. PORT: port for the server to run on (default is 3000)
         13. LOG_CONSOLE: set to 'debug' or 'info' to log to console as well as file
+        14. HOST: host for the server to run on (default is localhost)
     `);
     process.exit(1);
 } else {
     (async () => {
         try {
             const app = express();
-            const port = process.env.PORT || 3000;
-            const baseURL = '/api/v1';
+            const apiURL = '/api';
             app.use(cors());
             app.use(express.json({limit: '10mb'}));
             
-            
+            // API Routes:
             const packageEndpoints = new PackageEndpoints();
-            app.use(baseURL, packageEndpoints.getRouter());
+            app.use(apiURL, packageEndpoints.getRouter());
+
+            const nextApp = next({ dev: false, dir: path.join(__dirname, '../../frontend') });
+            const handle = nextApp.getRequestHandler();
+            await nextApp.prepare();
+            app.all('*', (req, res) => handle(req, res));
             
-            app.listen(port, () => {
-                console.log(`Server running at http://localhost:${port}${baseURL}`);
+            // Set HOST to 0.0.0.0 in EC2
+            const host = process.env.HOST ? process.env.HOST : 'localhost';
+            const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+            app.listen(port, host, () => {
+                console.log(`Backend server running at http://localhost:${port}${apiURL}`);
+                console.log(`Frontend server running at http://localhost:${port}`);
+                Logger.logInfo(`Backend server running at http://localhost:${port}${apiURL}`);
+                Logger.logInfo(`Frontend server running at http://localhost:${port}`);
             });
         } catch (error) {
-            console.error('Error starting the application:', error);
-            Logger.logError('Error starting the application:', error);
+            if (error instanceof Error && error.message.includes('next build')) {
+                console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                console.error("FRONTEND HAS NOT BEEN BUILT YET.");
+                console.error("Please run 'npm run build' in the frontend directory.");
+                console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            } else {
+                console.error('Error starting the application:', error);
+                Logger.logError('Error starting the application:', error);
+            }
+            
+            
         }
     })();
 }
