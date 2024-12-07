@@ -370,7 +370,7 @@ export class PackageCommandController {
             PackageCommandController.sendResponse(res, 200, { description: 'User successfully registered' }, endpointName);
 
         } catch (err: any){
-            if (err instanceof Error && err.message.includes('401')) {
+            if (err instanceof Error && err.message.includes('409')) {
                 const response = {description: 'User has already been registered'};
                 PackageCommandController.sendResponse(res, 409, response, endpointName, err);
             }
