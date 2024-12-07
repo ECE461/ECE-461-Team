@@ -42,7 +42,6 @@ export class PackageCommandController {
             // Check if request is valid + has all required fields
             if (!PackageData.isValidUploadRequestBody(req.body)) {
                 throw new Error("400: Invalid Request: Not correct format");
-                return;
             }
 
             // Get source from URL or Content
@@ -59,12 +58,13 @@ export class PackageCommandController {
             // Debloat and Name only set if source is Content???
             const debloat: boolean = req.body.debloat ? req.body.debloat : false;
             const name: string = req.body.Name ? req.body.Name : "";
+            const version: string = req.body.Version ? req.body.Version : "";
 
             Logger.logInfo("Creating Package Data Object")
             const packageData = await PackageData.create(source, jsProgram);
 
             Logger.logInfo("Uploading Package: To S3 and RDS")
-            const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData, debloat, name);
+            const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData, debloat, name, version);
             PackageCommandController.sendResponse(res, 201, pack.getJson(), endpointName);
         } catch (error) {
             if ((error instanceof Error) && (error.message.includes('424'))) {

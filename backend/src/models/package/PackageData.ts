@@ -59,10 +59,17 @@ export class PackageData {
                 }
                 return value;
             })
-            .when('Content', { is: Joi.exist(), then: Joi.required() }), // Name is required only if Content exists
+            .required(),
         JSProgram: Joi.string().optional()
             .custom((value, helpers) => {
                 if (value && !PackageData.isValidJavaScript(value)) {
+                    return helpers.error('any.invalid');
+                }
+                return value;
+            }),
+        Version: Joi.string().required()
+            .custom((value, helpers) => {
+                if (!PackageVersion.isValidVersion(value)) {
                     return helpers.error('any.invalid');
                 }
                 return value;
@@ -215,6 +222,7 @@ export class PackageData {
     static isValidUploadRequestBody(reqBody: Request): boolean {
         const { error } = PackageData.packageUploadSchema.validate(reqBody);
         if (error) {
+            Logger.logDebug(`Error matching UPLOAD request body: ${error}`);
             return false;
         }
         return true;
@@ -228,6 +236,7 @@ export class PackageData {
     static isValidUpdateRequestBody(reqBody: Request): boolean {
         const { error } = PackageData.packageUpdateSchema.validate(reqBody);
         if (error) {
+            Logger.logDebug(`Error matching UPDATE request body: ${error}`);
             return false;
         }
         return true;
