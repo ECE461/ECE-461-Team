@@ -34,7 +34,8 @@ export class PackageService {
             Logger.logError('Error in PackageService getPackagesByQuery:', error);
 
             if (error instanceof Error && error.message.includes('invalid regular expression')) {
-                throw new Error('400: Invalid regular expression');
+                // throw new Error('400: Invalid regular expression');
+                return [];
               }
             throw new Error('Failed to fetch packages');
         }
