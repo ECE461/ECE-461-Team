@@ -173,10 +173,11 @@ export class PackageService {
                 throw new Error('400: Package name does not match');
             }
 
-            // Check that Request Body "version" matches package.json's version
-            if (packageMetadata.getVersion() !== version && version !== "") {
-                throw new Error('400: Package version does not match');
-            }
+            // // Check that Request Body "version" matches package.json's version
+            // if (packageMetadata.getVersion() !== version && version !== "") {
+            //     throw new Error('400: Package version does not match');
+            // }
+            packageMetadata.setVersion(version);
 
             // Check if package exists
             Logger.logInfo("Checking if package exists");
