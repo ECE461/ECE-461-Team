@@ -117,12 +117,8 @@ export class Correctness {
     }
     try {
       const packageJsonPath = path.join(this.repoDir, packageJsonFile);
-      console.log("HELLO" + packageJsonPath);
-      console.log("TESTING" + fs.readFileSync(packageJsonPath, 'utf8'));
-
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
-      console.log("HELLO" + packageJson.dependencies);
       return Object.keys(packageJson.dependencies || {}).length > 0;
     } catch (error) {
       Logger.logDebug('Error reading package.json:' + error);

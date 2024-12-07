@@ -1,7 +1,7 @@
 import axios from 'axios';
+import { Logger } from '../../utils/Logger';
 
 const GITHUB_API = 'https://raw.githubusercontent.com';
-// const NPM_API = 'https://registry.npmjs.org';
 
 export class License {
   private owner: string;
@@ -36,12 +36,9 @@ export class License {
         }
       );
       let hasLicense = license_list.some(license => response.data.toLowerCase().includes(license));
-      //console.log(hasLicense); 
       return hasLicense;
 
     } catch (error) {
-      //console.error(`findLicense -> Error when fetching file content in ${this.owner}/${this.repoName}  ${path}: ${error}`);
-      //console.log(path);
       return null;
     }
   }
@@ -63,7 +60,7 @@ export class License {
           }
       });
       let default_branch: string = default_response.data.default_branch;
-      //console.log(default_branch);
+
       // gets booleans of LICENSE and README.md files
       const [licenseFile, readMeFile] = await Promise.all([
         this.getFileContent('LICENSE', default_branch),
@@ -72,15 +69,13 @@ export class License {
       
       // checks if one or the other contains LGPLv2.1
       if (licenseFile || readMeFile) {
-        //console.log('License Found: LGPLv2.1');
         return 1;
       }
       this.latency = (performance.now() - startTime) / 1000;
-      //console.log('License Not Found');
       return 0;
 
     } catch (error) {
-      console.error(`getRepoLicense -> Error when fetching license in ${this.owner}/${this.repoName}:`, (error as any).message);
+      Logger.logDebug('Error fetching license:' + error);
       return 0;
     }
   }
