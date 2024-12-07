@@ -38,6 +38,11 @@ export class PackageMetadata{
     setReadMe(readMe: string) {
         this.readMe = readMe;
     }
+
+    setVersion(version: string) {
+        this.version = new PackageVersion(version);
+    }
+
     // getName : Returns name of the package
     getName(): string {
         return this.name.getName();
@@ -71,7 +76,7 @@ export class PackageMetadata{
 
     getReadMe(): string {
         if (!this.readMe) {
-            throw new Error('ReadMe not set');
+            return "";
         }
         return this.readMe;
     }
