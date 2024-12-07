@@ -327,5 +327,31 @@ public static async getGithubURLFromNpmURL(url: string): Promise<string | null> 
   return null;
 }
 
+static cleanURLIfCredentials(input: string): string {
+  try {
+      // Parse the input as a URL
+      const url = new URL(input);
+
+      // Check if the URL has credentials (username is present)
+      if (url.username) {
+          Logger.logInfo(`Found credentials in URL: ${url.username}`);
+
+          // Remove credentials by clearing username and password
+          url.username = '';
+          url.password = '';
+
+          // Return the cleaned URL
+          return url.toString();
+      }
+
+      // No credentials found, return the original URL
+      return input;
+  } catch (error) {
+      // If input is not a valid URL, return it unchanged
+      Logger.logError("Invalid URL provided:", error);
+      return input;
+  }
+}
+
 }
 
