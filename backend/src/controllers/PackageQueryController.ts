@@ -62,7 +62,7 @@ export class PackageQueryController {
             const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
             PackageQueryController.sendResponse(res, 403, response, endpointName, error);
           } else {
-            const response = {message: "Internal Server Error"};
+            const response = {description: "Internal Server Error"};
             PackageQueryController.sendResponse(res, 500, response, endpointName, error);
           }
       }
@@ -110,7 +110,7 @@ export class PackageQueryController {
             const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
             PackageQueryController.sendResponse(res, 403, response, endpointName, error);
           } else {
-            const response = {message: "Internal Server Error"};
+            const response = {description: "Internal Server Error"};
             PackageQueryController.sendResponse(res, 500, response, endpointName, error);
           }
       }
@@ -156,7 +156,7 @@ export class PackageQueryController {
           const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
           PackageQueryController.sendResponse(res, 403, response, endpointName, error);
         } else {
-          const response = {message: "Internal Server Error"};
+          const response = {description: "Internal Server Error"};
           PackageQueryController.sendResponse(res, 500, response, endpointName, error);
         }
       }
