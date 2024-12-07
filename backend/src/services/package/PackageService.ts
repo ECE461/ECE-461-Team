@@ -115,9 +115,10 @@ export class PackageService {
             let packageMetadata : PackageMetadata = await PackageUploadService.extractPackageInfo(packageData, isUploadByContent, packageData.getUploadUrl());
 
             // Check that Request Body "name" matches package.json's name
-            if (packageMetadata.getName() !== name && name !== "") {
-                throw new Error(`400: Package name does not match: ${packageMetadata.getName()} !== ${name}`);
-            }
+            // if (packageMetadata.getName() !== name && name !== "") {
+            //     throw new Error(`400: Package name does not match: ${packageMetadata.getName()} !== ${name}`);
+            // }
+            packageMetadata.setName(name);
             
             // Check that Request Body "version" matches package.json's version
             // if (packageMetadata.getVersion() !== version && version !== "") {
@@ -169,9 +170,10 @@ export class PackageService {
             let packageMetadata : PackageMetadata = await PackageUploadService.extractPackageInfo(packageData, false, packageData.getUploadUrl());
 
             // Check that Request Body "name" matches package.json's name
-            if (packageMetadata.getName() !== name && name !== "") {
-                throw new Error('400: Package name does not match');
-            }
+            // if (packageMetadata.getName() !== name && name !== "") {
+            //     throw new Error('400: Package name does not match');
+            // }
+            packageMetadata.setName(name);
 
             // // Check that Request Body "version" matches package.json's version
             // if (packageMetadata.getVersion() !== version && version !== "") {
@@ -231,6 +233,10 @@ export class PackageService {
         }
 
         const package_url = await this.db.getPackageURL(packageId);
+        if (package_url === "") {
+            throw new Error('Package URL not found in databases');
+        }
+
         const packageManager = await MetricManager.create(package_url);
 
         try {
