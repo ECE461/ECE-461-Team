@@ -51,8 +51,7 @@ export class PackageData {
                 return value;
             }),
         URL: Joi.string().uri(),
-        debloat: Joi.boolean()
-            .when('Content', { is: Joi.exist(), then: Joi.required() }), // debloat is required only if Content exists
+        debloat: Joi.boolean().optional(), // debloat is required only if Content exists
         Name: Joi.string()
             .custom((value, helpers) => {
                 if (!PackageName.isValidName(value)) {
@@ -111,7 +110,7 @@ export class PackageData {
                     return value;
                 }),
             URL: Joi.string().uri(),
-            debloat: Joi.boolean().when('Content', { is: Joi.exist(), then: Joi.required() }),
+            debloat: Joi.boolean().optional(),
             JSProgram: Joi.string().optional()
                 .custom((value, helpers) => {
                     if (value && !PackageData.isValidJavaScript(value)) {
