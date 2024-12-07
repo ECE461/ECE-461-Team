@@ -118,6 +118,11 @@ export class PackageCommandController {
                 throw new Error(`400: Package name does not match name in request body: ${req.body.metadata.Name} vs ${req.body.data.Name}`);
             }
 
+            // Check if both versions are the same
+            if (req.body.metadata.Version !== req.body.data.Version) {
+                throw new Error(`400: Package version does not match version in request body: ${req.body.metadata.Version} vs ${req.body.data.Version}`);
+            }
+
             // Check if old package id exists:
             const oldID = req.body.metadata.ID;
             if (!(await PackageCommandController.packageService.checkPackageIDExists(oldID))) {
@@ -134,6 +139,7 @@ export class PackageCommandController {
             const debloat: boolean = req.body.data.debloat ? req.body.data.debloat : false;
             const name: string = req.body.data.Name ? req.body.data.Name : "";
             const version: string = req.body.metadata.Version;
+    
 
             // Create Package Data Object
             Logger.logInfo("Creating Package Data Object")
