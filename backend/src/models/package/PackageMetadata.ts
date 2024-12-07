@@ -41,6 +41,7 @@ export class PackageMetadata{
 
     setVersion(version: string) {
         this.version = new PackageVersion(version);
+        this.id = new PackageID(this.name.getName(), version);
     }
 
     // getName : Returns name of the package
