@@ -63,18 +63,22 @@ export class Database {
         Logger.logInfo('Starting connection to the PostgreSQL database...');
 
         // Optionally test the connection immediately
-        this.pool.connect()
-            .then(() => Logger.logInfo('Connected to the PostgreSQL database.'))
-            .catch((err: any) => {Logger.logError('Error connecting to the database:', err)});
+        if (!(process.env.RESPONSE_TYPE === 'FAKE_SUCCESS')) {
+            this.pool.connect()
+                .then(() => Logger.logInfo('Connected to the PostgreSQL database.'))
+                .catch((err: any) => {Logger.logError('Error connecting to the database:', err)});
 
-        Logger.logInfo('Initializing the database...');
+            Logger.logInfo('Initializing the database...');
 
-        Promise.all([
-            this.initializePackageTable(), 
-            this.initializeUsersTable()
-        ])
-            .then(() => Logger.logInfo('Database Initialized.'))
-            .catch((err: any) => {Logger.logError('Error initializing database:', err)})
+            Promise.all([
+                this.initializePackageTable(), 
+                this.initializeUsersTable()
+            ])
+                .then(() => Logger.logInfo('Database Initialized.'))
+                .catch((err: any) => {Logger.logError('Error initializing database:', err)})
+        }
+
+        
     }
 
     public static getInstance(): Database {
