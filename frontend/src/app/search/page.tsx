@@ -13,6 +13,7 @@ type InputType = QueryInput | RegexInput;
 
 function App() {
 
+  const {isAdmin} = useAuth();
   const [inputs, setInputs] =useState<InputType[]>([{ name: "", version: "" }]);  // Holds multiple packages
   const [error, setError] = useState(""); // For error handling
   const [message , setMessage] = useState(""); // For message handling
@@ -279,9 +280,11 @@ function App() {
         </div>
       )}
       <S.resetContainer>
+        {isAdmin && (
       <S.resetButton type="button" onClick={handleReset}>
         Reset
       </S.resetButton>
+        )}
       </S.resetContainer>
     </div>
   );

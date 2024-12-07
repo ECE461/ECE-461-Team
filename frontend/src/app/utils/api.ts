@@ -13,11 +13,15 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) =>{
-    const token = localStorage.getItem('authToken');
-    if(token){
-      config.headers.Authorization = `${token}`;
+  (config) => {
+    let token = localStorage.getItem("authToken");
+
+    if (token) {
+      config.headers["X-Authorization"] = token;
+    } else {
+      console.log("No token found in localStorage.");
     }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -108,12 +112,21 @@ export const deletePackageByID = async (id: string) => {
     }
 };
 
-export const uploadPackage = async (data: { JSProgram: string; URL?: string; Content?: string }) => {
-  const payload = {
-    JSProgram: data.JSProgram,
-    ...(data.URL ? { URL: data.URL } : { Content: data.Content }),
-  };
-
+export const uploadPackage = async (data: { 
+  Name: string; 
+  Version: string; 
+  JSProgram?: string; 
+  URL?: string; 
+  Content?: string; 
+  debloat: boolean; }) => {
+    const payload = {
+      Name: data.Name,
+      Version: data.Version,
+      debloat: data.debloat, // Include debloat as a boolean
+      ...(data.JSProgram ? { JSProgram: data.JSProgram } : {}),
+      ...(data.URL ? { URL: data.URL } : {}),
+      ...(data.Content ? { Content: data.Content } : {}),
+    };
   try {
     const response = await api.post(`${apiURL}/api/package`, payload, {
       headers: {
@@ -151,7 +164,7 @@ export const createToken = async (name : string, password: string, isAdmin : boo
             },
         };
         console.log("Payload being sent:", payload);
-        const response = await api.put(`/api/authenticate`, payload, {
+        const response = await axios.put(`${apiURL}/api/authenticate`, payload, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -184,18 +197,18 @@ export const deletePackageById = async (name: string) => {
     }
 }
 
-export const registerUser = async (userData: { name: string; isadmin: boolean; password: string }) => {
+export const registerUser = async (userData: { name: string; isAdmin: boolean; password: string }) => {
   try {
     const requestBody = {
       User: {
         name: userData.name,
-        isadmin: userData.isadmin,
+        isAdmin: userData.isAdmin,
       },
       Secret: {
         password: userData.password,
       },
     };
-    const response = await api.post(`${apiURL}/api/register`, requestBody, {
+    const response = await api.post(`/api/register`, requestBody, {
       headers: {
         'Content-Type': 'application/json',
       },

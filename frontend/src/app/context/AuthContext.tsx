@@ -4,33 +4,56 @@
 import React, { createContext, useEffect, useContext, useState } from "react";
 import * as A from "../utils/api";
 import { useRouter } from "next/navigation";
+import { get } from "http";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   authChecked: boolean;
   username : string;
   authToken: string | null;
+  isAdmin: boolean;
   login: ({ name, password ,isAdmin}: { name: string; password: string, isAdmin: boolean }) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getLocalStorage = (key: string, defaultValue: any = null) => {
+  const value = localStorage.getItem(key);
+  try {
+    return value ? JSON.parse(value) : defaultValue; 
+  } catch (error) {
+    return value || defaultValue; 
+  }
+};
+
+const setLocalStorage = (key: string, value: any) => {
+  const isObject = typeof value === "object" && value !== null;
+  localStorage.setItem(key, isObject ? JSON.stringify(value) : value);
+};
+
+const removeLocalStorage = (key: string) => {
+  localStorage.removeItem(key);
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authChecked, setAuthChecked] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [authToken, setAuthToken] =useState<string | null>(null)
   const [username, setUsername] = useState<string>("");
   const router = useRouter();
 
   useEffect(() => {
-    const storedAuth = localStorage.getItem("isAuthenticated") === "true";
-    const storedUsername = localStorage.getItem("username");
-    const storedToken = localStorage.getItem("authToken");
+    const storedAuth = getLocalStorage("isAuthenticated", false);
+    const storedUsername = getLocalStorage("username", "");
+    const storedToken = getLocalStorage("authToken", null);
+    const storedIsAdmin = getLocalStorage("isAdmin", false);
     if (storedAuth && storedToken) {
       setIsAuthenticated(true);
       setUsername(storedUsername || "");
       setAuthToken(storedToken);
+      setIsAdmin(storedIsAdmin);
     }
     setAuthChecked(true); 
   },[]);
@@ -38,16 +61,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async ({name,password,isAdmin }:{name: string, password: string,isAdmin:boolean}) => {
     try{
       const token = await A.createToken(name,password,isAdmin);
+     
+
       if (!token ) {
         throw new Error("Invalid credentials");
       }
       setIsAuthenticated(true);
       setUsername(name);
       setAuthToken(token);
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("username", name);
-      localStorage.setItem("authToken", token);
+      setIsAdmin(isAdmin);
+      setLocalStorage("isAuthenticated", true);
+      setLocalStorage("username", name);
+      setLocalStorage("authToken", token);
+      setLocalStorage("isAdmin",isAdmin);
   
+      console.log("Login successful, token and isAdmin saved:", { token, isAdmin });
       return true;
     }
     catch(err){
@@ -56,9 +84,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAuthenticated(false);
       setAuthToken(null);
     
-      localStorage.removeItem("isAuthenticated");
-      localStorage.removeItem("username");
-      localStorage.removeItem("authToken");
+      removeLocalStorage("isAuthenticated");
+      removeLocalStorage("username");
+      removeLocalStorage("authToken");
+      removeLocalStorage("isAdmin");
+      removeLocalStorage("isAdmin");
       return false;
     }
     
@@ -66,14 +96,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     setIsAuthenticated(false);
     setAuthToken(null);
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("username");
-    localStorage.removeItem("authToken");
+    setUsername("");
+
+    removeLocalStorage("isAuthenticated");
+    removeLocalStorage("username");
+    removeLocalStorage("authToken");
+    removeLocalStorage("isAdmin");
     router.push("/");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated,authChecked, username,authToken, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated,authChecked, isAdmin,username,authToken, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

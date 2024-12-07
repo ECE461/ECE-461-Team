@@ -6,9 +6,12 @@ import * as A from "../utils/api";
 
 
 const Upload = () => {
+  const [name, setName] = useState("");
+  const [version, setVersion] = useState("");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [jsProgram, setJsProgram] = useState("");
+  const [debloat, setDebloat] = useState<boolean>(false);
   const [message, setMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const isDisabled = !url && !file;
@@ -46,25 +49,49 @@ const Upload = () => {
       setMessage("Please drop a ZIP file.");
     }
   };
+  
+  const handleDeblaotChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDebloat(event.target.checked);
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!name || !version) {
+      setMessage("Please provide a name and version.");
+      return;
+    }
     if ( (!url && !file)) {
       setMessage("Please provide either a URL or a ZIP file.");
       return;
     }
 
     try {
-      let data;
+      let requestBody: {
+        Name: string;
+        Version: string;
+        JSProgram?: string;
+        URL?: string;
+        Content?: string;
+        debloat: boolean;
+      } = {
+        Name: name,
+        Version: version,
+        debloat, // Boolean value
+      };
+  
       if (url) {
-        data = { URL: url };
+        requestBody.URL = url;
       } else if (file) {
         const base64Content = await handleFileRead(file);
-        data = {  Content: base64Content.split(",")[1] }; // Extract base64 string after prefix
+        requestBody.Content =base64Content.split(",")[1] // Extract base64 string after prefix
       }
       
-      const response = A.uploadPackage(data);
+      if (jsProgram.trim()) {
+        requestBody.JSProgram = jsProgram.trim();
+      }
+      
+      const response = A.uploadPackage(requestBody);
       setMessage("Upload successful!");
       console.log("Response:", response);
     } catch (error) {
@@ -75,7 +102,26 @@ const Upload = () => {
 
   return (
     <S.UploadContainer>
-      
+      <S.pageHeader><title>Upload a Package</title></S.pageHeader>
+      <S.InputFieldContainer>
+        <S.NameVersionField
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          
+        />
+
+        <S.NameVersionField
+          type="text"
+          placeholder="Version"
+          value={version}
+          onChange={(e) => setVersion(e.target.value)}
+         
+        />
+
+     
+      </S.InputFieldContainer>
       <form onSubmit={handleUpload}>
       <S.urlHeader>GitHub URL</S.urlHeader> 
         <S.urlContainer>
@@ -112,6 +158,7 @@ const Upload = () => {
           ) : (
             <p>Drag & drop a ZIP file here, or click to select</p>
           )}
+          <label htmlFor="file-upload">Upload a ZIP file</label>
           <input
             type="file"
             accept=".zip"
@@ -120,6 +167,7 @@ const Upload = () => {
               opacity: 0,
               cursor: "pointer",
             }}
+           
           />
         </S.UploadBox>
         <S.Divider>
@@ -129,10 +177,18 @@ const Upload = () => {
             type="text"
             value={jsProgram}
             onChange={(e) => setJsProgram(e.target.value)}
-            disabled={!!file}
             placeholder="Enter a JS program"
           />
         <S.buttonContainer>
+        <label>
+            <input
+              type="checkbox"
+              checked={debloat}
+              onChange={handleDeblaotChange}
+              style={{ marginRight: "5px" }}
+            />
+            Debloat
+          </label>
         <S.uploadButton disabled = {isDisabled} type="submit">Upload</S.uploadButton>
         </S.buttonContainer>
       </form>

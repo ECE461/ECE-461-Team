@@ -6,8 +6,14 @@ export const UploadContainer = styled.div`
   justify-content: center;
   align-items: center;
   padding: 20px;
+  flex-direction: column;
 `;
-
+export const pageHeader = styled.header`
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+`;
 export const UploadBox = styled.div`
   display: flex;
   justify-content: center;
@@ -81,6 +87,7 @@ export const InputFieldContainer = styled.div`
  display: flex;
  justify-content: center;
  padding: 20px;
+//  flex-direction: column;
 //  width: 100%;
 //  max-width: 600px;
  `
@@ -153,4 +160,11 @@ span {
   color: #666;
   text-align: center;
 }
+`;
+
+export const CheckboxContainer = styled.div`
+`;
+export const CheckboxLabel = styled.label`
+`;
+export const Checkbox = styled.input`
 `;
