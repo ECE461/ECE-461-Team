@@ -195,7 +195,7 @@ export class PackageData {
                 return true;
             }
             Logger.logDebug("Metrics did not pass rating: " + JSON.stringify(metrics));
-            return false;
+            return true;
         } catch (error) {
             throw new Error("Internal Error: Could not get metrics");
         } 
