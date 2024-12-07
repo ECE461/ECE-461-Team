@@ -34,12 +34,12 @@ export class AuthenticationRequest {
             const parts = header.split(' ');
 
             //bearer has to preceed the token in order to render the token valid
-            if (parts[0] != '"bearer'){
+            if (parts[0] != 'bearer'){
                 throw new Error("403: Not an actual token")
             }
 
             //clean up quotations and 'bearer' from '"bearer <token>"'
-            this.token = parts[1].replace(/^"bearer\s*/i, '').replace(/"$/, '');
+            this.token = parts[1].replace(/^bearer\s*/i, '');
 
             /*INSTANTIATE PAYLOAD*/
             if (!process.env.JWT_KEY){

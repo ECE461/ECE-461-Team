@@ -418,6 +418,7 @@ export class PackageCommandController {
         static async logRequest(req: Request, endpoint: string) {
             Logger.logInfo(`*******************REQUEST*******************`);
             Logger.logInfo(`            ${endpoint}`);
+            Logger.logDebug(`Request headers: ${JSON.stringify(req.headers)}`);
             Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
             Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
             Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
