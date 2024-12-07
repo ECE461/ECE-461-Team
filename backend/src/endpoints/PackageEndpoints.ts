@@ -48,7 +48,7 @@ export class PackageEndpoints {
         // Get cost for package with specific ID (COST)
         this.router.get('/package/:id/cost', PackageQueryController.getCost); // (NON-BASELINE)
       
-        this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
+        // this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
 
 
         // READ-WRITE Endpoints -----------------------------------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ export class PackageEndpoints {
         this.router.delete('/package/byName/:name', FakeController.deletePackageByName); // (NON-BASELINE)
         this.router.put('/authenticate', FakeController.createAccessToken); //(NON-BASELINE)
         this.router.post('/register', FakeController.registerUser) //(NON-BASELINE)
-        this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
+        // this.router.get('/tracks', PackageQueryController.getTracks); // (BASELINE)
         this.router.get('/package/:id/cost', FakeController.getCost); // (BASELINE)
 
         // TODO: Add user endpoints

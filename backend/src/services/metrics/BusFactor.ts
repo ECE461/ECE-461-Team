@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Logger } from '../../utils/Logger';
 
 export class BusFactor {
     private repoOwner: string;
@@ -38,7 +39,7 @@ export class BusFactor {
             return parseFloat(score.toFixed(3));
 
         } catch (error) {
-            console.error('BusFactor -> Error fetching commits:', (error as any).message);
+            Logger.logError('BusFactor -> Error fetching commits:', (error as any).message);
             process.exit(1);
         }
     }

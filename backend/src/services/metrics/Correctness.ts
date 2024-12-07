@@ -4,6 +4,7 @@ import 'es6-promise/auto';
 import * as dotenv from 'dotenv';
 import * as git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
+import { Logger } from '../../utils/Logger';
 
 dotenv.config();
 
@@ -24,7 +25,7 @@ export class Correctness {
   public async getCorrectnessScore(): Promise<number> {
     let startTime = performance.now();
 
-    await this.fetchRepoContents();
+    // await this.fetchRepoContents();
 
     // Run checks concurrently
     const [readme, stability, tests, linters, dependencies] = await Promise.all([
@@ -36,11 +37,11 @@ export class Correctness {
     ]);
 
     // Assign weights and calculate score
-    const readmeWeight = 0.2;
-    const stabilityWeight = 0.25;
-    const testsWeight = 0.3;
-    const lintersWeight = 0.1;
-    const dependenciesWeight = 0.15;
+    const readmeWeight = 0.35; // Readme needs to be present
+    const stabilityWeight = 0.15;  // Smaller repos may not have multiple releases
+    const testsWeight = 0.3;  // Tests will help ensure correctness
+    const lintersWeight = 0.1;  // Linters will help ensure code quality
+    const dependenciesWeight = 0.10;  // Dependencies are important for functionality
 
     const finalScore = (
       readme * readmeWeight + 
@@ -89,7 +90,7 @@ export class Correctness {
       const releases = await response.json();
       return releases.length > 1;
     } catch (error) {
-      console.error('Error fetching releases:', error);
+      Logger.logDebug('Error fetching releases:' +  error);
       return false;
     }
   }
@@ -116,10 +117,15 @@ export class Correctness {
     }
     try {
       const packageJsonPath = path.join(this.repoDir, packageJsonFile);
+      console.log("HELLO" + packageJsonPath);
+      console.log("TESTING" + fs.readFileSync(packageJsonPath, 'utf8'));
+
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+      console.log("HELLO" + packageJson.dependencies);
       return Object.keys(packageJson.dependencies || {}).length > 0;
     } catch (error) {
-      console.error('Error reading package.json:', error);
+      Logger.logDebug('Error reading package.json:' + error);
       return false;
     }
   }
@@ -128,7 +134,7 @@ export class Correctness {
     try {
       fs.rmSync(this.repoDir, { recursive: true });
     } catch (error) {
-      console.error('Error removing repository directory:', error);
+      Logger.logDebug('Error removing repository directory:' + error);
     }
   }
 
@@ -143,11 +149,11 @@ export class Correctness {
       this.checkDependencies()
     ]);
 
-    console.log('README exists:', checks[0]);
-    console.log('Stability (version exists):', checks[1]);
-    console.log('Tests defined:', checks[2]);
-    console.log('Linters defined:', checks[3]);
-    console.log('Dependencies defined:', checks[4]);
+    Logger.logDebug('README exists:' + checks[0]);
+    Logger.logDebug('Stability (version exists):' + checks[1]);
+    Logger.logDebug('Tests defined:' + checks[2]);
+    Logger.logDebug('Linters defined:' + checks[3]);
+    Logger.logDebug('Dependencies defined:' + checks[4]);
 
     await this.cleanup();
   }
