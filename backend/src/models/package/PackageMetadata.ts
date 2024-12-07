@@ -15,7 +15,7 @@ export class PackageMetadata{
     private name: PackageName; // ex: "package-name"
     private version: PackageVersion; // ex: "1.0.0"
     private id: PackageID; // ex: "123456789"
-    private url?: string;
+    private url?: string; // github url
     private readMe: string = '';
     
     /* Constructor
@@ -42,6 +42,11 @@ export class PackageMetadata{
     setVersion(version: string) {
         this.version = new PackageVersion(version);
         this.id = new PackageID(this.name.getName(), version);
+    }
+
+    setName(name: string) {
+        this.name = new PackageName(name);
+        this.id = new PackageID(name, this.version.getVersion());
     }
 
     // getName : Returns name of the package
