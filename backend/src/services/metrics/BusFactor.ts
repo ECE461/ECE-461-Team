@@ -17,7 +17,6 @@ export class BusFactor {
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
 
         const url = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/commits?since=${twoYearsAgo.toISOString()}`;
-        //console.log(url);
         try {
             const response = await axios.get(url,
                 {

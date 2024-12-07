@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as dotenv from 'dotenv';
+import { Logger } from "../../utils/Logger";
 
 dotenv.config();
 const GITHUB_API = 'https://api.github.com'
@@ -36,11 +37,9 @@ export class Maintainer {
         // calculate difference in days between the last commit and today
         const dateDiff = Math.abs(todayDate.getTime() - lastCommitDate.getTime());
         const daysDiff = Math.ceil(dateDiff / (1000 * 3600 * 24));
-        //console.log('Days Diff: ', daysDiff);
 
         // find open to total issue ratio
         const openIssueRatio = await this.getOpenIssueRatioCount();
-        //console.log("Open Issue Ratio: ", openIssueRatio);
 
         // calculate score (0-1) based on how long ago last commit was & open to total issue ratio
         let score = 0;
@@ -84,7 +83,6 @@ export class Maintainer {
                 }
             );
             const openIssues = response.data.open_issues_count; // this number includes open pull requests
-            //console.log('Open Issue Count: ', openIssues);
             
             const closedResponse = await axios.get(closedUrl,
                 {
@@ -96,11 +94,8 @@ export class Maintainer {
             var closedIssues = 0;
             if(closedResponse.data[0] != undefined) {
                 closedIssues = closedResponse.data[0].number; // this number also includes pull requests
-                //console.log('Closed Issue Count: ', closedIssues);
             }
 
-            // console.log('Open Issue Count: ', openIssues);
-            // console.log('Closed Issue Count: ', closedIssues);
             if (closedIssues + openIssues === 0) {
                 return 0;
             }
@@ -110,7 +105,7 @@ export class Maintainer {
             const ratio = openIssues / (openIssues + closedIssues);
             return ratio;
         } catch (error) {
-            console.error('Error when fetching open issue ratio count: ', (error as any).message);
+            Logger.logDebug('Error fetching open issue count:' + (error as any).message);
             throw new Error('Error when fetching open issue ratio count');
         }
     }
@@ -131,17 +126,16 @@ export class Maintainer {
                 }
             );
             const lastCommit = response.data[0];
-            // console.log('Last Commit Data: ', lastCommit.commit.author.date);
             return lastCommit.commit.author.date;
         } catch (error) {
-            console.error('Error when fetching last commit data: ', (error as any).message);
+            Logger.logDebug('Error fetching last commit data:' + (error as any).message);
             throw new Error('Error when fetching last commit data');
         }
     }
 
     async correctnessChecker() {
-        console.log('Correctness Checker:');
-        console.log('Maintainer Score: ', await this.getMaintainerScore());
+        Logger.logDebug('Correctness Checker:');
+        Logger.logDebug('Maintainer Score: ' + await this.getMaintainerScore());
     }
 
     /**

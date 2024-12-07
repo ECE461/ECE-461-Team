@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Logger } from '../../utils/Logger';
 
 export class RampUp {
     private repoOwner: string;
@@ -27,17 +28,7 @@ export class RampUp {
             const { size, stargazers_count, forks_count } = response.data;
 
             const fileCount = await this.getFileCount();
-            //const lineCount = await this.getLineCount();
             const dependenciesCount = await this.getDependenciesCount();
-
-           /*  console.log('Repository Stats:', {
-                fileCount,
-                //lineCount,
-                dependenciesCount,
-                size,
-                //stargazers_count,
-                //forks_count
-            }); */
 
             const score = this.calculateScore({
                 fileCount,
@@ -53,7 +44,7 @@ export class RampUp {
             return parseFloat(score.toFixed(3));
 
         } catch (error) {
-            console.error('RAMPUP -> Error fetching repository stats:', error);
+            Logger.logDebug('RAMPUP -> Error fetching repository stats:' + error);
             return 0; // Return 0 in case of an error
         }
     }
@@ -105,7 +96,7 @@ export class RampUp {
 
             return Object.keys(dependencies).length;
         } catch (error) {
-            console.error('getDependenciesCount -> Error fetching dependencies count:', error);
+            Logger.logDebug('getDependenciesCount -> Error fetching dependencies count:' + error);
             return 0; // Return undefined in case of an error
         }
     }
