@@ -72,7 +72,7 @@ export class PackageMetadata{
 
     getUrl(): string {
         if (!this.url) {
-            throw new Error('URL not set');
+            return "";
         }
         return this.url;
     }
