@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Logger } from '../../utils/Logger';
 
 export class BusFactor {
     private repoOwner: string;
@@ -16,7 +17,6 @@ export class BusFactor {
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
 
         const url = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/commits?since=${twoYearsAgo.toISOString()}`;
-        //console.log(url);
         try {
             const response = await axios.get(url,
                 {
@@ -38,7 +38,7 @@ export class BusFactor {
             return parseFloat(score.toFixed(3));
 
         } catch (error) {
-            console.error('BusFactor -> Error fetching commits:', (error as any).message);
+            Logger.logError('BusFactor -> Error fetching commits:', (error as any).message);
             process.exit(1);
         }
     }

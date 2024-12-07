@@ -139,24 +139,6 @@ export class MetricManager {
             dependencyValue: parseFloat(dependencyValue.toFixed(3)),
             dependencyLatency: parseFloat(dependencyLatency.toFixed(3))
         };
-
-
-        // return 
-        // URL: ${this.owner}/${this.repoName}
-        // busFactorValue: ${parseFloat(busFactorValue.toFixed(3))} (Latency: ${busFactorLatency.toFixed(3)} s)
-        // rampUpValue: ${parseFloat(rampUpValue.toFixed(3))} (Latency: ${rampUpLatency.toFixed(3)} s)
-        // licenseValue: ${parseFloat(licenseValue.toFixed(3))} (Latency: ${licenseLatency.toFixed(3)} s)
-        // maintainerValue: ${parseFloat(maintainerValue.toFixed(3))} (Latency: ${maintainerLatency.toFixed(3)} s)
-        // correctnessValue: ${parseFloat(correctnessValue.toFixed(3))} (Latency: ${correctnessLatency.toFixed(3)} s)
-        // Net Score: ${parseFloat(netScore.toFixed(3))} (Latency: ${netLatency.toFixed(3)} s)
-        // `;
-
-        // return '\nbusFactorValue: ' + parseFloat(busFactorValue.toFixed(3)) + 
-        // '\n ' + 'rampUpValue: ' + parseFloat(rampUpValue.toFixed(3))
-        // + '\n ' + 'liscenseValue: ' + parseFloat(licenseValue.toFixed(3))
-        // + '\n ' + 'maintainerValue: ' + parseFloat(maintainerValue.toFixed(3))
-        // + '\n ' + 'correctnessValue: ' + parseFloat(correctnessValue.toFixed(3))
-        // + '\n ' + 'Net Score: ' + parseFloat(netScore.toFixed(3));
     }
 
     /**

@@ -58,7 +58,7 @@ describe('POST /packages Test Endpoint and Controller', () => {
             .post('/api/v1/packages')
             .send(invalidQuery)
             .expect(400);
-        expect(response.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         // Missing Version
         const invalidQuery2 = [
@@ -70,7 +70,7 @@ describe('POST /packages Test Endpoint and Controller', () => {
             .post('/api/v1/packages')
             .send(invalidQuery2)
             .expect(400);
-        expect(response2.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response2.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         // Invalid Version1
         const invalidQuery3 = [
@@ -83,7 +83,7 @@ describe('POST /packages Test Endpoint and Controller', () => {
             .post('/api/v1/packages')
             .send(invalidQuery3)
             .expect(400);
-        expect(response3.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response3.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         // Invalid Version2
         const invalidQuery4 = [
@@ -96,7 +96,7 @@ describe('POST /packages Test Endpoint and Controller', () => {
             .post('/api/v1/packages')
             .send(invalidQuery4)
             .expect(400);
-        expect(response4.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response4.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
     });
 
     it('should return 400 for invalid offset', async () => {
@@ -112,21 +112,21 @@ describe('POST /packages Test Endpoint and Controller', () => {
             .send(validQuery)
             .expect(400);
 
-        expect(response.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         const response2 = await request(app)
             .post('/api/v1/packages?offset=1.6') // Invalid offset
             .send(validQuery)
             .expect(400);
 
-        expect(response2.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response2.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         const response3 = await request(app)
             .post('/api/v1/packages?offset=a') // Invalid offset
             .send(validQuery)
             .expect(400);
 
-        expect(response3.body.message).toEqual(PackageQueryController.MSG_INVALID.message);
+        expect(response3.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
     });
 
     it('should return 500 for internal server error', async () => {

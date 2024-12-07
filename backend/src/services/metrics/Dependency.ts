@@ -71,9 +71,9 @@ export async function getPackageJson(repoOwner: string, repoName: string): Promi
         return response.data;
     } catch (error) {
         if (error instanceof Error) {
-            console.error(error.message);
+            Logger.logError("Failed to retreive package.json", error.message);
         } else {
-            console.error("An unknown error occurred");
+            Logger.logError("An unknown error occurred", error);
         }
     }
 }
@@ -101,11 +101,11 @@ async function getPullRequestFraction(repoOwner: string, repoName: string): Prom
         return totalCommits > 0 ? prCommits / totalCommits : 0.0;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.error(`Failed to fetch pull request data: ${error.response?.status}`);
+            Logger.logDebug(`Failed to fetch pull request data: ${error.response?.status}`);
         } else if (error instanceof Error) {
-            console.error(error.message);
+            Logger.logDebug(`Failed to fetch pull request data: ${error.message}`);
         } else {
-            console.error("An unknown error occurred");
+            Logger.logDebug("An unknown error occurred");
         }
         return 0.0; // Explicitly return a default value in case of an error
     }
@@ -126,12 +126,11 @@ export async function processPackages(repoOwner: string, repoName: string, matri
         // Add package and calculate scores
         matrix.addPackage(packageName, version, dependencies as Array<[string, string]>, pullRequestFraction);
         const score = matrix.getPackageScore(packageName, version);
-        console.log(`Package: ${packageName}, Version: ${version}, Score: ${score.toFixed(2)}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.error(`Failed to process package ${repoOwner}/${repoName}: ${error.message}`);
+            Logger.logDebug(`Failed to process package ${repoOwner}/${repoName}: ${error.message}`);
         } else {
-            console.error("An unknown error occurred");
+            Logger.logDebug("An unknown error occurred");
         }
     }
 }

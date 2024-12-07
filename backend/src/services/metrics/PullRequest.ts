@@ -1,10 +1,7 @@
 import axios from 'axios'; 
-
-
 import { Logger } from '../../utils/Logger';
 import { MetricManager } from './MetricManager';
 import {URL} from 'url' 
-import { log } from 'console';
 import { hasUncaughtExceptionCaptureCallback } from 'process';
 import { performance } from 'perf_hooks';
 
@@ -86,7 +83,6 @@ export class PullRequest{
             const response2 = await axios.get(this.getEndpoint('number', pr_number) + '/reviews', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
             const review = response2.data; 
 
-            // console.log(`is data merged for #${pr_number}? ${data.merged}\nis there a code review? ${review.length ? 'yes' : 'no'}`);
             //only count line contribution if the pull request has been merged and if a code review exists 
             if(data.merged && review.length){
                 arr[0] += data.additions; 
@@ -212,28 +208,4 @@ export class PullRequest{
 
 }
 
-// async function dummy(){
-    
-//     let startTime = performance.now(); 
-
-//     //must declare url object. 
-//     const url = new URL('https://github.com/lodash/lodash');
-    
-//     let metric = new MetricManager(url.pathname);
-
-//     let pr_fraction = new PullRequest(metric.getOwner(), metric.getRepoName());
-   
-//     pr_fraction.getPullRequest().then(
-//         result =>{
-//             console.log(result)
-//             console.log(`latency = ${performance.now() - startTime}`);
-//         }
-
-//     ).catch(error => {
-//         console.log(error);
-//     });
-
-// }
-
-// dummy(); 
 
