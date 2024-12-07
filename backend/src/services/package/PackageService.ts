@@ -100,7 +100,7 @@ export class PackageService {
         }  
     }
 
-    async uploadPackage(packageData: PackageData, debloat: boolean, name: string) {
+    async uploadPackage(packageData: PackageData, debloat: boolean, name: string, version: string) {
         try {
 
             // Debloat package if necessary
@@ -117,6 +117,11 @@ export class PackageService {
             // Check that Request Body "name" matches package.json's name
             if (packageMetadata.getName() !== name && name !== "") {
                 throw new Error(`400: Package name does not match: ${packageMetadata.getName()} !== ${name}`);
+            }
+            
+            // Check that Request Body "version" matches package.json's version
+            if (packageMetadata.getVersion() !== version && version !== "") {
+                throw new Error(`400: Package version does not match: ${packageMetadata.getVersion()} !== ${version}`);
             }
 
             // If package does already exists:
