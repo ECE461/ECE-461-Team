@@ -112,7 +112,7 @@ export class PackageService {
 
             Logger.logInfo("Extracting package metadata");
             const isUploadByContent = packageData.getSourceType() === "Content";
-            let packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData, isUploadByContent);
+            let packageMetadata : PackageMetadata = await PackageUploadService.extractPackageInfo(packageData, isUploadByContent, packageData.getUploadUrl());
 
             // Check that Request Body "name" matches package.json's name
             if (packageMetadata.getName() !== name && name !== "") {
@@ -166,7 +166,7 @@ export class PackageService {
             }
 
             Logger.logInfo("Extracting package metadata");
-            let packageMetadata : PackageMetadata = PackageUploadService.extractPackageInfo(packageData, false);
+            let packageMetadata : PackageMetadata = await PackageUploadService.extractPackageInfo(packageData, false, packageData.getUploadUrl());
 
             // Check that Request Body "name" matches package.json's name
             if (packageMetadata.getName() !== name && name !== "") {

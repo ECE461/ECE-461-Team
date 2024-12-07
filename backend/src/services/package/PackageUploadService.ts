@@ -6,6 +6,7 @@ import { PackageData } from '../../models/package/PackageData';
 import { S3 } from '../../utils/S3';
 import { Logger } from '../../utils/Logger';
 import { URLHandler } from '../../utils/URLHandler';
+import { Package } from '../../models/package/Package';
 
 export class PackageUploadService {
 
@@ -15,8 +16,22 @@ export class PackageUploadService {
         return packageData;
     }
 
-    public static extractPackageInfo(packageData: PackageData, isUpdateByContent: boolean) : PackageMetadata {
+    static isValidWeirdRepository(entry: unknown): boolean {
+        if (typeof entry !== 'string') {
+            return false; // Not a string
+        }
+        const regex = /^[^/]+\/[^/]+$/;
+        return regex.test(entry);
+    }
+
+    static async extractPackageInfo(packageData: PackageData, isUpdateByContent: boolean, uploadUrl: string) : Promise<PackageMetadata> {
         Logger.logInfo("Extracting package metadata");
+
+        // Clean uploadUrl if it has github.com:
+        if (uploadUrl.includes('github.com')) {
+            const urlH = await URLHandler.create(uploadUrl);
+            uploadUrl = URLHandler.standardizeGitHubURL(urlH.getURL());
+        }
 
         // Unzip the package
         const zipBuffer = Buffer.from(packageData.getContent(), 'base64');
@@ -57,8 +72,16 @@ export class PackageUploadService {
                     const url = URLHandler.convertGithubURLToHttps(packageInfo.repository?.url);
                     packageMetadata.setUrl(url);
                 }
+                else if (packageInfo.repository && PackageUploadService.isValidWeirdRepository(packageInfo.repository)) {
+                    const url = `https://github.com/${packageInfo.repository}`;
+                    packageMetadata.setUrl(url);
+                }
                 else {
-                    throw new Error("400: No url found in the uploaded package's package.json");
+                    if (!uploadUrl.includes('github.com')) {
+                        throw new Error("400: No url found in the uploaded package's package.json");
+                    } else {
+                        packageMetadata.setUrl(uploadUrl);
+                    }
                 }
                 
             }
@@ -82,6 +105,11 @@ export class PackageUploadService {
             throw new Error("400: No package.json found in the uploaded package");
         }
         else {
+            // Check github url exists:
+            if (await URLHandler.checkUrlExists((packageMetadata as PackageMetadata).getUrl()) === false) {
+                throw new Error("400: The repository URL in the package.json does not exist");
+            }
+
             // Set readme content if found
             if (readmeContent) {
                 (packageMetadata as PackageMetadata).setReadMe(readmeContent);
