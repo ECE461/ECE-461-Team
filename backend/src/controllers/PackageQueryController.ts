@@ -101,7 +101,9 @@ export class PackageQueryController {
         Logger.logInfo('Matching Regex: '+ regex);
         const packages: PackageMetadata[] = await PackageQueryController.packageService.getPackagesByRegex(regex);
         const jsonResponse = packages.map(pkg => pkg.getJson());
-
+        if (packages.length === 0) {
+          throw new Error("404: No matches found")
+        }
         PackageQueryController.sendResponse(res, 200, jsonResponse, endpointName);
       } catch (error) {
           if (error instanceof Error && error.message.includes('400')) {
