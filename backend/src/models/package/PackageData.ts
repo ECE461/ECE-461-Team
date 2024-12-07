@@ -116,6 +116,13 @@ export class PackageData {
                     }
                     return value;
                 }),
+            Version: Joi.string().required()
+                .custom((value, helpers) => {
+                    if (!PackageVersion.isValidVersion(value)) {
+                        return helpers.error('any.invalid');
+                    }
+                    return value;
+                }),
             URL: Joi.string().uri(),
             debloat: Joi.boolean().optional(),
             JSProgram: Joi.string().optional()
