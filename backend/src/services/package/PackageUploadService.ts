@@ -49,6 +49,7 @@ export class PackageUploadService {
             const pathParts = fileName.split('/');
             
             if (fileName.endsWith('package.json') && pathParts.length === 2) {
+                Logger.logInfo("Found package.json");
                 const packageJsonContent = entry.getData().toString('utf8');
                 const packageInfo = JSON.parse(packageJsonContent);
 
@@ -66,23 +67,37 @@ export class PackageUploadService {
                 packageMetadata = new PackageMetadata("FAKE_NAME", "1.0.0");
                 
                 if (packageInfo.repository?.homepage && packageInfo.repository?.homepage.includes('github.com')) {
-                    const url = URLHandler.convertGithubURLToHttps(packageInfo.repository?.homepage);
+                    const url = URLHandler.cleanURLIfCredentials(URLHandler.convertGithubURLToHttps(packageInfo.repository?.homepage));
                     packageMetadata.setUrl(url);
+                    Logger.logInfo("Found repository URL in package.json - repository.homepage: " + url);
+                } else if (packageInfo.homepage && packageInfo.homepage.includes('github.com')) {
+                    const url = URLHandler.cleanURLIfCredentials(URLHandler.convertGithubURLToHttps(packageInfo.homepage));
+                    packageMetadata.setUrl(url);
+                    Logger.logInfo("Found repository URL in package.json - homepage: " + url);
                 }
                 else if (packageInfo.repository?.url && packageInfo.repository?.url.includes('github.com')) {
-                    const url = URLHandler.convertGithubURLToHttps(packageInfo.repository?.url);
+                    const url = URLHandler.cleanURLIfCredentials(URLHandler.convertGithubURLToHttps(packageInfo.repository?.url));
                     packageMetadata.setUrl(url);
+                    Logger.logInfo("Found repository URL in package.json - repository.url: " + url);
+                }
+                else if (packageInfo.repository && packageInfo.repository.includes('github.com')) {
+                    const url = URLHandler.cleanURLIfCredentials(URLHandler.convertGithubURLToHttps(packageInfo.repository));
+                    packageMetadata.setUrl(url);
+                    Logger.logInfo("Found repository URL in package.json - repository: " + url);
                 }
                 else if (packageInfo.repository && PackageUploadService.isValidWeirdRepository(packageInfo.repository)) {
                     const url = `https://github.com/${packageInfo.repository}`;
                     packageMetadata.setUrl(url);
+                    Logger.logInfo("Found repository URL in package.json - repository (weird): " + url);
                 }
                 else {
                     if (!uploadUrl.includes('github.com')) {
                         // throw new Error("400: No url found in the uploaded package's package.json");
                         packageMetadata.setUrl("");
+                        Logger.logInfo("No repository URL found in package.json, set to empty string");
                     } else {
                         packageMetadata.setUrl(uploadUrl);
+                        Logger.logInfo("No repository URL found in package.json, using upload URL: " + uploadUrl);
                     }
                 }
                 
