@@ -17,6 +17,7 @@ import { AuthenticationRequest } from '../models/authentication/AuthenticationRe
  * @method: createAccessToken
  */
 export class PackageCommandController {
+    static readonly INVALID_AUTHENTICATION = "Authentication failed due to invalid or missing AuthenticationToken.";
     static packageService = new PackageService();
 
     /* uploadPackage: Uploads package from content or ingests package from URL.
@@ -33,19 +34,14 @@ export class PackageCommandController {
      * 
      */
     static async uploadPackage(req: Request, res: Response) {
+        const endpointName = "POST /package (UPLOAD)";
         // Log request
-        Logger.logInfo(`**************************************
-                    POST /package`);
-        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-        Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
-        Logger.logInfo(`**************************************`);
+        PackageCommandController.logRequest(req, endpointName);
 
         const msg_invalid = "There is missing field(s) in the PackageData or it is formed improperly (e.g. Content and URL ar both set)";
         // Check if request is valid + has all required fields
         if (!PackageData.isValidUploadRequestBody(req.body)) {
-            Logger.logInfo(msg_invalid);
-            res.status(400).json({description: msg_invalid});
+            PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName);
             return;
         }
 
@@ -69,20 +65,23 @@ export class PackageCommandController {
 
             Logger.logInfo("Uploading Package: To S3 and RDS")
             const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData, debloat, name);
-            res.status(201).json(pack.getJson());
+            PackageCommandController.sendResponse(res, 201, pack.getJson(), endpointName);
         } catch (error) {
             if ((error instanceof Error) && (error.message.includes('424'))) {
-                Logger.logDebug(error);
-                res.status(424).send({description: "Package is not uploaded due to the disqualified rating."});
+                const response = {description: "Package is not uploaded due to the disqualified rating."};
+                PackageCommandController.sendResponse(res, 424, response, endpointName, error);
             } else if ((error instanceof Error) && error.message.includes('400')) {
-                Logger.logError("Invalid Request: Not correct format", error);
-                res.status(400).json({description: msg_invalid});
+                const response = {description: msg_invalid};
+                PackageCommandController.sendResponse(res, 400, response, endpointName, error);
             } else if ((error instanceof Error) && error.message.includes('409')){
-                Logger.logError("Package already exists", error);
-                res.status(409).send({description: "Package already exists"});
+                const response = {description: "Package already exists"};
+                PackageCommandController.sendResponse(res, 409, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, error);
             } else {
-                Logger.logError("Internal Error while uploading package: ", error);
-                res.status(500).send({description: "Internal Server Error"});
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, error);
             }
         }
     }
@@ -99,45 +98,31 @@ export class PackageCommandController {
      * Sets response status to 200 (success), 400 (invalid request), 404 (package does not exist), 409 (package already exists)
      */
     static async updatePackage(req: Request, res: Response) {    
+        const endpointName = "POST /package/:id (UPDATE)";
         // Log request
-        Logger.logInfo(`**************************************
-                    POST /package/:id`);
-        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
-        Logger.logInfo(`**************************************`);
-        
-        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
-        if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
-            Logger.logInfo(msg_invalid);
-            res.status(400).json({description: msg_invalid});
-            return;
-        }
-
-        // Check if package ID in metadata matches ID in request params
-        if (req.body.metadata.ID !== req.params.id) {
-            Logger.logInfo(`Package ID does not match ID in request body: ${req.body.metadata.ID} vs ${req.params.id}`);
-            res.status(400).json({description: msg_invalid});
-            return;
-        }
-
-        // Check if package name in metadata matches name in request body
-        if (req.body.metadata.Name !== req.body.data.Name) {
-            Logger.logInfo(`Package name does not match name in request body: ${req.body.metadata.Name} vs ${req.body.data.Name}`);
-            res.status(400).json({description: msg_invalid});
-            return;
-        }
-
-        // Check if old package id exists:
-        const oldID = req.body.metadata.ID;
-        if (!(await PackageCommandController.packageService.checkPackageIDExists(oldID))) {
-            Logger.logInfo("Package does not exist");
-            res.status(404).json({description: "Package does not exist."});
-            return;
-        }
+        PackageCommandController.logRequest(req, endpointName);
 
         // Parse information:
         try {
+            if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
+                throw new Error("400: Invalid Request: Not correct format");
+            }
+
+            // Check if package ID in metadata matches ID in request params
+            if (req.body.metadata.ID !== req.params.id) {
+                throw new Error(`400: Package ID does not match ID in request body: ${req.body.metadata.ID} vs ${req.params.id}`);
+            }
+
+            // Check if package name in metadata matches name in request body
+            if (req.body.metadata.Name !== req.body.data.Name) {
+                throw new Error(`400: Package name does not match name in request body: ${req.body.metadata.Name} vs ${req.body.data.Name}`);
+            }
+
+            // Check if old package id exists:
+            const oldID = req.body.metadata.ID;
+            if (!(await PackageCommandController.packageService.checkPackageIDExists(oldID))) {
+                throw new Error("404: Package does not exist");
+            }
 
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
         
@@ -157,21 +142,24 @@ export class PackageCommandController {
             // Update Package
             Logger.logInfo(`Updating Package: Name: ${name}, Version: ${req.body.metadata.Version}`)
             await PackageCommandController.packageService.updatePackage(packageData, debloat, name, version, oldID);
-            res.status(200).json({description: "Version is updated."});
+            PackageCommandController.sendResponse(res, 200, {description: "Version is updated."}, endpointName);
 
         } catch (error) {
             if ((error instanceof Error) && error.message.includes('404')) {
-                Logger.logError("Package does not exist", error);
-                res.status(404).json({description: "Package does not exist."});
+                const response = {description: "Package does not exist."};
+                PackageCommandController.sendResponse(res, 404, response, endpointName, error);
             } else if ((error instanceof Error) && error.message.includes('400')) {
-                Logger.logError("Invalid Request: Not correct format", error);
-                res.status(400).json({description: msg_invalid});
+                const response = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
+                PackageCommandController.sendResponse(res, 400, {description: response}, endpointName, error);
             } else if ((error instanceof Error) && error.message.includes('409')){
-                Logger.logError("Package already exists", error);
-                res.status(409).json({description: "Package already exists."});
+                const response = {description: "Package already exists."};
+                PackageCommandController.sendResponse(res, 409, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, error);
             } else {
-                Logger.logError("Internal Error while updating package: ", error);
-                res.status(500).json({description: "Internal Server Error"});
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, error);
             }
         }
         
@@ -189,20 +177,30 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 401 (no permission to reset)
      */
     static async reset(req: Request, res: Response) {
+        const endpointName = "DELETE /reset (RESET)";
         // Log request
-        Logger.logInfo(`**************************************
-                    DELETE /reset`);
-        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
-        Logger.logInfo(`**************************************`);
+        PackageCommandController.logRequest(req, endpointName);
 
         try {
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+    
+            if(!authorization_token.isAdmin){
+                throw new Error("403: User is not an admin, therefore cannot register users");
+            }
+
             await PackageCommandController.packageService.reset();
-            res.status(200).send({message: "Registry is reset."});
+            PackageCommandController.sendResponse(res, 200, {message: "Registry is reset."}, endpointName);
         } catch (error) {
-            Logger.logError("Internal Server Error", error);
-            res.status(500).send({description: "Internal Server Error"});
+            if ((error instanceof Error) && error.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('400')) {
+                const response = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid."; 
+                PackageCommandController.sendResponse(res, 400, {description: response}, endpointName, error);
+            } else {
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, error);
+            }
         }
     }
 
@@ -217,19 +215,13 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageById(req: Request, res: Response) { // NON-BASELINE
+        const endpointName = "DELETE /package/:id (DELETE BY ID)";
         // Log request
-        Logger.logInfo(`**************************************
-                    DELETE /package/:id`);
-        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
-        Logger.logInfo(`**************************************`);
+        PackageCommandController.logRequest(req, endpointName);
 
-        const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
+        
         if (!PackageID.isValidGetByIdRequest(req)) {
-            Logger.logInfo(msg_invalid);
-            res.status(400).json({description: msg_invalid});
-            return;
+            throw new Error("400: Invalid Request: Not correct format");
         }
 
         try{
@@ -237,12 +229,22 @@ export class PackageCommandController {
             
             await PackageCommandController.packageService.deletePackageById(req.params.id); 
             
-            res.status(200).send({message: "Successfully deleted package via ID."});
-            console.log(`Package ${req.params.id} has been successfully deleted.`)
-        }catch(error){
+            Logger.logInfo(`Successfully deleted package via ID: ${req.params.id}`);
+            PackageCommandController.sendResponse(res, 200, {message: "Successfully deleted package via ID."}, endpointName);
+        } catch(error){
             if(error instanceof Error && error.message.includes('404')){
-                res.status(404).send({description: 'Package does not exist'});
-              }
+                const response = {description: "Package does not exist."};
+                PackageCommandController.sendResponse(res, 404, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('400')) {
+                const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
+                PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName);
+            } else {
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, error);
+            }
         }
     }
 
@@ -257,19 +259,13 @@ export class PackageCommandController {
      * Sets response to 200 (success), 400 (invalid req), 404 (package DNE)
      */
     static async deletePackageByName(req: Request, res: Response) {
+        const endpointName = "DELETE /package/byName/:name (DELETE ALL VERSIONS)";
         // Log request
-        Logger.logInfo(`**************************************
-                    DELETE /package/byName/:name`);
-        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
-        Logger.logInfo(`**************************************`);
+        PackageCommandController.logRequest(req, endpointName);
 
         const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid."
         if (!PackageName.isValidGetByNameRequest(req)) {
-            Logger.logInfo(msg_invalid);
-            res.status(400).json({description: msg_invalid});
-            return;
+            throw new Error("400: Invalid Request: Not correct format");
         }
         
         try{
@@ -277,12 +273,22 @@ export class PackageCommandController {
             
             await PackageCommandController.packageService.deletePackageByName(req.params.name);
 
-            res.status(200).send({message: "Successfully deleted package via name."})
+            PackageCommandController.sendResponse(res, 200, {message: "Successfully deleted package via name."}, endpointName);
 
         }catch(error){
             if(error instanceof Error && error.message.includes('404')) {
-                res.status(404).send({description: 'Package does not exist'});
-              }
+                const response = {description: "Package does not exist."};
+                PackageCommandController.sendResponse(res, 404, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, error);
+            } else if ((error instanceof Error) && error.message.includes('400')) {
+                const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid.";
+                PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+            } else {
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, error);
+            }
         }
     }
 
@@ -298,37 +304,34 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
-
+        const endpointName = "PUT /authenticate (LOGIN)";
         // Log request
-        Logger.logInfo(`**************************************
-                    PUT /authenticate`);
-        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
-        Logger.logInfo(`**************************************`);
-
-
-        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+        PackageCommandController.logRequest(req, endpointName);
       
         if (!AuthenticationRequest.isValidRequest(req)) {
-            Logger.logInfo(msg_invalid);
-            res.status(400).json({description: msg_invalid});
-            return;
+            throw new Error("400: Invalid Request: Not correct format");
         }
 
         try {
             
             let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password, req.body.User.isAdmin);
-
+            Logger.logInfo(`${endpointName}: Successfully created token for user: ${req.body.User.name}: ${token}`);
             res.status(200).send(token);
 
         } catch(err: any) {
 
             if (err instanceof Error && err.message.includes('401')) {
-                res.status(401).send({description: 'The user or password is invalid.'});
-            }
-            else if (err instanceof Error && err.message.includes('500')){
-                res.status(500).send({description: 'This system does not support authentication.'});
+                const response = {description: 'The user or password is invalid.'};
+                PackageCommandController.sendResponse(res, 401, response, endpointName, err);
+            } else if ((err instanceof Error) && err.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, err);
+            } else if ((err instanceof Error) && err.message.includes('400')){
+                const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+                PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName, err);
+            } else {
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, err);
             }
         }
     }
@@ -344,16 +347,17 @@ export class PackageCommandController {
      * Description: allows admins to register 
      */
     static async registerUser(req: Request, res: Response){
+        const endpointName = "POST /register (REGISTER USER)";
+        // Log request
+        PackageCommandController.logRequest(req, endpointName);
         
         // await PackageCommandController.packageService.addDefaultUser();
         // await PackageCommandController.packageService.dummyToken();
 
-        const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+        
 
         if (!AuthenticationRequest.isValidRequest(req)) {
-            Logger.logInfo(msg_invalid);
-            res.status(400).json({description: msg_invalid});
-            return;
+            throw new Error("400: Invalid Request: Not correct format");
         }
 
         try{
@@ -366,24 +370,58 @@ export class PackageCommandController {
             }
 
             await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
-            res.status(200).send({ message: 'User successfully registered' });
+            PackageCommandController.sendResponse(res, 200, { message: 'User successfully registered' }, endpointName);
 
         } catch (err: any){
             if (err instanceof Error && err.message.includes('401')) {
-                Logger.logInfo(err.message);
-                res.status(409).send({description: 'User has already been registered'});
+                const response = {description: 'User has already been registered'};
+                PackageCommandController.sendResponse(res, 409, response, endpointName, err);
             }
             else if (err instanceof Error && err.message.includes('500')){
-                Logger.logInfo(err.message);
-                res.status(500).send({description: 'Error registering user.'});
-            }
-            else if (err instanceof Error && err.message.includes('403')){
-                Logger.logInfo(err.message);
-                res.status(403).send({ description: 'Authentication failed due to invalid or missing AuthenticationToken.'})
+                const response = {description: 'Error registering user.'};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, err);
+            } else if (err instanceof Error && err.message.includes('400')) {
+                const msg_invalid = "There is missing field(s) in the AuthenticationRequest or it is formed improperly.";
+                PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName);
+            } else if (err instanceof Error && err.message.includes('403')){
+                const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
+                PackageCommandController.sendResponse(res, 403, response, endpointName, err);
             }
         }
         
     }
 
+    /* 
+     * @method: sendResponse: Helper function- Sends response to client, logs response
+     * @param res: Response object
+     * @param status: Status code
+     * @param response: Response data in JSON format
+     * @param endpoint: Endpoint name
+     * @param error: Error object (if exists)
+     */
+        static async sendResponse(res: Response, status: number, response: any, endpoint: string, error?: any) {
+            Logger.logInfo("*********************RESPONSE***********************");
+            Logger.logInfo(`Sending respoinse for ${endpoint}`);
+            Logger.logInfo(`Status: ${status}`);
+            Logger.logDebug(`Response: ${JSON.stringify(response)}`);
+            Logger.logInfo("********************************************");
+            res.status(status).json(response);
+            if (error) {
+                Logger.logError(`${endpoint} ${status}:` ,error);
+            }
+        }
     
+        /* @method logRequest: Logs request information
+         * @param req: Request object
+         * @param endpoint: Endpoint name
+         */
+        static async logRequest(req: Request, endpoint: string) {
+            Logger.logInfo(`*******************REQUEST*******************`);
+            Logger.logInfo(`            ${endpoint}`);
+            Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+            Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+            Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+            Logger.logInfo(`**************************************`);
+        }
+
 }
