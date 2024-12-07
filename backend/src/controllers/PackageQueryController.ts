@@ -264,7 +264,7 @@ export class PackageQueryController {
           PackageQueryController.sendResponse(res, 404, response, endpointName, error);
         } else if (error instanceof Error && error.message.includes('400')) {
           const msg_invalid = "There is missing field(s) in the PackageID";
-          PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+          PackageQueryController.sendResponse(res, 400, {dsescription: msg_invalid}, endpointName, error);
         } else if ((error instanceof Error) && error.message.includes('403')){
           const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
           PackageQueryController.sendResponse(res, 403, response, endpointName, error);
