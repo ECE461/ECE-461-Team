@@ -25,12 +25,17 @@ const LoginPage = () => {
       const loginSuccess = await login({ name, password,isAdmin });
       if (loginSuccess) {
         router.push("/search"); // Redirect to search page on success
+        console.log(password); 
       }
       else {
         setError("Failed to log in. Please check your credentials.");
+        console.log(password); 
+      
+
       }
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
+      console.log(password); 
     }
   };
 

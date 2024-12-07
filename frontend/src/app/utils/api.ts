@@ -27,7 +27,7 @@ export default api;
 
 export const fetchQueryResults = async (inputs: { name: string; version: string }[]) => {
   try {
-    const response = await axios.post(`/api/packages`, inputs, {
+    const response = await api.post(`/api/packages`, inputs, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -40,7 +40,7 @@ export const fetchQueryResults = async (inputs: { name: string; version: string 
 
 export const fetchRegexResults = async (regexPattern: string) => {
   try {
-    const response = await axios.post(`/api/package/byRegex`, { RegEx: regexPattern }, {
+    const response = await api.post(`/api/package/byRegEx`, { RegEx: regexPattern }, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -54,7 +54,7 @@ export const fetchRegexResults = async (regexPattern: string) => {
 
 export const resetPackage = async () => {
     try {
-        const response = await axios.delete(`/api/reset`);
+        const response = await api.delete(`/api/reset`);
         return response.data;
     } catch (error) {
         console.error("Error deleting package:", error);
@@ -63,7 +63,7 @@ export const resetPackage = async () => {
 
 export const getPackageByID = async (id: string) => {
     try {
-        const response = await axios.get(`${apiURL}/api/package/${id}`);
+        const response = await api.get(`$/api/package/${id}`);
         return response.data;
     } catch (error) {
         console.error("Error fetching package by ID:", error);
@@ -72,7 +72,7 @@ export const getPackageByID = async (id: string) => {
 
 export const updatePackageByID = async (id: string, requestPayload: any) => {
   try {
-    const response = await axios.post(`${apiURL}/api/package/${id}`, requestPayload, {
+    const response = await api.post(`/api/package/${id}`, requestPayload, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -91,7 +91,7 @@ export const updatePackageByID = async (id: string, requestPayload: any) => {
 
 export const getCostByID = async (id: string, dependency: boolean) => {
     try{
-        const response = await axios.get(`${apiURL}/api/package/${id}/cost?dependency=${dependency}`);
+        const response = await api.get(`${apiURL}/api/package/${id}/cost?dependency=${dependency}`);
         return response.data;
     }
     catch(error){
@@ -101,7 +101,7 @@ export const getCostByID = async (id: string, dependency: boolean) => {
 export const deletePackageByID = async (id: string) => {
     try {
       console.log("Request URL:", `${apiURL}/api/package/${id}`);
-      const response = await axios.delete(`${apiURL}/api/package/${id}`);
+      const response = await api.delete(`${apiURL}/api/package/${id}`);
       return response.data;
     } catch (error) {
       console.error("Error deleting package:", error);
@@ -115,7 +115,7 @@ export const uploadPackage = async (data: { JSProgram: string; URL?: string; Con
   };
 
   try {
-    const response = await axios.post(`${apiURL}/api/package`, payload, {
+    const response = await api.post(`${apiURL}/api/package`, payload, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -130,7 +130,7 @@ export const uploadPackage = async (data: { JSProgram: string; URL?: string; Con
   
 export const getRatingByID = async (id: string) => {
     try{
-        const response = await axios.get(`${apiURL}/api/package/${id}/rate`);
+        const response = await api.get(`/api/package/${id}/rate`);
         return response.data;
     }
     catch(error){
@@ -140,17 +140,18 @@ export const getRatingByID = async (id: string) => {
 
 export const createToken = async (name : string, password: string, isAdmin : boolean) => {
     try{
+      const sanitizedPassword = password.replace(/\\/g, "");
         const payload = {
             User: {
                 name,
                 isAdmin
             },
             Secret:{
-                password
+                password: sanitizedPassword,
             },
         };
         console.log("Payload being sent:", payload);
-        const response = await axios.put(`${apiURL}/api/authenticate`, payload, {
+        const response = await api.put(`/api/authenticate`, payload, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -165,7 +166,7 @@ export const createToken = async (name : string, password: string, isAdmin : boo
 
 export const getPackageHistoryByName = async (name: string) => {
     try{
-        const response = await axios.get(`${apiURL}/api/package/byName/${name}`);
+        const response = await api.get(`${apiURL}/api/package/byName/${name}`);
         return response.data;
     }
     catch(error){
@@ -175,7 +176,7 @@ export const getPackageHistoryByName = async (name: string) => {
 
 export const deletePackageById = async (name: string) => {
     try{
-        const response = await axios.delete(`${apiURL}/api/package/${name}`);
+        const response = await api.delete(`${apiURL}/api/package/${name}`);
         return response.data;
     }
     catch(error){
@@ -194,7 +195,7 @@ export const registerUser = async (userData: { name: string; isadmin: boolean; p
         password: userData.password,
       },
     };
-    const response = await axios.post(`${apiURL}/api/register`, requestBody, {
+    const response = await api.post(`${apiURL}/api/register`, requestBody, {
       headers: {
         'Content-Type': 'application/json',
       },
