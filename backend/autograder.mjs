@@ -6,7 +6,7 @@ import axios from "axios";
  */
 
 const group = 3;
-const ghToken = `${GITHUB_TOKEN}`; // Enter your github token here!!
+const ghToken = `${process.env.GITHUB_TOKEN}`; // Enter your github token here!!
 const baseUrl = "http://dl-berlin.ecn.purdue.edu:8000";
 
 function printReadableScore(data) {
@@ -123,11 +123,6 @@ async function downloadLog(logPath) {
   }
 }
 
-// curl --location --request GET 'http://dl-berlin.ecn.purdue.edu:8000/stats' \ 
-// --header 'Content-Type: application/json' \
-// --data '{
-//     "gh_token": "token here"
-// }'
 async function getStats() {
   try {
     const response = await axios.get(`${baseUrl}/stats`, {
