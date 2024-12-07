@@ -122,6 +122,16 @@ const Upload = () => {
             }}
           />
         </S.UploadBox>
+        <S.Divider>
+          <span> (optional) </span>
+        </S.Divider>
+        <S.InputField
+            type="text"
+            value={jsProgram}
+            onChange={(e) => setJsProgram(e.target.value)}
+            disabled={!!file}
+            placeholder="Enter a JS program"
+          />
         <S.buttonContainer>
         <S.uploadButton disabled = {isDisabled} type="submit">Upload</S.uploadButton>
         </S.buttonContainer>
