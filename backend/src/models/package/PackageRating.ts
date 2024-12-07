@@ -14,7 +14,7 @@ export class PackageRating {
             CorrectnessLatency: this.packageRating.correctnessLatency,
             RampUp: this.packageRating.rampUpValue,
             RampUpLatency:this.packageRating.rampUpLatency,
-            ResponsiveMaintainter: this.packageRating.maintainerValue,
+            ResponsiveMaintainer: this.packageRating.maintainerValue,
             ResponsiveMaintainerLatency: this.packageRating.maintainerLatency,
             LicenseScore: this.packageRating.licenseValue,
             LicenseScoreLatency: this.packageRating.licenseLatency,
