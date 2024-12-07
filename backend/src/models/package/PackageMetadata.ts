@@ -29,9 +29,6 @@ export class PackageMetadata{
     }
 
     setUrl(url: string) {
-        if (!url) {
-            throw new Error('URL cannot be empty');
-        }
         this.url = url;
     }
 
