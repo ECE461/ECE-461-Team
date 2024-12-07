@@ -159,6 +159,17 @@ const UpdatePage = () => {
           />
       </S.UploadBox>
       {/* </S.DropdownContainer> */}
+      <S.Divider>
+          <span> (optional) </span>
+        </S.Divider>
+        <S.InputField
+            type="text"
+            value={jsProgram}
+            onChange={(e) => setJsProgram(e.target.value)}
+            disabled={!!file}
+            placeholder="type a JS program"
+          />
+       
       {message && <p>{message}</p>}
       </S.updateCotainer>
     </div>
