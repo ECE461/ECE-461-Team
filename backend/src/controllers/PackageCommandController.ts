@@ -38,17 +38,17 @@ export class PackageCommandController {
         // Log request
         PackageCommandController.logRequest(req, endpointName);
 
-        const msg_invalid = "There is missing field(s) in the PackageData or it is formed improperly (e.g. Content and URL ar both set)";
-        // Check if request is valid + has all required fields
-        if (!PackageData.isValidUploadRequestBody(req.body)) {
-            PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName);
-            return;
-        }
-
-        // Get source from URL or Content
-        const source = req.body.URL ? req.body.URL : req.body.Content;
-        
         try {
+            // Check if request is valid + has all required fields
+            if (!PackageData.isValidUploadRequestBody(req.body)) {
+                throw new Error("400: Invalid Request: Not correct format");
+                return;
+            }
+
+            // Get source from URL or Content
+            const source = req.body.URL ? req.body.URL : req.body.Content;
+        
+        
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
         
             // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status
@@ -71,8 +71,8 @@ export class PackageCommandController {
                 const response = {description: "Package is not uploaded due to the disqualified rating."};
                 PackageCommandController.sendResponse(res, 424, response, endpointName, error);
             } else if ((error instanceof Error) && error.message.includes('400')) {
-                const response = {description: msg_invalid};
-                PackageCommandController.sendResponse(res, 400, response, endpointName, error);
+                const msg_invalid = "There is missing field(s) in the PackageData or it is formed improperly (e.g. Content and URL ar both set)";
+                PackageCommandController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
             } else if ((error instanceof Error) && error.message.includes('409')){
                 const response = {description: "Package already exists"};
                 PackageCommandController.sendResponse(res, 409, response, endpointName, error);
@@ -189,7 +189,7 @@ export class PackageCommandController {
             }
 
             await PackageCommandController.packageService.reset();
-            PackageCommandController.sendResponse(res, 200, {message: "Registry is reset."}, endpointName);
+            PackageCommandController.sendResponse(res, 200, {description: "Registry is reset."}, endpointName);
         } catch (error) {
             if ((error instanceof Error) && error.message.includes('403')){
                 const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
@@ -219,18 +219,18 @@ export class PackageCommandController {
         // Log request
         PackageCommandController.logRequest(req, endpointName);
 
-        
-        if (!PackageID.isValidGetByIdRequest(req)) {
-            throw new Error("400: Invalid Request: Not correct format");
-        }
 
         try{
+            if (!PackageID.isValidGetByIdRequest(req)) {
+                throw new Error("400: Invalid Request: Not correct format");
+            }
+
             let authorization_token = new AuthenticationRequest(req);
             
             await PackageCommandController.packageService.deletePackageById(req.params.id); 
             
             Logger.logInfo(`Successfully deleted package via ID: ${req.params.id}`);
-            PackageCommandController.sendResponse(res, 200, {message: "Successfully deleted package via ID."}, endpointName);
+            PackageCommandController.sendResponse(res, 200, {description: "Successfully deleted package via ID."}, endpointName);
         } catch(error){
             if(error instanceof Error && error.message.includes('404')){
                 const response = {description: "Package does not exist."};
@@ -262,18 +262,18 @@ export class PackageCommandController {
         const endpointName = "DELETE /package/byName/:name (DELETE ALL VERSIONS)";
         // Log request
         PackageCommandController.logRequest(req, endpointName);
-
-        const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid."
-        if (!PackageName.isValidGetByNameRequest(req)) {
-            throw new Error("400: Invalid Request: Not correct format");
-        }
         
         try{
+            const msg_invalid = "There is missing field(s) in the PackageName or it is formed improperly, or is invalid."
+            if (!PackageName.isValidGetByNameRequest(req)) {
+                throw new Error("400: Invalid Request: Not correct format");
+            }
+
             let authorization_token = new AuthenticationRequest(req);
             
             await PackageCommandController.packageService.deletePackageByName(req.params.name);
 
-            PackageCommandController.sendResponse(res, 200, {message: "Successfully deleted package via name."}, endpointName);
+            PackageCommandController.sendResponse(res, 200, {description: "Successfully deleted package via name."}, endpointName);
 
         }catch(error){
             if(error instanceof Error && error.message.includes('404')) {
@@ -307,12 +307,11 @@ export class PackageCommandController {
         const endpointName = "PUT /authenticate (LOGIN)";
         // Log request
         PackageCommandController.logRequest(req, endpointName);
-      
-        if (!AuthenticationRequest.isValidRequest(req)) {
-            throw new Error("400: Invalid Request: Not correct format");
-        }
 
         try {
+            if (!AuthenticationRequest.isValidRequest(req)) {
+                throw new Error("400: Invalid Request: Not correct format");
+            }
             
             let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password, req.body.User.isAdmin);
             Logger.logInfo(`${endpointName}: Successfully created token for user: ${req.body.User.name}: ${token}`);
@@ -354,13 +353,11 @@ export class PackageCommandController {
         // await PackageCommandController.packageService.addDefaultUser();
         // await PackageCommandController.packageService.dummyToken();
 
-        
-
-        if (!AuthenticationRequest.isValidRequest(req)) {
-            throw new Error("400: Invalid Request: Not correct format");
-        }
-
         try{
+            if (!AuthenticationRequest.isValidRequest(req)) {
+                throw new Error("400: Invalid Request: Not correct format");
+            }
+
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
         
             // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
@@ -370,7 +367,7 @@ export class PackageCommandController {
             }
 
             await PackageCommandController.packageService.registerUser(req.body.User.name, req.body.User.isAdmin, req.body.Secret.password)
-            PackageCommandController.sendResponse(res, 200, { message: 'User successfully registered' }, endpointName);
+            PackageCommandController.sendResponse(res, 200, { description: 'User successfully registered' }, endpointName);
 
         } catch (err: any){
             if (err instanceof Error && err.message.includes('401')) {
@@ -386,6 +383,9 @@ export class PackageCommandController {
             } else if (err instanceof Error && err.message.includes('403')){
                 const response = {description: PackageCommandController.INVALID_AUTHENTICATION};
                 PackageCommandController.sendResponse(res, 403, response, endpointName, err);
+            } else {
+                const response = {description: "Internal Server Error"};
+                PackageCommandController.sendResponse(res, 500, response, endpointName, err);
             }
         }
         
