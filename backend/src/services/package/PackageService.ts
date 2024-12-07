@@ -331,19 +331,19 @@ export class PackageService {
             //check if user exists 
             let user = await this.db.userExists(username); 
             if(!user){
-                throw new Error("401: The user or password is invalid");
+                throw new Error("401: The user does not exist");
             }   
 
             //check if there  is a password associated with the username
             let pw = await this.db.getPW(username); 
             if(!pw){
-                throw new Error("401: The user or password is invalid");
+                throw new Error("401: The password DNE in database");
             }
 
             //compare(plainText, hashed) passwords
             const pw_correct = await bcrypt.compare(pwInput, pw); 
             if(!pw_correct){
-                throw new Error("401: The user or password is invalid")
+                throw new Error("401: The password is incorrect");
             }
             
             const isAdmin: boolean = await this.db.isAdmin(username);

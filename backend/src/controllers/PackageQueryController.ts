@@ -18,7 +18,7 @@ import { AuthenticationRequest } from '../models/authentication/AuthenticationRe
  * @method: getPackageHistoryByName
  */
 export class PackageQueryController {
-
+    static readonly INVALID_AUTHENTICATION = "Authentication failed due to invalid or missing AuthenticationToken.";
     static packageService = new PackageService();
 
     /* getPackagesByQuery: Gets any packages fitting query (see models/package/PackageQuery.ts)
@@ -33,21 +33,15 @@ export class PackageQueryController {
     *  Also sets status code to 200 (success), 400 (invalid request), or 413 (too many packages returned - if no pagination?) 
     */
     static async getPackagesByQuery(req: Request, res: Response) : Promise<void> {
+      const endpointName = 'POST /packages (QUERY)';
       // Log POST /packages request
-      Logger.logInfo(`**************************************
-                  POST /packages`);
-      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
-      Logger.logInfo(`**************************************`);
+      PackageQueryController.logRequest(req, endpointName);
 
-      const msg_invalid = "There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid."
+      
       try {
           // Package Query Validation
           if (!PackageQuery.isValidQuery(req)) {
-              Logger.logInfo(msg_invalid);
-              res.status(400).json({description: msg_invalid});
-              return;
+              throw new Error('400: Invalid PackageQuery');
           }
 
           let authorization_token = new AuthenticationRequest(req);
@@ -55,11 +49,22 @@ export class PackageQueryController {
           // Call PackageService to handle business logic
           const offset = req.query.offset ? Number(req.query.offset) : 0;
           const packages = await PackageQueryController.packageService.getPackagesByQuery(req.body, offset);
+
+          Logger.logInfo(`Offset set to: ${offset}`);
           res.setHeader('offset', (offset + packages.length).toString());
-          res.status(200).json(packages);
+
+          PackageQueryController.sendResponse(res, 200, packages, endpointName);
       } catch (error) {
-          Logger.logError('Error fetching patches: ', error);
-          res.status(500).send({message: "Internal Server Error"});
+          if (error instanceof Error && error.message.includes('400')) {
+            const msg_invalid = "There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.";
+            PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+          } else if ((error instanceof Error) && error.message.includes('403')){
+            const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
+            PackageQueryController.sendResponse(res, 403, response, endpointName, error);
+          } else {
+            const response = {message: "Internal Server Error"};
+            PackageQueryController.sendResponse(res, 500, response, endpointName, error);
+          }
       }
     }
 
@@ -77,19 +82,12 @@ export class PackageQueryController {
     * 
     */
     static async getPackagesByRegex(req: Request, res: Response) {
+      const endpointName = 'POST /package/byRegEx (REGEX)';
       // Log request
-      Logger.logInfo(`**************************************
-                  POST /package/byRegEx`);
-      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
-      Logger.logInfo(`**************************************`);
+      PackageQueryController.logRequest(req, endpointName);
 
-      const msg_invalid = "There is missing field(s) in the PackageRegEx or it is formed improperly, or is invalid";
       if (!PackageRegex.isValidRegexRequest(req)) {
-        Logger.logInfo(msg_invalid);
-        res.status(400).json({description: msg_invalid});
-        return;
+        throw new Error('400: Invalid PackageRegex');
       }
 
       try {
@@ -103,13 +101,17 @@ export class PackageQueryController {
         Logger.logInfo('Matching Regex: '+ regex);
         const packages: PackageMetadata[] = await PackageQueryController.packageService.getPackagesByRegex(regex);
         const jsonResponse = packages.map(pkg => pkg.getJson());
-        res.status(200).json(jsonResponse);
+        PackageQueryController.sendResponse(res, 200, jsonResponse, endpointName);
       } catch (error) {
           if (error instanceof Error && error.message.includes('400')) {
-            res.status(400).json({description: msg_invalid});
-            return;
+            const msg_invalid = "There is missing field(s) in the PackageRegEx or it is formed improperly, or is invalid";
+            PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+          } else if ((error instanceof Error) && error.message.includes('403')){
+            const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
+            PackageQueryController.sendResponse(res, 403, response, endpointName, error);
           } else {
-            res.status(500).send({message: "Internal Server Error"});
+            const response = {message: "Internal Server Error"};
+            PackageQueryController.sendResponse(res, 500, response, endpointName, error);
           }
       }
     }
@@ -126,34 +128,36 @@ export class PackageQueryController {
      * Sets status to 200 (success), 400 (invalid request), or 404 (package does not exist)
      */ 
     static async getPackageById(req: Request, res: Response) {
+      const endpointName = 'GET /package/:id (DOWNLOAD)';
       // Log request
-      Logger.logInfo(`**************************************
-                  GET /package/:id`);
-      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
-      Logger.logInfo(`**************************************`);
+      PackageQueryController.logRequest(req, endpointName);
       
-      const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
+      
       try{
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
         
         // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
 
         if (!PackageID.isValidGetByIdRequest(req)) {
-          Logger.logInfo(msg_invalid);
-          res.status(400).json({description: msg_invalid});
-          return;
+          throw new Error("400: Invalid format")
         }
         let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
 
-        res.status(200).json(pckg.getJson());
+        PackageQueryController.sendResponse(res, 200, pckg.getJson(), endpointName);
       }catch(error){
         if(error instanceof Error && error.message.includes('404')){
-          res.status(404).send({description: 'Package does not exist'});
+          const response = {description: 'Package does not exist'};
+          PackageQueryController.sendResponse(res, 404, response, endpointName, error);
+          
+        } else if (error instanceof Error && error.message.includes('400')) {
+          const msg_invalid = "There is missing field(s) in the PackageID or it is formed improperly, or is invalid.";
+          PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+        } else if ((error instanceof Error) && error.message.includes('403')){
+          const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
+          PackageQueryController.sendResponse(res, 403, response, endpointName, error);
         } else {
-          console.error('Error fetching patches: ', error);
-          res.status(500).send({message: "Internal Server Error"});
+          const response = {message: "Internal Server Error"};
+          PackageQueryController.sendResponse(res, 500, response, endpointName, error);
         }
       }
     }
@@ -170,15 +174,11 @@ export class PackageQueryController {
      * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package rating system broke on at least one metric)
      */
     static async getRating(req: Request, res: Response) {
+      const endpointName = 'GET /package/:id/rate (RATING)';
       // Log request
-      Logger.logInfo(`**************************************
-                  GET /package/:id/rate`);
-      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
-      Logger.logInfo(`**************************************`);
+      PackageQueryController.logRequest(req, endpointName);
 
-      const msg_invalid = "There is missing field(s) in the PackageID";
+      
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
@@ -191,19 +191,25 @@ export class PackageQueryController {
 
         
         if (!PackageID.isValidGetByIdRequest(req)) {
-          Logger.logInfo(msg_invalid);
-          res.status(400).json({description: msg_invalid});
-          return;
+          throw new Error("400: Invalid Query Request");
         }
 
         // Get the package id from the request
         const packageId = req.params.id;
         const rating = await PackageQueryController.packageService.getRating(packageId);
-        res.status(200).json(rating.getJson());
+        PackageQueryController.sendResponse(res, 200, rating.getJson(), endpointName);
       }
       catch (error) {
-        console.error('Error calculating scores: ', error);
-        res.status(500).send({message: "Internal Server Error"});
+        if (error instanceof Error && error.message.includes('400')) {
+          const msg_invalid = "There is missing field(s) in the PackageID";
+          PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+        } else if ((error instanceof Error) && error.message.includes('403')){
+          const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
+          PackageQueryController.sendResponse(res, 403, response, endpointName, error);
+        } else {
+          const response = {description: "The package rating system choked on at least one of the metrics."};
+          PackageQueryController.sendResponse(res, 500, response, endpointName, error);
+        }
       };
     }
 
@@ -219,21 +225,20 @@ export class PackageQueryController {
      * Sets status to 200 (all metrics success), 400 (invalid req), 404 (package DNE), 500 (package cost system broke)
      */
     static async getCost(req: Request, res: Response) {
+      const endpointName = 'GET /package/:id/cost (COST)';
+      // Log request
+      PackageQueryController.logRequest(req, endpointName);
+
       try { 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
         
         // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
 
-        const msg_invalid = "There is missing field(s) in the PackageID";
         if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
-          Logger.logInfo(msg_invalid);
-          res.status(400).json({description: msg_invalid});
-          return;
+          throw new Error("400: Invalid format ");
         }
         if (!PackageID.isValidGetByIdRequest(req)) {
-          Logger.logInfo(msg_invalid);
-          res.status(400).json({description: msg_invalid});
-          return;
+          throw new Error("400: Invalid format");
         }
 
         // Get the package key from the id (for S3)
@@ -242,16 +247,21 @@ export class PackageQueryController {
 
         // Get the package id from the request
         const cost = await PackageQueryController.packageService.getCost(packageId, dependency);
-
-        res.status(200).json(cost);
+        PackageQueryController.sendResponse(res, 200, cost, endpointName);
       }
       catch (error) {
         if(error instanceof Error && error.message.includes('404')){
-          res.status(404).send({description: 'Package does not exist'});
-        }
-        else
-        {
-          res.status(500).send({message: "The package rating system choked on at least one of the metrics."});
+          const response = {description: 'Package does not exist'};
+          PackageQueryController.sendResponse(res, 404, response, endpointName, error);
+        } else if (error instanceof Error && error.message.includes('400')) {
+          const msg_invalid = "There is missing field(s) in the PackageID";
+          PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
+        } else if ((error instanceof Error) && error.message.includes('403')){
+          const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
+          PackageQueryController.sendResponse(res, 403, response, endpointName, error);
+        } else {
+          const response = {description: "The package rating system choked on at least one of the metrics."};
+          PackageQueryController.sendResponse(res, 500, response, endpointName, error);
         }
       };
     }
@@ -259,13 +269,10 @@ export class PackageQueryController {
     /* getTrack: Return extension track that we are working on
      */
     static async getTracks(req: Request, res: Response) {
+      const endpointName = 'GET /tracks';
       // Log request
-      Logger.logInfo(`**************************************
-                  GET /tracks`);
-      Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
-      Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
-      Logger.logDebug(`Request Query: ${JSON.stringify(req.query)}`);
-      Logger.logInfo(`**************************************`);
+      PackageQueryController.logRequest(req, endpointName);
+
       try {
 
         const plannedTracks = {
@@ -274,12 +281,43 @@ export class PackageQueryController {
           ]
         };
 
-        res.status(200).json(plannedTracks);
+        PackageQueryController.sendResponse(res, 200, plannedTracks, endpointName);
       } catch (err) {
-        Logger.logError('Error fetching tracks:', err);
-        res.status(500).send({description: "The system encountered an error while retrieving the student's track information."});
+        const response = {description: "The system encountered an error while retrieving the student's track information."};
+        PackageQueryController.sendResponse(res, 500, response, endpointName, err);
       }
     }
 
+    /* 
+     * @method: sendResponse: Helper function- Sends response to client, logs response
+     * @param res: Response object
+     * @param status: Status code
+     * @param response: Response data in JSON format
+     * @param endpoint: Endpoint name
+     * @param error: Error object (if exists)
+     */
+    static async sendResponse(res: Response, status: number, response: any, endpoint: string, error?: any) {
+      Logger.logInfo("*********************RESPONSE***********************");
+      Logger.logInfo(`Sending respoinse for ${endpoint}`);
+      Logger.logInfo(`Status: ${status}`);
+      Logger.logDebug(`Response: ${JSON.stringify(response)}`);
+      Logger.logInfo("********************************************");
+      if (error) {
+        Logger.logError(`${endpoint} ${status}:` ,error);
+      }
+      res.status(status).json(response);
+    }
 
+    /* @method logRequest: Logs request information
+      * @param req: Request object
+      * @param endpoint: Endpoint name
+      */
+    static async logRequest(req: Request, endpoint: string) {
+        Logger.logInfo(`*******************REQUEST*******************`);
+        Logger.logInfo(`            ${endpoint}`);
+        Logger.logDebug(`Request Body: ${JSON.stringify(req.body)}`);
+        Logger.logDebug (`Request Params: ${JSON.stringify(req.params)}`);
+        Logger.logDebug(`Request query: ${JSON.stringify(req.query)}`);
+        Logger.logInfo(`**************************************`);
+    }
 }
