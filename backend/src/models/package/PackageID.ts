@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { Request } from 'express';
+import { Logger } from '../../utils/Logger';
 
 export class PackageID {
     private id: string;
@@ -14,7 +15,7 @@ export class PackageID {
         if(req.params.id){
             return PackageID.isValidID(req.params.id);
         }
-        
+        Logger.logDebug('Invalid ID: ' + req.params.id);
         return false;
     }
 
