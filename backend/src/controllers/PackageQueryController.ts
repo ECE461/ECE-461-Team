@@ -101,6 +101,11 @@ export class PackageQueryController {
         Logger.logInfo('Matching Regex: '+ regex);
         const packages: PackageMetadata[] = await PackageQueryController.packageService.getPackagesByRegex(regex);
         const jsonResponse = packages.map(pkg => pkg.getJson());
+        // If length == 0, throw 404 error:
+        if (packages.length === 0) {
+          throw new Error("404: No matching packages");
+        }
+
         PackageQueryController.sendResponse(res, 200, jsonResponse, endpointName);
       } catch (error) {
           if (error instanceof Error && error.message.includes('400')) {
@@ -109,6 +114,9 @@ export class PackageQueryController {
           } else if ((error instanceof Error) && error.message.includes('403')){
             const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
             PackageQueryController.sendResponse(res, 403, response, endpointName, error);
+          } else if ((error instanceof Error) && error.message.includes('404')) {
+            const response = {description: 'No packages found matching the regex'};
+            PackageQueryController.sendResponse(res, 404, response, endpointName, error);
           } else {
             const response = {description: "Internal Server Error"};
             PackageQueryController.sendResponse(res, 500, response, endpointName, error);

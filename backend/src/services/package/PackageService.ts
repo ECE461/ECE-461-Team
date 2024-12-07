@@ -48,7 +48,7 @@ export class PackageService {
 
             for (const metadata of allPackagesMetadataList) {
                 for (const query of packageQueries) {
-                    const version = query.Version ? query.Version : "0.0.0";
+                    const version = query.Version ? query.Version : "*";
                     const packageQuery = new PackageQuery(query.Name, version);
                     if (packageQuery.checkMatches(metadata)) {
                         matchingPackages.push(metadata.getJson());
@@ -120,9 +120,11 @@ export class PackageService {
             }
             
             // Check that Request Body "version" matches package.json's version
-            if (packageMetadata.getVersion() !== version && version !== "") {
-                throw new Error(`400: Package version does not match: ${packageMetadata.getVersion()} !== ${version}`);
-            }
+            // if (packageMetadata.getVersion() !== version && version !== "") {
+            //     throw new Error(`400: Package version does not match: ${packageMetadata.getVersion()} !== ${version}`);
+            // }
+            // Set version to version from parameter:
+            packageMetadata.setVersion(version);
 
             // If package does already exists:
             Logger.logInfo("Checking if package exists");
