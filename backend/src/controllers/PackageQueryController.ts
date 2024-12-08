@@ -45,6 +45,7 @@ export class PackageQueryController {
           }
 
           let authorization_token = new AuthenticationRequest(req);
+          await authorization_token.updateCalls();
 
           // Call PackageService to handle business logic
           const offset = req.query.offset ? Number(req.query.offset) : 0;
@@ -93,8 +94,7 @@ export class PackageQueryController {
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
 
         // Call PackageService to handle business logic
         const regex = req.body.RegEx;
@@ -142,8 +142,7 @@ export class PackageQueryController {
       try{
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
         const user = authorization_token.getUserId();
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        authorization_token.updateCalls();
 
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format")
@@ -189,8 +188,7 @@ export class PackageQueryController {
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
         
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid Query Request");
@@ -235,7 +233,9 @@ export class PackageQueryController {
       PackageQueryController.logRequest(req, endpointName);
 
       try { 
+
         let authorization_token = new AuthenticationRequest(req);
+        authorization_token.updateCalls();
 
         // Check if ID in param exists first:
         const id = req.params.id;

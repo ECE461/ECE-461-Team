@@ -375,17 +375,18 @@ export class PackageService {
 
             //generate token based on the above parameters
             const payload = {
-                id: user, 
+                id: username, 
                 admin: isAdmin, 
                 iat: Math.floor(Date.now() / 1000),
                 exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60, 
             };
-            
+
             //force throw error or it won't let me add stuff:(
             if (!(process.env.JWT_KEY)){
                 throw new Error("501: JWT_KEY undefined. Check your environment variables.");
             }
 
+            //sign the token with a jwt key
             const token = jwt.sign(payload, process.env.JWT_KEY);
             
             if (!token){
@@ -393,6 +394,8 @@ export class PackageService {
             }
 
             Logger.logInfo("Successfully generated token.")
+
+            this.db.addToken(token); 
             return `"bearer ${token}"`;
 
         } catch (err: any) {
@@ -431,7 +434,6 @@ export class PackageService {
     async dummyToken(){
         try{
             const token = await this.createAccessToken('ece30861defaultadminuser', "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;", true);
-
             Logger.logInfo(token);  
         } catch (err: any) { 
             return;
