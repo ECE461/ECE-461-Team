@@ -7,3 +7,6 @@ coverage/
 *.pyc
 __pycache__/
 webpage-461
+package-lock.json
+backend/package-lock.json
+frontend/package-lock.json

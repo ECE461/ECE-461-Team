@@ -141,12 +141,13 @@ export class PackageQueryController {
       
       try{
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        await authorization_token.updateCalls();
+        const user = authorization_token.getUserId();
+        authorization_token.updateCalls();
 
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format")
         }
-        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
+        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id, user); 
 
         PackageQueryController.sendResponse(res, 200, pckg.getJson(), endpointName);
       }catch(error){
@@ -232,9 +233,16 @@ export class PackageQueryController {
       PackageQueryController.logRequest(req, endpointName);
 
       try { 
-        let authorization_token = new AuthenticationRequest(req); // will throw a shit ton of exceptions
-        await authorization_token.updateCalls();
 
+        let authorization_token = new AuthenticationRequest(req);
+        authorization_token.updateCalls();
+
+        // Check if ID in param exists first:
+        const id = req.params.id;
+        if (!(await this.packageService.checkPackageIDExists(id))) {
+            throw new Error("404: Package does not exist");
+        }
+        
         let dependency = false;
         if(req.query.dependency)
         {

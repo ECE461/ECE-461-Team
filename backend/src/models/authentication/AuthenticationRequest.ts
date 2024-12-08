@@ -101,6 +101,7 @@ export class AuthenticationRequest {
     }  
 
     public isAdmin() { return this.admin; }
+    public getUserId() { return this.id; }
 
     public async updateCalls() { 
     
