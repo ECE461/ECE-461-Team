@@ -198,7 +198,7 @@ export class PackageService {
             // Check: packages uploaded with Content must be updated with Content
             Logger.logDebug(packageMetadata.getId());
             if (packageData.getSourceType() !== await this.db.getSourceType(oldID)) {
-                throw new Error('400: Cannot update with different source type');
+                throw new Error(`400: Cannot update with different source type: Uploaded: ${await this.db.getSourceType(oldID)} New: ${packageData.getSourceType()}`);
             }
 
             // Check: if uploaded with Content, new version must not be an old Patch version

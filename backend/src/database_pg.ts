@@ -162,7 +162,7 @@ export class Database {
      */
 
     public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string, uploadUrl: string, user: string) {
-        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl, uploadUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`;
+        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl, uploadUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
         try {
             const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram, uploadUrl, user]);
             Logger.logInfo(`A new package has been inserted with id: ${packageId} by user: ${user}`);
@@ -337,8 +337,7 @@ export class Database {
             const res = await this.pool.query(sql, [packageID]);
             Logger.logDebug(res.rows);
             const uploadUrl = res.rows[0].uploadUrl;
-
-            return uploadUrl === "" ? "Content" : "URL";
+            return (uploadUrl !== "" && uploadUrl !== "\"\"") ? "Content" : "URL";
         } catch (err) {
             Logger.logError('Error fetching source type:', err);
             throw err;
