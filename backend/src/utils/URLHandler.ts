@@ -314,6 +314,7 @@ public static async getGithubURLFromNpmURL(url: string): Promise<string | null> 
     
       Logger.logDebug("Github URL:" + urlG);
       const githubURL = URLHandler.convertGithubURLToHttps(urlG);
+
       
       // Return null if no github URL found
       if (githubURL == "") {
