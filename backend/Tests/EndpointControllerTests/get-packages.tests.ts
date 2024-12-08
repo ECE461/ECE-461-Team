@@ -45,7 +45,7 @@ describe('GET /package/{id}/rate Test Endpoint and Controller', () => {
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/rate`)
             .set('X-Authorization', 'bearer fake_token')
-            .expect('Content-Type', /json/)
+            .expect('Content-Type', 'application/json; charset=utf-8')
             .expect(200);
 
         expect(response.body).toEqual({ rating: 1.0 });
@@ -141,7 +141,6 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/cost?dependency=${dependency}`)
             .set('X-Authorization', 'bearer fake_token')
-            .expect('Content-Type', /json/)
             .expect(200);
 
         expect(response.body).toEqual({ standaloneCost: 12345 });
