@@ -45,6 +45,7 @@ export class PackageQueryController {
           }
 
           let authorization_token = new AuthenticationRequest(req);
+          await authorization_token.updateCalls();
 
           // Call PackageService to handle business logic
           const offset = req.query.offset ? Number(req.query.offset) : 0;
@@ -62,7 +63,7 @@ export class PackageQueryController {
             const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
             PackageQueryController.sendResponse(res, 403, response, endpointName, error);
           } else {
-            const response = {description: "Internal Server Error"};
+            const response = {message: "Internal Server Error"};
             PackageQueryController.sendResponse(res, 500, response, endpointName, error);
           }
       }
@@ -93,8 +94,7 @@ export class PackageQueryController {
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
 
         // Call PackageService to handle business logic
         const regex = req.body.RegEx;
@@ -141,8 +141,7 @@ export class PackageQueryController {
       
       try{
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
 
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format")
@@ -188,13 +187,7 @@ export class PackageQueryController {
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
-
-        if(!authorization_token.isAdmin){
-            throw new Error("403: User is not an admin, therefore cannot register users");
-        }
-
+        await authorization_token.updateCalls();
         
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid Query Request");
@@ -216,7 +209,7 @@ export class PackageQueryController {
           const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
           PackageQueryController.sendResponse(res, 403, response, endpointName, error);
         } else {
-          const response = {description: "The package rating system choked on at least one of the metrics."};
+          const response = {message: "Internal Server Error"};
           PackageQueryController.sendResponse(res, 500, response, endpointName, error);
         }
       };
@@ -240,8 +233,7 @@ export class PackageQueryController {
 
       try { 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
 
         if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
           throw new Error("400: Invalid format ");
@@ -264,12 +256,12 @@ export class PackageQueryController {
           PackageQueryController.sendResponse(res, 404, response, endpointName, error);
         } else if (error instanceof Error && error.message.includes('400')) {
           const msg_invalid = "There is missing field(s) in the PackageID";
-          PackageQueryController.sendResponse(res, 400, {dsescription: msg_invalid}, endpointName, error);
+          PackageQueryController.sendResponse(res, 400, {description: msg_invalid}, endpointName, error);
         } else if ((error instanceof Error) && error.message.includes('403')){
           const response = {description: PackageQueryController.INVALID_AUTHENTICATION};
           PackageQueryController.sendResponse(res, 403, response, endpointName, error);
         } else {
-          const response = {description: "The package rating system choked on at least one of the metrics."};
+          const response = {message: "Internal Server Error"};
           PackageQueryController.sendResponse(res, 500, response, endpointName, error);
         }
       };

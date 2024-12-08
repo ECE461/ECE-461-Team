@@ -93,7 +93,7 @@ const handleDownloadClick = async () => {
 
   return (
     <ProtectedRoute>
-    <div>
+    <S.Container>
       <S.Header>
         {name} {version}
       </S.Header>
@@ -121,15 +121,16 @@ const handleDownloadClick = async () => {
       return null;
     })}
 </div>
-
-<label>
-                <input
+              <S.CheckboxContainer>
+              <S.CheckboxLabel>
+                <S.Checkbox
                   type="checkbox"
                   checked={dependency}
                   onChange={handleDependencyChange}
                 />
                 View With Dependency
-              </label>
+              </S.CheckboxLabel>
+              </S.CheckboxContainer>
           <table>
             <thead>
               <tr>
@@ -153,14 +154,16 @@ const handleDownloadClick = async () => {
       ) : (
         <p>Loading...</p>
       )}
-      <button onClick={handleUpdateClick}>Update</button>
-      <button onClick={handleDeleteClick} style={{ color: "red" }}>
+      <S.buttonContainer>
+      <S.updateButton onClick={handleUpdateClick}>Update</S.updateButton>
+      <S.deleteButton onClick={handleDeleteClick} >
         Delete Package
-      </button>
-      <button onClick={handleDownloadClick} style={{ color: "blue" }}>
+      </S.deleteButton>
+      <S.downloadButton onClick={handleDownloadClick} >
         Download Package
-      </button>
-    </div>
+      </S.downloadButton>
+      </S.buttonContainer>
+    </S.Container>
   </ProtectedRoute>
 );
 };

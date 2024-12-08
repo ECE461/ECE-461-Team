@@ -17,6 +17,10 @@ interface Payload extends JwtPayload {
 /**
  * @brief This class handles the logic for token validity, authorization, and expiration. It is also important to note that this class 
  *        throws error to error check and halt code execution if the token is inalid.  MUST BE ENCLOSED IN TRY CATCH BLOCKS
+ * 
+ * @method isValidRequest: validates request body for /register and /authorize endpoints
+ * @method isAdmin: returns admin status of bearer 
+ * @method updateCalls: decrements number of API calls. deletes once token expires
  */
 export class AuthenticationRequest {
     private token: string;
@@ -27,6 +31,7 @@ export class AuthenticationRequest {
     constructor(req: Request) {
         
         try {
+            this.db = Database.getInstance();
 
             /*INSTANTIATE TOKEN*/
             const header = req.headers['x-authorization'];
@@ -50,20 +55,22 @@ export class AuthenticationRequest {
             if (!process.env.JWT_KEY){
                 throw new Error("403: JWT_KEY undefined OR has expired. Check your environment variables.");
             }
-
-            const payload = jwt.verify(this.token, process.env.JWT_KEY) as Payload;
             
-            this.id = payload.id;
-            this.admin = payload.admin;
+            try { //nested try catch because compiler doesn't know that only payload will be TokenExpiredError, cannot handle err in main trycatch
+                const payload = jwt.verify(this.token, process.env.JWT_KEY) as Payload;
 
-            this.db = Database.getInstance();
+                this.id = payload.id;
+                this.admin = payload.admin;
+
+            } catch (err: any) {
+                
+                this.db.deleteToken(this.token);
+                throw new Error("403: Token has expired.")
+            }
+            
+        
 
         } catch (err: any) {
-
-            if(err instanceof TokenExpiredError){
-                throw new Error("403: Token has expired");
-            }
-
             throw err;
         }
 

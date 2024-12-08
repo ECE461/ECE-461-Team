@@ -25,18 +25,24 @@ const LoginPage = () => {
       const loginSuccess = await login({ name, password,isAdmin });
       if (loginSuccess) {
         router.push("/search"); // Redirect to search page on success
+        console.log(password); 
       }
       else {
         setError("Failed to log in. Please check your credentials.");
+        console.log(password); 
+      
+
       }
     } catch (err) {
       setError("Failed to log in. Please check your credentials.");
+      console.log(password); 
     }
   };
 
   return (
     <div>
       <S.LoginContainer>
+        <title> Login page </title>
       <S.LoginHeader>Login</S.LoginHeader>
       <S.InputField placeholder ="username" type="text" value={name} onChange={(e) => setName(e.target.value)} />
       <S.InputField placeholder="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />

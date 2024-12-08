@@ -49,8 +49,7 @@ export class PackageCommandController {
         
         
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status
+            await authorization_token.updateCalls();
 
             Logger.logInfo("Parsing request data")
             const jsProgram : string = req.body.JSProgram ? req.body.JSProgram : "";
@@ -130,8 +129,7 @@ export class PackageCommandController {
             }
 
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+            await authorization_token.updateCalls();
 
 
             const source = req.body.data.URL ? req.body.data.URL : req.body.data.Content;
@@ -189,10 +187,12 @@ export class PackageCommandController {
 
         try {
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-    
+            await authorization_token.updateCalls();
+
             if(!authorization_token.isAdmin){
                 throw new Error("403: User is not an admin, therefore cannot register users");
             }
+            
 
             await PackageCommandController.packageService.reset();
             PackageCommandController.sendResponse(res, 200, {description: "Registry is reset."}, endpointName);
@@ -232,6 +232,7 @@ export class PackageCommandController {
             }
 
             let authorization_token = new AuthenticationRequest(req);
+            await authorization_token.updateCalls();
             
             await PackageCommandController.packageService.deletePackageById(req.params.id); 
             
@@ -276,6 +277,7 @@ export class PackageCommandController {
             }
 
             let authorization_token = new AuthenticationRequest(req);
+            await authorization_token.updateCalls();
             
             await PackageCommandController.packageService.deletePackageByName(req.params.name);
 
@@ -367,7 +369,6 @@ export class PackageCommandController {
             }
 
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-            
             await authorization_token.updateCalls(); //are we handling the case even if the api doesn't have a successful response status 
             
     

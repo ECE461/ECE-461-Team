@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useUpdateData } from "../context/UpdateContext";
 import * as S from "../../styles/uploadPage.module";
 import * as A from "../utils/api";
+import {useId} from "../context/IdContext";
 
 const UpdatePage = () => {
   const { name, version, id, clearUpdateData } = useUpdateData();
@@ -15,12 +16,9 @@ const UpdatePage = () => {
   const [jsProgram, setJsProgram] = useState("");
   const [message, setMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [newVersion, setNewVersion] = useState("");
+  const [debloat, setDebloat] = useState<boolean>(false);
   const isDisabled = !url && !file && !inputName && !inputVersion;
-
-  
-  console.log("name:", name);
-  console.log("version:", version);
-  console.log("ID:", id);
 
 
   const handleFileRead = (file: File): Promise<string> => {
@@ -55,6 +53,9 @@ const UpdatePage = () => {
     }
   };
 
+  const handleDeblaotChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDebloat(event.target.checked);
+  };
   const handleUpdate = async () => {
     if (!inputName || !inputVersion) {
       setMessage("Please provide a name and version.");
@@ -65,27 +66,29 @@ const UpdatePage = () => {
       return;
     }
     try {
-      let data;
+      let data: { URL?: string; Content?: string } = {};
       if (url) {
         data = { URL: url };
       } else if (file) {
         const base64Content = await handleFileRead(file);
         data = { Content: base64Content.split(",")[1] };
       }
-      const requestPayload: any = {
+
+      const requestData = {
+        Name: inputName,
+        Version : newVersion,
+        ...data,
+        debloat: true,
+        ...(jsProgram ? { JSProgram: jsProgram } : {}), 
+      };
+      const requestPayload = {
         metadata: {
           Name: inputName,
           Version: inputVersion,
           ID: id,
         },
-        data: {
-          Name: inputName,
-          Content: data?.Content || "",
-          URL: data?.URL || "",
-          debloat: true, 
-          JSProgram : "",// Assuming `debloat` should always be true
-        },
-      };
+        data: requestData,
+      };  
     
       console.log("Request payload:", requestPayload);
       const response = A.updatePackageByID(id!, requestPayload);
@@ -100,7 +103,7 @@ const UpdatePage = () => {
   return (
     <div>
       <S.updateCotainer>
-      <h1> select the package </h1>
+      <h1> Type package you want to update </h1>
       <S.InputFieldContainer>
         <S.NameVersionField
           type="text"
@@ -118,8 +121,15 @@ const UpdatePage = () => {
           readOnly={!!version} 
         />
 
-      <S.updateButton onClick={handleUpdate}>Update</S.updateButton>
+      <S.updateButton onClick={handleUpdate} disabled = {isDisabled}>Update</S.updateButton>
       </S.InputFieldContainer>
+      <S.NameVersionField
+          type="text"
+          placeholder="Version"
+          value={newVersion}
+          onChange={(e) => setNewVersion(e.target.value)}
+          
+        />
       <S.urlHeader>GitHub URL</S.urlHeader> 
       <S.urlContainer>
         <S.InputField
@@ -166,9 +176,17 @@ const UpdatePage = () => {
             type="text"
             value={jsProgram}
             onChange={(e) => setJsProgram(e.target.value)}
-            disabled={!!file}
             placeholder="type a JS program"
           />
+          <label>
+            <input
+              type="checkbox"
+              checked={debloat}
+              onChange={handleDeblaotChange}
+              style={{ marginRight: "5px" }}
+            />
+            Debloat
+          </label>
        
       {message && <p>{message}</p>}
       </S.updateCotainer>
