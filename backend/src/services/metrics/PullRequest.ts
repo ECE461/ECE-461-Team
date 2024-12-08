@@ -25,7 +25,9 @@ import { performance } from 'perf_hooks';
 /**
  * @brief determine the number of closed pull requests made vs the number of pull requests with an accompanying code review. 
  *        for both existence of pull request and pull requests with code review. increment the number of commits tied with that pull request to add weight to certain pull requests that have had changes made
- */
+ *        
+ *        (commits with code review) / (total commits from merged pr)
+ */       
 export class PullRequest{
 
     private repoOwner: string; 
@@ -39,6 +41,27 @@ export class PullRequest{
         this.prefix = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/`;
     }
 
+    
+    private async getClosedPR(){
+
+        try {
+            const response = await axios.get(this.prefix + 'pulls?state=closed', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
+            return response;
+
+        } catch (err: any) {
+            throw err;
+        }
+    }
+
+
+    private async getPRDetails(){
+        try { 
+            
+
+        } catch (err: any) {
+            throw err;
+        }
+    }
     /**
      * @return {Promise } : calculates pull request 
      */
@@ -51,14 +74,30 @@ export class PullRequest{
             let merged_pr = 0; 
             let rev_pr = 0; //merged pr with code review 
 
-            const response = await axios.get(this.prefix + 'pulls?state=closed', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
+            let response = await axios.get(this.prefix + 'pulls?state=closed', {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}});
+
+            let pr_details: Promise<any>[] = [];
 
             response.data.forEach((pr: any) => {
-                merged_pr = pr.merged ? merged_pr + pr.commits : merged_pr; 
-                rev_pr = pr. review_comments? rev_pr + pr.commits : rev_pr; 
-
+                pr_details.push(axios.get(pr.url, {headers: {Authorization: `token ${process.env.GITHUB_TOKEN}`}}));
             });
+            
+           
+            await Promise.allSettled(pr_details)
+                .then(results => {
+                    results.forEach((details : any) => {
+                        let detail = details.value.data;
+   
+                        merged_pr = detail.merged_at ? merged_pr + detail.commits : merged_pr; 
+                        rev_pr = detail.review_comments ? rev_pr + detail.commits: rev_pr; 
 
+                        console.log(`merged_pr: ${merged_pr}, rev_pr: ${rev_pr}\n`);
+                    });
+                })
+                .catch((err) => {
+                    throw err;
+                });
+    
 
             this.latency = (performance.now() - startTime) / 1000;
             return rev_pr / merged_pr; 
@@ -80,4 +119,3 @@ export class PullRequest{
   }
 
 };
-
