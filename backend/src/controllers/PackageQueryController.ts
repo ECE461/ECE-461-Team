@@ -234,20 +234,26 @@ export class PackageQueryController {
       PackageQueryController.logRequest(req, endpointName);
 
       try { 
-        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
-
-        if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
-          throw new Error("400: Invalid format ");
+        let authorization_token = new AuthenticationRequest(req); // will throw a shit ton of exceptions
+        let dependency = false;
+        if(req.query.dependency)
+        {
+          if(req.query.dependency !== 'true' && req.query.dependency !== 'false')
+          {
+            throw new Error("400: Invalid format");
+          }
+          else
+          {
+            dependency = req.query.dependency === 'true';
+          }
         }
+
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format");
         }
 
         // Get the package key from the id (for S3)
         const packageId = req.params.id;
-        const dependency = req.query.dependency === 'true';
 
         // Get the package id from the request
         const cost = await PackageQueryController.packageService.getCost(packageId, dependency);
