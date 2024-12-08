@@ -79,7 +79,7 @@ export async function getPackageJson(repoOwner: string, repoName: string): Promi
 }
 
 // Fetch pull request data and calculate the fraction of code introduced via pull requests
-async function getPullRequestFraction(repoOwner: string, repoName: string): Promise<number> {
+export async function getPullRequestFraction(repoOwner: string, repoName: string): Promise<number> {
     try {
         const url = `${GITHUB_API_URL}/repos/${repoOwner}/${repoName}/pulls?state=all`;
         const response = await axios.get(url, { headers: {
