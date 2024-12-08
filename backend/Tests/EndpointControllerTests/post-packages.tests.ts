@@ -2,6 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { PackageEndpoints } from '../../src/endpoints/PackageEndpoints';
 import { PackageQueryController } from '../../src/controllers/PackageQueryController';
+import { valid } from 'joi';
 
 jest.mock('../../src/services/package/PackageService', () => {
     return {
@@ -10,6 +11,15 @@ jest.mock('../../src/services/package/PackageService', () => {
                 getPackagesByQuery: jest.fn().mockResolvedValue([
                     { Version: '1.2.3', Name: 'TestPackage', ID: 'testpackage' }
                 ])
+            };
+        })
+    };
+});
+jest.mock('../../src/models/authentication/AuthenticationRequest', () => {
+    return {
+        AuthenticationRequest: jest.fn().mockImplementation(() => {
+            return {
+                validateToken: jest.fn().mockResolvedValue(true)
             };
         })
     };
@@ -37,6 +47,7 @@ describe('POST /packages Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .post('/api/v1/packages')
+            .set('X-Authorization', 'bearer fake_token')
             .send(validQuery)
             .expect('Content-Type', /json/)
             .expect(200);
@@ -44,6 +55,18 @@ describe('POST /packages Test Endpoint and Controller', () => {
         expect(response.body).toEqual([
             { Version: '1.2.3', Name: 'TestPackage', ID: 'testpackage' }
         ]);
+
+        // Missing version but name provided
+        const validQuery2 = [
+            {
+                Name: 'Yah'
+            }
+        ];
+        const response2 = await request(app)
+            .post('/api/v1/packages')
+            .set('X-Authorization', 'bearer fake_token')
+            .send(validQuery2)
+            .expect(200);
     });
 
     it('should return 400 for invalid package query', async () => {
@@ -56,21 +79,10 @@ describe('POST /packages Test Endpoint and Controller', () => {
         ];
         const response = await request(app)
             .post('/api/v1/packages')
+            .set('X-Authorization', 'bearer fake_token')
             .send(invalidQuery)
             .expect(400);
-        expect(response.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
-
-        // Missing Version
-        const invalidQuery2 = [
-            {
-                Name: 'Yah'
-            }
-        ];
-        const response2 = await request(app)
-            .post('/api/v1/packages')
-            .send(invalidQuery2)
-            .expect(400);
-        expect(response2.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        expect(response.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         // Invalid Version1
         const invalidQuery3 = [
@@ -81,9 +93,10 @@ describe('POST /packages Test Endpoint and Controller', () => {
         ];
         const response3 = await request(app)
             .post('/api/v1/packages')
+            .set('X-Authorization', 'bearer fake_token')
             .send(invalidQuery3)
             .expect(400);
-        expect(response3.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        expect(response3.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         // Invalid Version2
         const invalidQuery4 = [
@@ -94,9 +107,10 @@ describe('POST /packages Test Endpoint and Controller', () => {
         ];
         const response4 = await request(app)
             .post('/api/v1/packages')
+            .set('X-Authorization', 'bearer fake_token')
             .send(invalidQuery4)
             .expect(400);
-        expect(response4.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        expect(response4.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
     });
 
     it('should return 400 for invalid offset', async () => {
@@ -109,24 +123,27 @@ describe('POST /packages Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .post('/api/v1/packages?offset=-1') // Invalid offset
+            .set('X-Authorization', 'bearer fake_token')
             .send(validQuery)
             .expect(400);
 
-        expect(response.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        expect(response.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         const response2 = await request(app)
             .post('/api/v1/packages?offset=1.6') // Invalid offset
+            .set('X-Authorization', 'bearer fake_token')
             .send(validQuery)
             .expect(400);
 
-        expect(response2.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        expect(response2.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
 
         const response3 = await request(app)
             .post('/api/v1/packages?offset=a') // Invalid offset
+            .set('X-Authorization', 'bearer fake_token')
             .send(validQuery)
             .expect(400);
 
-        expect(response3.body.message).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        expect(response3.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
     });
 
     it('should return 500 for internal server error', async () => {
@@ -141,6 +158,7 @@ describe('POST /packages Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .post('/api/v1/packages')
+            .set('X-Authorization', 'bearer fake_token')
             .send(validQuery)
             .expect(500);
 
