@@ -6,7 +6,7 @@ import { License } from '../../../src/services/metrics/License';
 import { Maintainer } from '../../../src/services/metrics/Maintainer';
 import { PullRequest } from '../../../src/services/metrics/PullRequest';
 import { RampUp } from '../../../src/services/metrics/RampUp';
-import { get } from 'http';
+import { URLHandler } from '../../../src/utils/URLHandler';
 require('dotenv').config();
 
 describe('Metric Manager Tests', () => {
@@ -20,6 +20,9 @@ describe('Metric Manager Tests', () => {
           "lodash": "^4.17.21"
         }
       });
+      // have to mock URLHandler.create as well
+      jest.spyOn(URLHandler, 'isValidURL').mockReturnValue(true);
+      jest.spyOn(URLHandler, 'checkUrlExists').mockResolvedValue(true);
 
       jest.spyOn(BusFactor.prototype, 'calculateBusFactor').mockResolvedValue(1);
       jest.spyOn(Correctness.prototype, 'getCorrectnessScore').mockResolvedValue(1);
@@ -31,7 +34,7 @@ describe('Metric Manager Tests', () => {
 
 
 
-      const manager = new MetricManager('cloudinary/cloudinary_npm');
+      const manager = await MetricManager.create('https://github.com/cloudinary/cloudinary_gem');
       const metrics = await manager.getMetrics();
       expect(metrics.netScore).toBe(1);
     });
@@ -46,6 +49,10 @@ describe('Metric Manager Tests', () => {
           "lodash": "^4.17.21"
         }
       });
+      // have to mock URLHandler.create as well
+      jest.spyOn(URLHandler, 'isValidURL').mockReturnValue(true);
+      jest.spyOn(URLHandler, 'checkUrlExists').mockResolvedValue(true);
+
 
       jest.spyOn(BusFactor.prototype, 'calculateBusFactor').mockResolvedValue(0);
       jest.spyOn(Correctness.prototype, 'getCorrectnessScore').mockResolvedValue(0);
@@ -55,7 +62,7 @@ describe('Metric Manager Tests', () => {
       jest.spyOn(PullRequest.prototype, 'getPullRequest').mockResolvedValue(0);
       jest.spyOn(RampUp.prototype, 'getRampUpScore').mockResolvedValue(0);
 
-      const manager = new MetricManager('cloudinary/cloudinary_npm');
+      const manager = await MetricManager.create('https://github.com/cloudinary/cloudinary_gem');
       const metrics = await manager.getMetrics();
       expect(metrics.netScore).toBe(0);
     });
@@ -70,6 +77,10 @@ describe('Metric Manager Tests', () => {
           "lodash": "^4.17.21"
         }
       });
+      // have to mock URLHandler.create as well
+      jest.spyOn(URLHandler, 'isValidURL').mockReturnValue(true);
+      jest.spyOn(URLHandler, 'checkUrlExists').mockResolvedValue(true);
+
 
       jest.spyOn(BusFactor.prototype, 'calculateBusFactor').mockResolvedValue(0.5);
       jest.spyOn(Correctness.prototype, 'getCorrectnessScore').mockResolvedValue(0.5);
@@ -79,7 +90,7 @@ describe('Metric Manager Tests', () => {
       jest.spyOn(PullRequest.prototype, 'getPullRequest').mockResolvedValue(0.5);
       jest.spyOn(RampUp.prototype, 'getRampUpScore').mockResolvedValue(0.5);
 
-      const manager = new MetricManager('cloudinary/cloudinary_npm');
+      const manager = await MetricManager.create('https://github.com/cloudinary/cloudinary_gem');
       const metrics = await manager.getMetrics();
       expect(metrics.netScore).toBe(0.5);
     });

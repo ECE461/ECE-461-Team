@@ -17,6 +17,16 @@ jest.mock('../../src/services/package/PackageService', () => {
         })
     };
 });
+jest.mock('../../src/models/authentication/AuthenticationRequest', () => {
+    return {
+        AuthenticationRequest: jest.fn().mockImplementation(() => {
+            return {
+                validateToken: jest.fn().mockResolvedValue(true)
+            };
+        })
+    };
+});
+
 
 describe('GET /package/{id}/rate Test Endpoint and Controller', () => {
     let app: express.Application;
@@ -34,6 +44,7 @@ describe('GET /package/{id}/rate Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/rate`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect('Content-Type', /json/)
             .expect(200);
 
@@ -45,6 +56,7 @@ describe('GET /package/{id}/rate Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${invalidPackageId}/rate`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect(400);
 
         expect(response.body).toEqual({ description: "There is missing field(s) in the PackageID" });
@@ -56,6 +68,7 @@ describe('GET /package/{id}/rate Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/rate`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect(500);
 
         expect(response.body).toEqual({ message: 'Internal Server Error' });
@@ -73,14 +86,15 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
         app.use('/api/v1', packageEndpoints.getRouter());
     });
 
-    it('should return 400 if no dependency value included', async () => {
+    it('should return 200 even if no dependency value included', async () => {
         const validPackageId = 'testpackage';
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/cost`)
-            .expect(400);
+            .set('X-Authorization', 'bearer fake_token')
+            .expect(200);
 
-        expect(response.body).toEqual({ description: "There is missing field(s) in the PackageID" });
+        expect(response.body).toEqual({ standaloneCost: 12345 });
     });
 
     it('should return 400 if the dependency value is invalid', async () => {
@@ -89,6 +103,7 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/cost?dependency=${invalidDependency}`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect(400);
 
         expect(response.body).toEqual({ description: "There is missing field(s) in the PackageID" });
@@ -100,6 +115,7 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${invalidPackageId}/cost?dependency=${dependency}`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect(400);
 
         expect(response.body).toEqual({ description: "There is missing field(s) in the PackageID" });
@@ -112,6 +128,7 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/cost?dependency=${dependency}`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect(500);
 
         expect(response.body).toEqual({ message: "Internal Server Error" });
@@ -123,6 +140,7 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/cost?dependency=${dependency}`)
+            .set('X-Authorization', 'bearer fake_token')
             .expect('Content-Type', /json/)
             .expect(200);
 
