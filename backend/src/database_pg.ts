@@ -13,6 +13,7 @@ export interface PackageDetails {
     version: string;
     githubURL?: string;
     uploadUrl?: string;
+    user: string;
 }
 
 
@@ -99,11 +100,12 @@ export class Database {
                 readme TEXT,
                 url TEXT,
                 jsprogram TEXT,
-                uploadUrl TEXT
+                uploadUrl TEXT,
+                uploadUser TEXT
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
-            throw new Error("error creating packages table");
+            throw err;
         }
     }
 
@@ -144,11 +146,11 @@ export class Database {
      * @method getVersions: return all versions of a package
      */
 
-    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string, uploadUrl: string) {
-        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string, uploadUrl: string, user: string) {
+        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl, uploadUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`;
         try {
-            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram, uploadUrl]);
-            Logger.logInfo(`A new package has been inserted with id: ${packageId}`);
+            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram, uploadUrl, user]);
+            Logger.logInfo(`A new package has been inserted with id: ${packageId} by user: ${user}`);
         } catch (err: any) {
             Logger.logError(`Error inserting data with id=${packageId} into database: `, err.message);
         }
@@ -291,7 +293,7 @@ export class Database {
     
 
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
-        const sql = `SELECT name, version, readme, url, jsprogram, uploadUrl FROM packages_table WHERE id = $1`;
+        const sql = `SELECT name, version, readme, url, jsprogram, uploadUrl, uploadUser FROM packages_table WHERE id = $1`;
         try{
             
             const res = await this.pool.query(sql, [packageID]);
@@ -307,7 +309,7 @@ export class Database {
             
             const fields = res.rows[0]; // Get the first row
             
-            return {name: fields.name, version: fields.version, readme: fields.readme, githubURL: fields.url, jsprogram: fields.jsprogram, uploadUrl: fields.uploadUrl};
+            return {name: fields.name, version: fields.version, readme: fields.readme, githubURL: fields.url, jsprogram: fields.jsprogram, uploadUrl: fields.uploadUrl, user: fields.uploadUser};
         } catch(err: any){
             Logger.logError('Error fetching details associated with your package ID', err.message);
             throw err;

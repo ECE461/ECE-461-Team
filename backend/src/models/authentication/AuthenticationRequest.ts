@@ -84,6 +84,7 @@ export class AuthenticationRequest {
     }  
 
     public isAdmin() { return this.payload.isAdmin; }
+    public getUserId() { return this.payload.id; }
 
     // public async incrementCalls(){
     //     //increment the number of api calls tied to this token 

@@ -141,13 +141,14 @@ export class PackageQueryController {
       
       try{
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+        const user = authorization_token.getUserId();
         
         // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
 
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format")
         }
-        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
+        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id, user); 
 
         PackageQueryController.sendResponse(res, 200, pckg.getJson(), endpointName);
       }catch(error){
@@ -240,6 +241,12 @@ export class PackageQueryController {
 
       try { 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+
+        // Check if ID in param exists first:
+        const id = req.params.id;
+        if (!(await this.packageService.checkPackageIDExists(id))) {
+            throw new Error("404: Package does not exist");
+        }
         
         // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
 
