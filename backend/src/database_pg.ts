@@ -72,7 +72,8 @@ export class Database {
 
             Promise.all([
                 this.initializePackageTable(), 
-                this.initializeUsersTable()
+                this.initializeUsersTable(), 
+                this.initializeTokensTable()
             ])
                 .then(() => Logger.logInfo('Database Initialized.'))
                 .catch((err: any) => {Logger.logError('Error initializing database:', err)})
@@ -117,6 +118,20 @@ export class Database {
             Logger.logInfo('Users table created or already exists.');
         } catch(err: any){
             throw new Error("error creating users table");
+        }
+    }
+
+    private async initializeTokensTable(){
+        try { 
+            await this.pool.query(`CREATE TABLE IF NOT EXISTS token_calls (
+                token TEXT PRIMARY KEY,
+                calls_left INTEGER
+            )`);
+
+            Logger.logInfo('Token table created or already exists.');
+        } catch (err: any) {
+           
+            throw new Error('error creating token_calls table');
         }
     }
     
@@ -446,5 +461,75 @@ export class Database {
             throw err;
         }
     }
+
+    /**
+     * *TOKENS TABLE
+     */
+
+    public async addToken(token: string){
+        const sql = `INSERT INTO token_calls (token, calls_left) VALUES ($1, $2)`; 
+
+        try {
+            const res = await this.pool.query(sql, [token, 1000]);
+            Logger.logInfo(`Successfully inserted token into token_calls table.`)
+
+        } catch(err: any) {
+            Logger.logError(`Error inserting token into token_calls table`, err.message);
+        }
+    }
+
+    public async deleteToken(token: string){
+        const sql = `DELETE FROM token_calls WHERE token = $1`
+
+        try {
+            const res = await this.pool.query(sql, [token]);
+            Logger.logInfo(`Deleting token ${token} from tokens_calls table.`);
+        
+        } catch(err: any) {
+            Logger.logError("Error deleting entries: ",  err.message);
+            throw err;
+        }
+    }
+
+    public async decrementCalls(token: string){
+        const sql = `UPDATE token_calls SET calls_left = calls_left - 1 WHERE token = $1`;
+
+        try {
+            
+            await this.pool.query(sql, [token]); //no return values when updating values
+
+        } catch (err: any) { 
+            Logger.logError("Error updating API calls: ",  err.message);
+            throw err;
+        }
+    }
+
+    public async callsRemaining(token: string) {
+        const sql = `SELECT calls_left FROM token_calls WHERE token = $1`;
+
+        try { 
+            
+            const res = await this.pool.query(sql, [token]);
+            
+            return res.rows[0].calls_left;
+
+        } catch (err: any) {
+            Logger.logError("Error fetching calls remaining: ", err.message);
+            throw err;
+        }
+    }
+
+    public async tokenExists (token: string) {
+        const sql = `SELECT COUNT(*) as count FROM token_calls WHERE token = $1`;
+
+        try {
+            const res = await this.pool.query(sql, [token]);
+
+            return res.rows[0].count >-0; 
+        } catch (err: any) {
+            Logger.logError("Error checking token existence: ", err.message);
+        }
+    }
+
 
 }
