@@ -239,7 +239,7 @@ export class PackageQueryController {
 
         // Check if ID in param exists first:
         const id = req.params.id;
-        if (!(await this.packageService.checkPackageIDExists(id))) {
+        if (!(await PackageQueryController.packageService.checkPackageIDExists(id))) {
             throw new Error("404: Package does not exist");
         }
         
