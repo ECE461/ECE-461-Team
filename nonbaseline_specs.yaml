@@ -1,0 +1,173 @@
+openapi: 3.0.2
+info:
+  title: Non-Baseline Requirements
+  version: 2.4.1
+  description: |
+    Team 3
+    
+    Phase 2 (Access Track)
+    
+    Source: Professor Davis
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+paths:
+  /package/{id}:
+    delete:
+      parameters:
+        - name: id
+          description: Package ID
+          schema:
+            $ref: '#/components/schemas/PackageID'
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Package is deleted.
+        "400":
+          description: |
+            There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.
+        "404":
+          description: Package does not exist.
+      operationId: PackageDelete
+      summary: Delete this version of the package. (NON-BASELINE)
+      description: Delete only the package that matches "id". (id is a unique identifier for a package)
+
+  /package/byName/{name}:
+    delete:
+      parameters:
+        - name: name
+          schema:
+            $ref: '#/components/schemas/PackageName'
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Package is deleted.
+        "400":
+          description: |
+            There is missing field(s) in the PackageName/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.
+        "404":
+          description: Package does not exist.
+      operationId: PackageByNameDelete
+      summary: Delete all versions of this package. (NON-BASELINE)
+
+  /authorize:
+    summary: Authenticate this user -- get an access token.
+    description: |
+      If your system supports the authentication scheme described in the spec, then:
+      1. The obtained token should be provided to the other endpoints via the "X-Authorization" header.
+      2. The "Authorization" header is *required* in your system.
+      Otherwise, this endpoint should return HTTP 501 "Not implemented", and the "X-Authorization" header should be unused for the other endpoints.
+      3. Return an access token that expires after 10 hours or after 1000 API calls
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  User:
+                    name: ece30861defaultadminuser
+                    isAdmin: true
+                  Secret:
+                    password: correcthorsebatterystaple123
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationToken'
+              examples:
+                ExampleResponse:
+                  value: "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+          description: Return an AuthenticationToken.
+        "400":
+          description: There is missing field(s) in the AuthenticationRequest or it is formed improperly.
+        "401":
+          description: The user or password is invalid.
+        "501":
+          description: This system does not support authentication.
+      operationId: CreateAuthToken
+      summary: (NON-BASELINE)
+      description: Create an access token.
+
+  /register:
+    post:
+      summary: Register a new user.
+      description: Register a new user with the provided details. Only administrators may register new users.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+            examples:
+              ExampleRequest:
+                value:
+                  User:
+                    name: ece461
+                    isAdmin: false
+                  Secret:
+                    password: purplebananashark1234
+        required: true
+      responses:
+        "200":
+          description: User successfully registered.
+        "400":
+          description:   There is missing field(s) in the PackageID/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.
+        "409":
+          description: User has already been registered.
+        "500":
+          description: Error registering user.
+        "403":
+          description: Authentication failed due to invalid or missing Authentication Token.
+
+components:
+  schemas:
+    PackageID:
+      description: Unique identifier for a package.
+      type: string
+
+    PackageName:
+      description: Name of a package.
+      type: string
+
+    AuthenticationToken:
+      description: "The spec permits you to use any token format you like. You could, for example, look into JSON Web Tokens (\"JWT\")."
+      type: string
+
+    AuthenticationRequest:
+      description: Request format for authentication.
+      required:
+        - User
+        - Secret
+      type: object
+      properties:
+        User:
+          $ref: '#/components/schemas/User'
+        Secret:
+          $ref: '#/components/schemas/UserAuthenticationInfo'
+
+    User:
+      required:
+        - name
+        - isAdmin
+      type: object
+      properties:
+        name:
+          type: string
+          example: Alfalfa
+        isAdmin:
+          type: boolean
+
+    UserAuthenticationInfo:
+      required:
+        - password
+      type: object
+      properties:
+        password:
+          type: string
