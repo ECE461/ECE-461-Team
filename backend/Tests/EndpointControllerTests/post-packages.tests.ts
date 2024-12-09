@@ -3,6 +3,7 @@ import request from 'supertest';
 import { PackageEndpoints } from '../../src/endpoints/PackageEndpoints';
 import { PackageQueryController } from '../../src/controllers/PackageQueryController';
 import { valid } from 'joi';
+import { PackageData } from '../../src/models/package/PackageData';
 
 jest.mock('../../src/services/package/PackageService', () => {
     return {
@@ -163,5 +164,26 @@ describe('POST /packages Test Endpoint and Controller', () => {
             .expect(500);
 
         expect(response.body.message).toEqual('Internal Server Error');
+    });
+
+    describe("POST /package endpoint tests", () => {
+        it("should return an error for an invalid query", async () => {
+            jest.spyOn(PackageData, 'isValidUploadRequestBody').mockReturnValue(false);
+
+            // Content/URL is missing
+            const invalidQuery = [
+                {
+                    Name: '',
+                    Version: '1.2.3'
+                }
+            ];
+            const response = await request(app)
+                .post('/api/v1/packages')
+                .set('X-Authorization', 'bearer fake_token')
+                .send(invalidQuery)
+                .expect(400);
+
+            expect(response.body.description).toEqual("There is missing field(s) in the PackageQuery or it is formed improperly, or is invalid.");
+        });
     });
 });

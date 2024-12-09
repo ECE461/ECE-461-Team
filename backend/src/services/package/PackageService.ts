@@ -312,11 +312,10 @@ export class PackageService {
 
             Logger.logInfo("Deleting package from S3...");
 
-            packageIDs.forEach(async(obj) =>{
 
-                await S3.deletePackagebyID(obj.id); 
-
-            });
+            for (const obj of packageIDs) {
+                await S3.deletePackagebyID(obj.id);
+            }
             
         }catch(err: any){
             throw err;
@@ -443,7 +442,5 @@ export class PackageService {
     async checkIDExists(packageID: string) {
         return await this.db.packageExists(packageID);
     }
-
-    
-
+  
 }

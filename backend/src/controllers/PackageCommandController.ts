@@ -196,6 +196,7 @@ export class PackageCommandController {
             await authorization_token.updateCalls();
 
             if(!authorization_token.isAdmin){
+                console.log("HERER!!!!")
                 throw new Error("403: User is not an admin, therefore cannot register users");
             }
             

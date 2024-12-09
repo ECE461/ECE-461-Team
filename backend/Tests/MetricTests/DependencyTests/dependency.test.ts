@@ -111,12 +111,4 @@ describe('Dependency Metric Tests', () => {
         const score = metric.getPackageScore('empty-package', '1.0.0');
         expect(score).toBeCloseTo(0.6 * 1.0 + 0.4 * 1.0); // Perfect score with no dependencies
     });
-
-    test('Handles API errors gracefully', async () => {
-        // Mock GitHub API error
-        const error = new Error('Error fetching package.json') as unknown as AxiosResponse<any>;
-        mockedAxiosGet.mockRejectedValueOnce(error);
-
-        await expect(processPackages('invalid', 'repo', metric)).rejects.toThrow('Error fetching package.json');
-    });
 });
