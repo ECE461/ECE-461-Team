@@ -39,6 +39,7 @@ export const fetchQueryResults = async (inputs: { name: string; version: string 
     return response.data;
   } catch (error) {
     console.error("Error fetching query results:", error);
+    throw error;
   }
 };
 
@@ -51,7 +52,7 @@ export const fetchRegexResults = async (regexPattern: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching regex results:", error);
+    throw error;
   
   }
 };
@@ -62,6 +63,7 @@ export const resetPackage = async () => {
         return response.data;
     } catch (error) {
         console.error("Error deleting package:", error);
+        throw error;
     }
 };
 
@@ -71,6 +73,7 @@ export const getPackageByID = async (id: string) => {
         return response.data;
     } catch (error) {
         console.error("Error fetching package by ID:", error);
+        throw error;
     }
 };
 
@@ -84,11 +87,6 @@ export const updatePackageByID = async (id: string, requestPayload: any) => {
     return response.data;
   } catch (error) {
     console.error("Error updating package by ID:", error);
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-      console.error("Response headers:", error.response.headers);
-    }
     throw error; 
   }
 };
@@ -136,7 +134,7 @@ export const uploadPackage = async (data: {
     return response.data;
   } catch (error: any) {
     console.error("Error uploading package:", error);
-    throw error.response ? error.response.data : error;
+    throw new Error(error.response.data.description);
   }
 };
 
@@ -163,17 +161,23 @@ export const createToken = async (name : string, password: string, isAdmin : boo
                 password: sanitizedPassword,
             },
         };
-        console.log("Payload being sent:", payload);
+        
         const response = await axios.put(`${apiURL}/api/authenticate`, payload, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
-        console.log("API response:", response.data);
+        if(response.status === 200){
         return response.data;
+        }
     }
-    catch(error){
-        console.error("Error creating token:", error);
+    catch(error:any){
+      if (error.response) {
+        console.error("Error response:", error.response);
+        console.error("Error status:", error.response.status);
+        console.error("Error data:", error.response.data);
+        throw new Error(error.response.data.description);
+      }
     }
 };
 

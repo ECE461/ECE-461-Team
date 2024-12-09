@@ -42,33 +42,39 @@ const UserPage = () => {
       {/* Admin-only section */}
       {isAdmin && (
         <div style={{ marginTop: "20px" }}>
-          <h2>Register New User</h2>
-          <input
+          <S.RegisterHeader>Register New User</S.RegisterHeader>
+          <S.InputFieldContainer>
+          <S.InputField
             type="text"
             placeholder="Enter username"
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{ display: "block", marginBottom: "10px" }}
           />
-          <input
+          <S.InputField
             type="password"
             placeholder="Enter password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ display: "block", marginBottom: "10px" }}
           />
+          <S.CheckboxContainer>
           <label>
-            <input
+            <S.Checkbox
               type="checkbox"
               checked={newUserIsAdmin}
               onChange={(e) => setNewUserIsAdmin(e.target.checked)}
-              style={{ marginRight: "5px" }}
+              
             />
             Is Admin
           </label>
-          <button onClick={handleRegisterUser} style={{ display: "block", marginTop: "10px" }}>
+          </S.CheckboxContainer>
+          </S.InputFieldContainer>
+          <S.ButtonContainer>
+          <S.StyledButton onClick={handleRegisterUser} >
             Register User
-          </button>
+          </S.StyledButton>
+          </S.ButtonContainer>
           {message && <p>{message}</p>}
         </div>
       )}

@@ -103,6 +103,7 @@ const UpdatePage = () => {
   return (
     <div>
       <S.updateCotainer>
+        <title>update a package</title>
       <h1> Type package you want to update </h1>
       <S.InputFieldContainer>
         <S.NameVersionField
@@ -144,6 +145,9 @@ const UpdatePage = () => {
           <span> or </span>
         </S.Divider> 
       {/* <S.DropdownContainer> */}
+      <label htmlFor="file-upload" style={{ cursor: "pointer" }}>
+     Upload ZIP File
+        </label>
       <S.UploadBox
         onDrop={handleDrop}
         onDragOver={(e) => {
@@ -162,6 +166,7 @@ const UpdatePage = () => {
             type="file"
             accept=".zip"
             onChange={handleFileSelect}
+            aria-label="Upload ZIP file"
             style={{
               opacity: 0,
               cursor: "pointer",

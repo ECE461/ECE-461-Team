@@ -94,6 +94,7 @@ const handleDownloadClick = async () => {
   return (
     <ProtectedRoute>
     <S.Container>
+      <title>detail page of package</title>
       <S.Header>
         {name} {version}
       </S.Header>
