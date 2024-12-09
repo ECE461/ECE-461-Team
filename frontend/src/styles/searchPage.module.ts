@@ -22,6 +22,12 @@ export const SearchContainer = styled.div`
   padding: 20px;
 `;
 
+export const SearchHeader = styled.header`
+  font-size: 24px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+`;
 export const DropdownContainer = styled.select`
   padding: 12px 20px;
   margin-right: 10px;
@@ -168,3 +174,9 @@ display: flex;
   gap: 10px;
 `;
 
+export const ErrorContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  color: red;
+`;

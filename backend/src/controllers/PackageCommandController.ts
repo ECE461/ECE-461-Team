@@ -39,6 +39,11 @@ export class PackageCommandController {
         PackageCommandController.logRequest(req, endpointName);
 
         try {
+            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+            const user = authorization_token.getUserId();
+            authorization_token.updateCalls();
+
             // Check if request is valid + has all required fields
             if (!PackageData.isValidUploadRequestBody(req.body)) {
                 throw new Error("400: Invalid Request: Not correct format");
@@ -47,11 +52,6 @@ export class PackageCommandController {
             // Get source from URL or Content
             const source = req.body.URL ? req.body.URL : req.body.Content;
         
-        
-            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status
-
             Logger.logInfo("Parsing request data")
             const jsProgram : string = req.body.JSProgram ? req.body.JSProgram : "";
 
@@ -64,7 +64,7 @@ export class PackageCommandController {
             const packageData = await PackageData.create(source, jsProgram);
 
             Logger.logInfo("Uploading Package: To S3 and RDS")
-            const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData, debloat, name, version);
+            const pack : Package = await PackageCommandController.packageService.uploadPackage(packageData, debloat, name, version, user);
             PackageCommandController.sendResponse(res, 201, pack.getJson(), endpointName);
         } catch (error) {
             if ((error instanceof Error) && (error.message.includes('424'))) {
@@ -104,6 +104,15 @@ export class PackageCommandController {
 
         // Parse information:
         try {
+            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+            const user = authorization_token.getUserId();
+
+            // Check if ID in param exists first:
+            const id = req.params.id;
+            if (!(await PackageCommandController.packageService.checkPackageIDExists(id))) {
+                throw new Error("404: Package does not exist");
+            }
+
             if (!PackageData.isValidUpdateRequestBody(req.body) || !PackageID.isValidGetByIdRequest(req)) {
                 throw new Error("400: Invalid Request: Not correct format");
             }
@@ -129,11 +138,6 @@ export class PackageCommandController {
                 throw new Error("404: Package does not exist");
             }
 
-            let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
-
-
             const source = req.body.data.URL ? req.body.data.URL : req.body.data.Content;
             const jsProgram : string = req.body.data.JSProgram ? req.body.data.JSProgram : "";
             const debloat: boolean = req.body.data.debloat ? req.body.data.debloat : false;
@@ -147,7 +151,7 @@ export class PackageCommandController {
 
             // Update Package
             Logger.logInfo(`Updating Package: Name: ${name}, Version: ${req.body.metadata.Version}`)
-            await PackageCommandController.packageService.updatePackage(packageData, debloat, name, version, oldID);
+            await PackageCommandController.packageService.updatePackage(packageData, debloat, name, version, oldID, user);
             PackageCommandController.sendResponse(res, 200, {description: "Version is updated."}, endpointName);
 
         } catch (error) {
@@ -189,11 +193,13 @@ export class PackageCommandController {
 
         try {
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
+            await authorization_token.updateCalls();
 
             if(!authorization_token.isAdmin){
                 console.log("HERER!!!!")
                 throw new Error("403: User is not an admin, therefore cannot register users");
             }
+            
 
             await PackageCommandController.packageService.reset();
             PackageCommandController.sendResponse(res, 200, {description: "Registry is reset."}, endpointName);
@@ -233,6 +239,7 @@ export class PackageCommandController {
             }
 
             let authorization_token = new AuthenticationRequest(req);
+            await authorization_token.updateCalls();
             
             await PackageCommandController.packageService.deletePackageById(req.params.id); 
             
@@ -277,6 +284,7 @@ export class PackageCommandController {
             }
 
             let authorization_token = new AuthenticationRequest(req);
+            await authorization_token.updateCalls();
             
             await PackageCommandController.packageService.deletePackageByName(req.params.name);
 
@@ -311,6 +319,9 @@ export class PackageCommandController {
      * Set status to 200 (success), 400 (invalid req), 401 (user/password invalid), 501 (system does not support authentication)
      */
     static async createAccessToken(req: Request, res: Response) { // Non-baseline --> add to user/authenticate endpoint or not
+        await PackageCommandController.packageService.addDefaultUser(); 
+        await PackageCommandController.packageService.dummyToken(); 
+
         const endpointName = "PUT /authenticate (LOGIN)";
         // Log request
         PackageCommandController.logRequest(req, endpointName);
@@ -321,6 +332,7 @@ export class PackageCommandController {
             }
             
             let token: string = await PackageCommandController.packageService.createAccessToken(req.body.User.name, req.body.Secret.password, req.body.User.isAdmin);
+
             Logger.logInfo(`${endpointName}: Successfully created token for user: ${req.body.User.name}: ${token}`);
             res.status(200).send(token);
 
@@ -357,17 +369,15 @@ export class PackageCommandController {
         // Log request
         PackageCommandController.logRequest(req, endpointName);
         
-        // await PackageCommandController.packageService.addDefaultUser();
-        // await PackageCommandController.packageService.dummyToken();
-
         try{
+
             if (!AuthenticationRequest.isValidRequest(req)) {
                 throw new Error("400: Invalid Request: Not correct format");
             }
 
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-            // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+            await authorization_token.updateCalls(); //are we handling the case even if the api doesn't have a successful response status 
+            
     
             if(!authorization_token.isAdmin){
                 throw new Error("403: User is not an admin, therefore cannot register users");

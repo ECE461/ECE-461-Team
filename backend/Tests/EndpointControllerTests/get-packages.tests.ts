@@ -86,15 +86,15 @@ describe('GET /package/{id}/cost Test Endpoint and Controller', () => {
         app.use('/api/v1', packageEndpoints.getRouter());
     });
 
-    it('should return 400 if no dependency value included', async () => {
+    it('should return 200 even if no dependency value included', async () => {
         const validPackageId = 'testpackage';
 
         const response = await request(app)
             .get(`/api/v1/package/${validPackageId}/cost`)
             .set('X-Authorization', 'bearer fake_token')
-            .expect(400);
+            .expect(200);
 
-        expect(response.body).toEqual({ description: "There is missing field(s) in the PackageID" });
+        expect(response.body).toEqual({ standaloneCost: 12345 });
     });
 
     it('should return 400 if the dependency value is invalid', async () => {

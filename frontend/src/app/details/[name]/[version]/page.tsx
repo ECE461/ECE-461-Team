@@ -94,33 +94,28 @@ const handleDownloadClick = async () => {
   return (
     <ProtectedRoute>
     <S.Container>
+      <title>detail page of package</title>
       <S.Header>
         {name} {version}
       </S.Header>
       {rateData ? (
         <div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" }}>
+          <S.RateContainer>
         {rateData &&
           Object.entries(rateData).map(([key, value]) => {
             if (typeof value === "string" || typeof value === "number" || value === null) {
               return (
-                <div
+                <S.RateItem
                   key={key}
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    padding: "10px",
-                    backgroundColor: "#f9f9f9",
-                  }}
                 >
-                  <strong>{key.replace(/([A-Z])/g, " $1")}</strong>
-                  <p>{value ?? "N/A"}</p>
-                </div>
+                  <S.RateKey>{key.replace(/([A-Z])/g, " $1")}</S.RateKey>
+                  <S.RateValue>{value ?? "N/A"}</S.RateValue>
+                </S.RateItem>
         );
       }
       return null;
     })}
-</div>
+</S.RateContainer>
               <S.CheckboxContainer>
               <S.CheckboxLabel>
                 <S.Checkbox
@@ -131,25 +126,25 @@ const handleDownloadClick = async () => {
                 View With Dependency
               </S.CheckboxLabel>
               </S.CheckboxContainer>
-          <table>
+          <S.table>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Standalone Cost</th>
-                <th>Total Cost</th>
+                <S.th>ID</S.th>
+                <S.th>Standalone Cost</S.th>
+                <S.th>Total Cost</S.th>
               </tr>
             </thead>
             <tbody>
               {costData &&
                 Object.entries(costData).map(([costId, costs]: [string, any]) => (
                   <tr key={costId}>
-                    <td>{costId}</td>
-                    <td>{costs.standaloneCost || "N/A"}</td>
-                    <td>{costs.totalCost || "N/A"}</td>
+                    <S.td>{costId}</S.td>
+                    <S.td>{costs.standaloneCost || "N/A"}</S.td>
+                    <S.td>{costs.totalCost || "N/A"}</S.td>
                   </tr>
                 ))}
             </tbody>
-          </table>
+          </S.table>
         </div>
       ) : (
         <p>Loading...</p>

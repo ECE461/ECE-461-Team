@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "./context/AuthContext";
 import { useRouter } from "next/navigation";
 import * as S from "../styles/loginPage.module";
+import Head from "next/head";
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -25,24 +26,20 @@ const LoginPage = () => {
       const loginSuccess = await login({ name, password,isAdmin });
       if (loginSuccess) {
         router.push("/search"); // Redirect to search page on success
-        console.log(password); 
       }
-      else {
-        setError("Failed to log in. Please check your credentials.");
-        console.log(password); 
-      
-
+    } catch (error:any) {
+      console.error("Login failed(login page dd):", error.message); // Log the error message
+      setError(error.message);
+      console.log(error)
       }
-    } catch (err) {
-      setError("Failed to log in. Please check your credentials.");
-      console.log(password); 
-    }
+    
+  
   };
 
   return (
     <div>
       <S.LoginContainer>
-        <title> Login page </title>
+      <title> login page</title>
       <S.LoginHeader>Login</S.LoginHeader>
       <S.InputField placeholder ="username" type="text" value={name} onChange={(e) => setName(e.target.value)} />
       <S.InputField placeholder="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -55,10 +52,10 @@ const LoginPage = () => {
           />
           Login as Admin
         </label>
-      <S.LoginButton onClick={handleLogin}>Login</S.LoginButton>
-      
+      <S.LoginButton onClick={handleLogin} type="submit">Login</S.LoginButton>
+      <div style={{ color: "red", marginTop: "10px" }}>{error}</div>
       </S.LoginContainer>
-      {error && <div>{error}</div>}
+      
     </div>
   );
 };

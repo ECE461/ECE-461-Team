@@ -45,6 +45,7 @@ export class PackageQueryController {
           }
 
           let authorization_token = new AuthenticationRequest(req);
+          await authorization_token.updateCalls();
 
           // Call PackageService to handle business logic
           const offset = req.query.offset ? Number(req.query.offset) : 0;
@@ -93,8 +94,7 @@ export class PackageQueryController {
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
 
         // Call PackageService to handle business logic
         const regex = req.body.RegEx;
@@ -141,13 +141,13 @@ export class PackageQueryController {
       
       try{
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        const user = authorization_token.getUserId();
+        authorization_token.updateCalls();
 
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format")
         }
-        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id); 
+        let pckg : Package = await PackageQueryController.packageService.getPackageById(req.params.id, user); 
 
         PackageQueryController.sendResponse(res, 200, pckg.getJson(), endpointName);
       }catch(error){
@@ -188,8 +188,7 @@ export class PackageQueryController {
       try {
 
         let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
+        await authorization_token.updateCalls();
         
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid Query Request");
@@ -234,20 +233,35 @@ export class PackageQueryController {
       PackageQueryController.logRequest(req, endpointName);
 
       try { 
-        let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-        
-        // await authorization_token.incrementCalls(); //are we handling the case even if the api doesn't have a successful response status 
 
-        if(req.query.dependency !== 'true' && req.query.dependency !== 'false'){
-          throw new Error("400: Invalid format ");
+        let authorization_token = new AuthenticationRequest(req);
+        authorization_token.updateCalls();
+
+        // Check if ID in param exists first:
+        const id = req.params.id;
+        if (!(await PackageQueryController.packageService.checkPackageIDExists(id))) {
+            throw new Error("404: Package does not exist");
         }
+        
+        let dependency = false;
+        if(req.query.dependency)
+        {
+          if(req.query.dependency !== 'true' && req.query.dependency !== 'false')
+          {
+            throw new Error("400: Invalid format");
+          }
+          else
+          {
+            dependency = req.query.dependency === 'true';
+          }
+        }
+
         if (!PackageID.isValidGetByIdRequest(req)) {
           throw new Error("400: Invalid format");
         }
 
         // Get the package key from the id (for S3)
         const packageId = req.params.id;
-        const dependency = req.query.dependency === 'true';
 
         // Get the package id from the request
         const cost = await PackageQueryController.packageService.getCost(packageId, dependency);

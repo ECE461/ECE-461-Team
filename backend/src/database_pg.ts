@@ -13,6 +13,7 @@ export interface PackageDetails {
     version: string;
     githubURL?: string;
     uploadUrl?: string;
+    user: string;
 }
 
 
@@ -72,7 +73,8 @@ export class Database {
 
             Promise.all([
                 this.initializePackageTable(), 
-                this.initializeUsersTable()
+                this.initializeUsersTable(), 
+                this.initializeTokensTable()
             ])
                 .then(() => Logger.logInfo('Database Initialized.'))
                 .catch((err: any) => {Logger.logError('Error initializing database:', err)})
@@ -99,11 +101,12 @@ export class Database {
                 readme TEXT,
                 url TEXT,
                 jsprogram TEXT,
-                uploadUrl TEXT
+                uploadUrl TEXT,
+                uploadUser TEXT
             )`);
             Logger.logInfo('Packages table created or already exists.');
         } catch (err: any) {
-            throw new Error("error creating packages table");
+            throw err;
         }
     }
 
@@ -117,6 +120,20 @@ export class Database {
             Logger.logInfo('Users table created or already exists.');
         } catch(err: any){
             throw new Error("error creating users table");
+        }
+    }
+
+    private async initializeTokensTable(){
+        try { 
+            await this.pool.query(`CREATE TABLE IF NOT EXISTS token_calls (
+                token TEXT PRIMARY KEY,
+                calls_left INTEGER
+            )`);
+
+            Logger.logInfo('Token table created or already exists.');
+        } catch (err: any) {
+           
+            throw new Error('error creating token_calls table');
         }
     }
     
@@ -144,11 +161,11 @@ export class Database {
      * @method getVersions: return all versions of a package
      */
 
-    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string, uploadUrl: string) {
-        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+    public async addPackage(packageId: string, name: string, version: string, readme: string, url: string, jsprogram: string, uploadUrl: string, user: string) {
+        const sql = `INSERT INTO packages_table (id, name, version, readme, url, jsprogram, uploadUrl, uploadUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
         try {
-            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram, uploadUrl]);
-            Logger.logInfo(`A new package has been inserted with id: ${packageId}`);
+            const res = await this.pool.query(sql, [packageId, name, version, readme, url, jsprogram, uploadUrl, user]);
+            Logger.logInfo(`A new package has been inserted with id: ${packageId} by user: ${user} with version: ${version} and name: ${name} and uploadUrl: ${uploadUrl}`);
         } catch (err: any) {
             Logger.logError(`Error inserting data with id=${packageId} into database: `, err.message);
         }
@@ -291,7 +308,7 @@ export class Database {
     
 
     public async getDetails(packageID: string): Promise< PackageDetails | null>{
-        const sql = `SELECT name, version, readme, url, jsprogram, uploadUrl FROM packages_table WHERE id = $1`;
+        const sql = `SELECT name, version, readme, url, jsprogram, uploadUrl, uploadUser FROM packages_table WHERE id = $1`;
         try{
             
             const res = await this.pool.query(sql, [packageID]);
@@ -307,7 +324,7 @@ export class Database {
             
             const fields = res.rows[0]; // Get the first row
             
-            return {name: fields.name, version: fields.version, readme: fields.readme, githubURL: fields.url, jsprogram: fields.jsprogram, uploadUrl: fields.uploadUrl};
+            return {name: fields.name, version: fields.version, readme: fields.readme, githubURL: fields.url, jsprogram: fields.jsprogram, uploadUrl: fields.uploadUrl, user: fields.uploadUser};
         } catch(err: any){
             Logger.logError('Error fetching details associated with your package ID', err.message);
             throw err;
@@ -318,10 +335,18 @@ export class Database {
         const sql = `SELECT uploadUrl FROM packages_table WHERE id = $1`;
         try {
             const res = await this.pool.query(sql, [packageID]);
-            Logger.logDebug(res.rows);
-            const uploadUrl = res.rows[0].uploadUrl;
-
-            return uploadUrl === "" ? "Content" : "URL";
+            Logger.logDebug(JSON.stringify(res.rows));
+            const uploadUrl = res.rows[0].uploadurl;
+            Logger.logDebug(`Fetched uploadUrl: ${uploadUrl}`);
+            try {
+                const url = new URL(uploadUrl);
+                Logger.logDebug("URL:" + url);
+                return "URL";
+            }
+            catch (err) {
+                Logger.logDebug("Error parsing URL:" + err);
+                return "Content";
+            }
         } catch (err) {
             Logger.logError('Error fetching source type:', err);
             throw err;
@@ -446,5 +471,75 @@ export class Database {
             throw err;
         }
     }
+
+    /**
+     * *TOKENS TABLE
+     */
+
+    public async addToken(token: string){
+        const sql = `INSERT INTO token_calls (token, calls_left) VALUES ($1, $2)`; 
+
+        try {
+            const res = await this.pool.query(sql, [token, 1000]);
+            Logger.logInfo(`Successfully inserted token into token_calls table.`)
+
+        } catch(err: any) {
+            Logger.logError(`Error inserting token into token_calls table`, err.message);
+        }
+    }
+
+    public async deleteToken(token: string){
+        const sql = `DELETE FROM token_calls WHERE token = $1`
+
+        try {
+            const res = await this.pool.query(sql, [token]);
+            Logger.logInfo(`Deleting token ${token} from tokens_calls table.`);
+        
+        } catch(err: any) {
+            Logger.logError("Error deleting entries: ",  err.message);
+            throw err;
+        }
+    }
+
+    public async decrementCalls(token: string){
+        const sql = `UPDATE token_calls SET calls_left = calls_left - 1 WHERE token = $1`;
+
+        try {
+            
+            await this.pool.query(sql, [token]); //no return values when updating values
+
+        } catch (err: any) { 
+            Logger.logError("Error updating API calls: ",  err.message);
+            throw err;
+        }
+    }
+
+    public async callsRemaining(token: string) {
+        const sql = `SELECT calls_left FROM token_calls WHERE token = $1`;
+
+        try { 
+            
+            const res = await this.pool.query(sql, [token]);
+            
+            return res.rows[0].calls_left;
+
+        } catch (err: any) {
+            Logger.logError("Error fetching calls remaining: ", err.message);
+            throw err;
+        }
+    }
+
+    public async tokenExists (token: string) {
+        const sql = `SELECT COUNT(*) as count FROM token_calls WHERE token = $1`;
+
+        try {
+            const res = await this.pool.query(sql, [token]);
+
+            return res.rows[0].count >-0; 
+        } catch (err: any) {
+            Logger.logError("Error checking token existence: ", err.message);
+        }
+    }
+
 
 }

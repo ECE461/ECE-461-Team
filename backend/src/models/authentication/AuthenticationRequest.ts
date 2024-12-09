@@ -4,7 +4,7 @@ import { Request } from "express";
 import Joi from 'joi'
 import jwt, { JwtPayload, TokenExpiredError } from 'jsonwebtoken';
 import { Logger } from '../../utils/Logger'
-import Redis from 'ioredis'
+import { Database } from '../../database_pg';
 
 //Jwtpayload default only has iat and exp. you need to specify a custom payload that can be recovered by jwt.verify
 interface Payload extends JwtPayload {
@@ -12,16 +12,26 @@ interface Payload extends JwtPayload {
     admin: boolean;
 }
 
-// const redis: Redis = new Redis();
 
 // AuthenticationRequest: contains user info and password
+/**
+ * @brief This class handles the logic for token validity, authorization, and expiration. It is also important to note that this class 
+ *        throws error to error check and halt code execution if the token is inalid.  MUST BE ENCLOSED IN TRY CATCH BLOCKS
+ * 
+ * @method isValidRequest: validates request body for /register and /authorize endpoints
+ * @method isAdmin: returns admin status of bearer 
+ * @method updateCalls: decrements number of API calls. deletes once token expires
+ */
 export class AuthenticationRequest {
     private token: string;
-    private payload: Payload;
+    private id: string;
+    private admin: boolean;
+    private db: Database;
 
     constructor(req: Request) {
         
         try {
+            this.db = Database.getInstance();
 
             /*INSTANTIATE TOKEN*/
             const header = req.headers['x-authorization'];
@@ -32,7 +42,7 @@ export class AuthenticationRequest {
             }
 
             const parts = header.split(' ');
-
+            
             //bearer has to preceed the token in order to render the token valid
             if (parts[0] != 'bearer'){
                 throw new Error("403: Not an actual token")
@@ -45,15 +55,22 @@ export class AuthenticationRequest {
             if (!process.env.JWT_KEY){
                 throw new Error("403: JWT_KEY undefined OR has expired. Check your environment variables.");
             }
+            
+            try { //nested try catch because compiler doesn't know that only payload will be TokenExpiredError, cannot handle err in main trycatch
+                const payload = jwt.verify(this.token, process.env.JWT_KEY) as Payload;
 
-            this.payload = jwt.verify(this.token, process.env.JWT_KEY) as Payload;
+                this.id = payload.id;
+                this.admin = payload.admin;
+
+            } catch (err: any) {
+                
+                this.db.deleteToken(this.token);
+                throw new Error("403: Token has expired.")
+            }
+            
+        
 
         } catch (err: any) {
-
-            if(err instanceof TokenExpiredError){
-                throw new Error("403: Token has expired");
-            }
-
             throw err;
         }
 
@@ -83,14 +100,37 @@ export class AuthenticationRequest {
         return true;
     }  
 
-    public isAdmin() { return this.payload.isAdmin; }
+    public isAdmin() { return this.admin; }
+    public getUserId() { return this.id; }
 
-    // public async incrementCalls(){
-    //     //increment the number of api calls tied to this token 
-    //     const calls = await redis.incr(`calls:${this.payload.id}`);
+    public async updateCalls() { 
+    
+        try {
+
+            const token_exists = await this.db.tokenExists(this.token);
+            if (!token_exists){
+                throw new Error("403: Token does does not exist, or has expired.");
+            }
+
+            let calls_remaining = await this.db.callsRemaining(this.token); 
+
+            Logger.logInfo(`${calls_remaining} API interactions remaining for user ${this.id} 's token ${this.token}`);
+
+            if(!calls_remaining){
+                this.db.deleteToken(this.token); 
+                throw new Error("403: You have reached the maximum API interactions. ");
+            }
+
+            await this.db.decrementCalls(this.token);
+
+        } catch (err: any) {
+            Logger.logError("Error updating token calls: ", err.message); 
+            throw err; 
+
+        }
         
-    //     if (calls > 1000){
-    //         throw new Error("403: You have reached your API token limit. Your token has expired");
-    //     }
-    // }
+
+    }
+
+
 }

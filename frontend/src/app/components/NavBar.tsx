@@ -15,13 +15,13 @@ const NavBar = () => {
   return (
     
     <S.NavBar>
-      <Link href="/search" >
+      <Link href="/search" aria-label="Search the package" >
         <S.NavItem isActive={pathname.includes("/search")}>Search</S.NavItem>
       </Link>
-      <Link href="/upload" >
+      <Link href="/upload" arira-label=" upload the package" >
         <S.NavItem isActive={pathname.includes("/upload")}>Upload</S.NavItem>
       </Link>
-      <Link href="/update">
+      <Link href="/update" aria-label="update the package">
         <S.NavItem isActive={pathname.includes("/update")}>Update</S.NavItem>
       </Link>
     </S.NavBar>

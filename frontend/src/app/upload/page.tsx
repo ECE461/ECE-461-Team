@@ -13,6 +13,7 @@ const Upload = () => {
   const [jsProgram, setJsProgram] = useState("");
   const [debloat, setDebloat] = useState<boolean>(false);
   const [message, setMessage] = useState("");
+  const [error,setError]= useState("");
   const [isDragging, setIsDragging] = useState(false);
   const isDisabled = !url && !file;
 
@@ -92,10 +93,9 @@ const Upload = () => {
       }
       
       const response = A.uploadPackage(requestBody);
-      setMessage("Upload successful!");
       console.log("Response:", response);
     } catch (error) {
-      setMessage("Failed to upload package.");
+      setError(error);
       console.error("Upload error:", error);
     }
   };
@@ -103,6 +103,7 @@ const Upload = () => {
   return (
     <S.UploadContainer>
       <S.pageHeader><title>Upload a Package</title></S.pageHeader>
+      <S.pageHeader>Upload a Package</S.pageHeader>
       <S.InputFieldContainer>
         <S.NameVersionField
           type="text"
@@ -137,6 +138,9 @@ const Upload = () => {
         <S.Divider>
           <span> or </span>
         </S.Divider> 
+        <label htmlFor="file-upload" style={{ cursor: "pointer" }}>
+     Upload ZIP File
+        </label>
         <S.UploadBox
           onDrop={handleDrop}
           onDragOver={(e) => {
@@ -158,17 +162,27 @@ const Upload = () => {
           ) : (
             <p>Drag & drop a ZIP file here, or click to select</p>
           )}
-          <label htmlFor="file-upload">Upload a ZIP file</label>
+          <div>
+          <label htmlFor="file-upload"></label>
           <input
             type="file"
             accept=".zip"
             onChange={handleFileSelect}
+            aria-label="Upload ZIP file"
             style={{
+              
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
               opacity: 0,
-              cursor: "pointer",
+              zIndex: -1,
             }}
+            
            
           />
+          </div>
         </S.UploadBox>
         <S.Divider>
           <span> (optional) </span>
@@ -179,8 +193,8 @@ const Upload = () => {
             onChange={(e) => setJsProgram(e.target.value)}
             placeholder="Enter a JS program"
           />
-        <S.buttonContainer>
-        <label>
+          <S.CheckboxContainer>
+          <label>
             <input
               type="checkbox"
               checked={debloat}
@@ -189,10 +203,12 @@ const Upload = () => {
             />
             Debloat
           </label>
+          </S.CheckboxContainer>
+        <S.buttonContainer>
         <S.uploadButton disabled = {isDisabled} type="submit">Upload</S.uploadButton>
         </S.buttonContainer>
       </form>
-      {message && <p>{message}</p>}
+      {error && <p>{error}</p>}
     </S.UploadContainer>
   );
 };

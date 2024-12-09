@@ -64,7 +64,7 @@ export class PackageService {
         }
     }
 
-    async getPackageById(packageID: string) {
+    async getPackageById(packageID: string, downloadUser: string) {
         try{
             let packageExist: any = await this.db.packageExists(packageID); 
             Logger.logInfo(`Checking if package exists in database: ${packageExist}`);
@@ -84,7 +84,14 @@ export class PackageService {
             
             let file = await S3.getFileByKey(packageID);
 
-            // TODO: Check permissions with JSProgram
+            // Check permissions with JSProgram
+            // If the program exits with a non-zero code, the download of the module should be rejected with an appropriate error message that includes the stdout from the program
+            if (details.jsprogram != "") {
+                // TODO: Check permissions with JSProgram
+                // Run program remotely with arguments: details.name details.version details.user downloadUser zip_file_path
+            }
+
+            
 
             if(file == null){
                 throw new Error("404: Package does not exist");
@@ -101,7 +108,7 @@ export class PackageService {
         }  
     }
 
-    async uploadPackage(packageData: PackageData, debloat: boolean, name: string, version: string) {
+    async uploadPackage(packageData: PackageData, debloat: boolean, name: string, version: string, user: string) {
         try {
 
             // Debloat package if necessary
@@ -145,7 +152,7 @@ export class PackageService {
 
             // Upload metadata and readme to RDS -----------------------------------------
             Logger.logInfo("Uploading package metadata to RDS");
-            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram(), packageData.getUploadUrl());
+            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram(), packageData.getUploadUrl(), user);
 
             // Upload to S3 Database
             Logger.logInfo("Uploading package to S3");
@@ -160,7 +167,7 @@ export class PackageService {
 
     }
 
-    async updatePackage(packageData: PackageData, debloat: boolean, name: string, version: string, oldID: string) {
+    async updatePackage(packageData: PackageData, debloat: boolean, name: string, version: string, oldID: string, user: string) {
         try {
             if (debloat) {
                 Logger.logInfo("Debloating package");
@@ -191,7 +198,7 @@ export class PackageService {
             // Check: packages uploaded with Content must be updated with Content
             Logger.logDebug(packageMetadata.getId());
             if (packageData.getSourceType() !== await this.db.getSourceType(oldID)) {
-                throw new Error('400: Cannot update with different source type');
+                throw new Error(`400: Cannot update with different source type: Uploaded: ${await this.db.getSourceType(oldID)} New: ${packageData.getSourceType()}`);
             }
 
             // Check: if uploaded with Content, new version must not be an old Patch version
@@ -210,7 +217,7 @@ export class PackageService {
 
             // Update metadata and readme to RDS -----------------------------------------
             Logger.logInfo("Uploading package metadata to RDS");
-            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram(), packageData.getUploadUrl());
+            await this.db.addPackage(packageMetadata.getId(), packageMetadata.getName(), packageMetadata.getVersion(), packageMetadata.getReadMe(), packageMetadata.getUrl(), packageData.getJSProgram(), packageData.getUploadUrl(), user);
 
             // Upload to S3 Database
             Logger.logInfo("Uploading package to S3");
@@ -367,17 +374,18 @@ export class PackageService {
 
             //generate token based on the above parameters
             const payload = {
-                id: user, 
+                id: username, 
                 admin: isAdmin, 
                 iat: Math.floor(Date.now() / 1000),
                 exp: Math.floor(Date.now() / 1000) + 10 * 60 * 60, 
             };
-            
+
             //force throw error or it won't let me add stuff:(
             if (!(process.env.JWT_KEY)){
                 throw new Error("501: JWT_KEY undefined. Check your environment variables.");
             }
 
+            //sign the token with a jwt key
             const token = jwt.sign(payload, process.env.JWT_KEY);
             
             if (!token){
@@ -385,6 +393,8 @@ export class PackageService {
             }
 
             Logger.logInfo("Successfully generated token.")
+
+            this.db.addToken(token); 
             return `"bearer ${token}"`;
 
         } catch (err: any) {
@@ -428,4 +438,9 @@ export class PackageService {
             return;
         }
     }
+
+    async checkIDExists(packageID: string) {
+        return await this.db.packageExists(packageID);
+    }
+  
 }
