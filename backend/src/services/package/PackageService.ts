@@ -423,13 +423,9 @@ export class PackageService {
     async dummyToken(){
         try{
             const token = await this.createAccessToken('ece30861defaultadminuser', "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;", true);
-
             Logger.logInfo(token);  
         } catch (err: any) { 
             return;
         }
     }
-
-    
-
 }

@@ -19,6 +19,9 @@ import { License } from '../../src/services/metrics/License';
 import { Maintainer } from '../../src/services/metrics/Maintainer';
 import { PullRequest } from '../../src/services/metrics/PullRequest';
 import { RampUp } from '../../src/services/metrics/RampUp';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { json } from 'stream/consumers';
 
 describe('PackageService', () => {
 
@@ -426,6 +429,240 @@ describe('PackageService', () => {
         });
     });
 
+    describe("createAccessToken()", () => {
+        jest.mock('bcryptjs', () => ({
+            ...jest.requireActual('bcryptjs'),   // Use actual bcryptjs for all methods except compare
+            compare: jest.fn(),  // Mock bcrypt.compare
+          }));
+        jest.mock('jsonwebtoken', () => ({
+            ...jest.requireActual('jsonwebtoken'),   // Use actual jsonwebtoken for all methods except sign
+            sign: jest.fn(),  // Mock jwt.sign
+          }));
 
+        it("should return an error if the user does not exist in the database", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
 
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(false);
+
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe('401: The user does not exist');
+            }
+        });
+
+        it("should return an error if the password DNE", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'getPW').mockResolvedValue(null);
+
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe('401: The password DNE in database');
+            }
+        });
+
+        it("should return an error if the password is incorrect", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'getPW').mockResolvedValue('password1');
+            bcrypt.compare = jest.fn().mockResolvedValue(false);
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe('401: The password is incorrect');
+            }
+        });
+
+        it("should return an error if the admin status is incorrect", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'getPW').mockResolvedValue('password');
+            bcrypt.compare = jest.fn().mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'isAdmin').mockResolvedValue(true);
+
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe('401: Wrong permissions provided');
+            }
+        });
+
+        it("should return an error if the JWT_KEY is not set", async () => {
+            const originalJwtKey = process.env.JWT_KEY;
+            delete process.env.JWT_KEY;
+
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'getPW').mockResolvedValue('password');
+            bcrypt.compare = jest.fn().mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'isAdmin').mockResolvedValue(false);
+
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe('501: JWT_KEY undefined. Check your environment variables.');
+            }
+
+            process.env.JWT_KEY = originalJwtKey;
+        });
+
+        it("should return a token if the user exists and the password is correct", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'getPW').mockResolvedValue('password');
+            bcrypt.compare = jest.fn().mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'isAdmin').mockResolvedValue(false);
+
+            const token = await packageService.createAccessToken(username, password, false);
+            expect(token).toContain('bearer');
+        });
+
+        it("should return an error if the token signing fails", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'getPW').mockResolvedValue('password');
+            bcrypt.compare = jest.fn().mockResolvedValue(true);
+            jest.spyOn(Database.prototype, 'isAdmin').mockResolvedValue(false);
+            jwt.sign = jest.fn().mockReturnValue(null);
+
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe("501: Error creating token.");
+            }
+        });
+
+        it("should throw an error if unhandled error occurs", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockRejectedValue(new Error('Failed to create token'));
+
+            try {
+                await packageService.createAccessToken(username, password, false);
+            } catch (error) {
+                expect((error as Error).message).toBe('Failed to create token');
+            }
+        });
+    });
+
+    describe("registerUser()", () => {
+        it("should return an error if the user already exists in the database", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+
+            try {
+                await packageService.registerUser(username, false, password);
+            } catch (error) {
+                expect((error as Error).message).toBe("409: Please choose a unique username");
+            }
+        });
+
+        it("should throw an error if the user cannot be added to the database", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(false);
+            jest.spyOn(Database.prototype, 'addUser').mockRejectedValue(new Error('Failed to add user'));
+
+            try {
+                await packageService.registerUser(username, false, password);
+            } catch (error) {
+                expect((error as Error).message).toBe('Failed to add user');
+            }
+        });
+
+        it("should not throw an error if the user deletion is successful", async () => {
+            const username = 'username';
+            const password = 'password';
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(false);
+            jest.spyOn(Database.prototype, 'addUser').mockResolvedValue(void 0);
+
+            await packageService.registerUser(username, false, password);
+        });
+    });
+
+    describe("addDefaultUser()", () => {
+        it("shold return an error if the default user already exists in the database", async () => {
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(true);
+
+            try {
+                await packageService.addDefaultUser();
+            } catch (error) {
+                expect((error as Error).message).toBe("409: Default user already exists");
+            }
+        });
+
+        it("should return an error if the default user cannot be added to the database", async () => {
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(false);
+            jest.spyOn(Database.prototype, 'addUser').mockRejectedValue(new Error('Failed to add user'));
+
+            try {
+                await packageService.addDefaultUser();
+            } catch (error) {
+                expect((error as Error).message).toBe('Failed to add user');
+            }
+        });
+
+        it("should not throw an error if the default user is successfully added", async () => {
+            const packageService = new PackageService();
+
+            jest.spyOn(Database.prototype, 'userExists').mockResolvedValue(false);
+            jest.spyOn(Database.prototype, 'addUser').mockResolvedValue(void 0);
+
+            await packageService.addDefaultUser();
+        });
+    });
+
+    describe("dummyToken()", () => {
+        it("should return a dummy token", async () => {
+            const packageService = new PackageService();
+            const token = packageService.dummyToken();
+        });
+
+        it("should return an error if the token signing fails", async () => {
+            const packageService = new PackageService();
+
+            jwt.sign = jest.fn().mockReturnValue(null);
+
+            try {
+                packageService.dummyToken();
+            } catch (error) {
+                expect((error as Error).message).toBe("501: Error creating token.");
+            }
+        });
+    });
 });
