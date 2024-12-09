@@ -103,6 +103,7 @@ const Upload = () => {
   return (
     <S.UploadContainer>
       <S.pageHeader><title>Upload a Package</title></S.pageHeader>
+      <S.pageHeader>Upload a Package</S.pageHeader>
       <S.InputFieldContainer>
         <S.NameVersionField
           type="text"
@@ -192,8 +193,8 @@ const Upload = () => {
             onChange={(e) => setJsProgram(e.target.value)}
             placeholder="Enter a JS program"
           />
-        <S.buttonContainer>
-        <label>
+          <S.CheckboxContainer>
+          <label>
             <input
               type="checkbox"
               checked={debloat}
@@ -202,6 +203,8 @@ const Upload = () => {
             />
             Debloat
           </label>
+          </S.CheckboxContainer>
+        <S.buttonContainer>
         <S.uploadButton disabled = {isDisabled} type="submit">Upload</S.uploadButton>
         </S.buttonContainer>
       </form>

@@ -92,16 +92,48 @@ export const buttonContainer = styled.div`
 `;
 
 export const table = styled.table`
+    border-collapse: collapse;
+    width: 100%;
+    border: 1px solid #ddd;
+    margin-top: 20px;
+  
 `;
 
 export const td = styled.td`
+    border: 1px solid #ddd;
+    padding: 8px;
+   
+    text-align: center;
 `;
 
-export const tr = styled.tr`
-`;
+
 export const th = styled.th`
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    background-color: #f2f2f2;
+  
 `;
-export const thead = styled.thead`
+
+export const RateContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 `;
-export const tbody = styled.tbody`
+
+export const RateItem = styled.div`
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #f9f9f9;
+`;
+
+export const RateKey = styled.strong`
+  display: block;
+  margin-bottom: 2px;
+  font-weight: bold;
+`;
+
+export const RateValue = styled.p`
+  margin: 0;
 `;
