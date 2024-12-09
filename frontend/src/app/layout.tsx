@@ -1,6 +1,7 @@
 // app/layout.tsx
 "use client";
 
+import Head from "next/head";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import * as S from "../styles/searchPage.module";
@@ -12,6 +13,7 @@ import { UpdateProvider } from "./context/UpdateContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UserDisplay from "./components/UserDisplay";
 import NavBar from "./components/NavBar";
+
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname(); 
@@ -28,7 +30,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <IdProvider>
         <UpdateProvider>
         <html lang="en">
-          <head />
+          <Head><title>ECE 461 team 3 website</title></Head>
           <body>
             {isMounted && (
               <>

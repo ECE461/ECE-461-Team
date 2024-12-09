@@ -78,8 +78,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Login successful, token and isAdmin saved:", { token, isAdmin });
       return true;
     }
-    catch(err){
-      alert("Invalid credentials");
+    catch(error:any){
+      // alert("Invalid credentials");
+     
+      console.error("Login failed:", error.message);
+      throw error;
+    
+      
       setUsername("");
       setIsAuthenticated(false);
       setAuthToken(null);

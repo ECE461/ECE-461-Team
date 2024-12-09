@@ -120,7 +120,7 @@ function App() {
           setMessage(""); // Clear message if there are results
         } else {
           setQueryResults([]);
-          // setMessage(response.message);
+          setMessage("No results found.");
         }
       } else {
         response = await A.fetchRegexResults(formattedInputs);
@@ -131,22 +131,30 @@ function App() {
         } else {
           setRegexResults([]);
         
-          // setMessage("No matching results for the regex pattern.");
+          setError(response.data)
         }
       }
     } catch (error: any) {
-      console.error("Error fetching results:", error);
-      // Check if the error response has a message matching the API response for missing fields or invalid token
-      if (error.response && error.response.data && error.response.data.message) {
-        const apiMessage = error.response.data.message;
-        if (apiMessage.includes("There is missing field(s) in the PackageQuery/AuthenticationToken or it is formed improperly, or the AuthenticationToken is invalid.")) {
-          setMessage(apiMessage);
-        } else {
-          setError(`Error: ${apiMessage}`);
-        }
-      } else {
-        setError("An unknown error occurred.");
-      }
+      console.error("Full error object:", error); 
+
+      if (error.response) {
+        
+        console.log("Error response:", error.response);
+        console.log("Error data:", error.response.data);
+        const apiMessage = error.response.data?.description || "Unknown error occurred";
+        console.log("API message:", apiMessage);
+        setError(apiMessage);
+    } else if (error.request) {
+        
+        console.log("No response received:", error.request);
+        setError("No response received from server.");
+    } else {
+       
+        console.log("Error setting up request:", error.message);
+        setError("Error setting up request.");
+    }
+
+    
     }
   };
   const handleChangeInput = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,13 +165,17 @@ function App() {
 
   return (
     <div>
+       <title>search page</title>
       <S.SearchBox>
         <form onSubmit={handleSubmit}>
+        <S.SearchHeader>Search Package!</S.SearchHeader>
         <S.InitialInputContainer>
+          <label>Search Type:
         <S.DropdownContainer onChange={handleChangeSearchType} value={searchType}>
             <option value="Query">Query</option>
             <option value="Regex">Regex</option>
         </S.DropdownContainer>
+        </label>
         
         {searchType === "Query" ? (
         <>
@@ -275,9 +287,9 @@ function App() {
       )}
 
       {error && (
-        <div>
-          <p style={{ color: "red" }}>{error}</p>
-        </div>
+        <S.ErrorContainer>
+          {error}
+        </S.ErrorContainer>
       )}
       <S.resetContainer>
         {isAdmin && (

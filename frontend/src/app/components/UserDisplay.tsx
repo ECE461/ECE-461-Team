@@ -15,7 +15,7 @@ const UserDisplay = () => {
 
   return (
     <div style={{ position: "absolute", top: "10px", right: "10px", display: "flex", alignItems: "center" }}>
-      <Link href="/user" style={{ marginRight: "10px", textDecoration: "none"}}>
+      <Link href="/user" aria-label="user information "style={{ marginRight: "10px", textDecoration: "none"}}>
         Hello, {username}
       </Link>
       <button onClick={logout}>Logout</button>
