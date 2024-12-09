@@ -189,8 +189,9 @@ export class PackageCommandController {
 
         try {
             let authorization_token = new AuthenticationRequest(req); //will throw a shit ton of exceptions
-    
+
             if(!authorization_token.isAdmin){
+                console.log("HERER!!!!")
                 throw new Error("403: User is not an admin, therefore cannot register users");
             }
 

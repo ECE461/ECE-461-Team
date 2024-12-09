@@ -15,7 +15,7 @@ module.exports = {
             displayName: 'backend',
             rootDir: './backend',
             testEnvironment: 'node',
-            testMatch: ['<rootDir>/Tests/**/*.tests.ts'],
+            testMatch: ['<rootDir>/Tests/**/*.tests.ts', "<rootDir>/Tests/**/*.test.ts"],
             collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
             coveragePathIgnorePatterns: ['<rootDir>/src/controllers/FakeController.ts'], // ignore coverage for this file
             moduleDirectories: ['node_modules', 'src'],
