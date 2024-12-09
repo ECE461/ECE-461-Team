@@ -12,7 +12,7 @@ export const pageHeader = styled.header`
   font-size: 24px;
   display: flex;
   justify-content: center;
-  padding: 10px;
+  padding-bottom: 10px;
 `;
 export const UploadBox = styled.div`
   display: flex;
@@ -163,8 +163,12 @@ span {
 `;
 
 export const CheckboxContainer = styled.div`
+display: flex;
+justify-content: center;
+padding : 10px;
 `;
 export const CheckboxLabel = styled.label`
 `;
 export const Checkbox = styled.input`
+   
 `;

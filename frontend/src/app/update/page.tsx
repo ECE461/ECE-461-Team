@@ -126,7 +126,7 @@ const UpdatePage = () => {
       </S.InputFieldContainer>
       <S.NameVersionField
           type="text"
-          placeholder="Version"
+          placeholder="Enter new Version"
           value={newVersion}
           onChange={(e) => setNewVersion(e.target.value)}
           
